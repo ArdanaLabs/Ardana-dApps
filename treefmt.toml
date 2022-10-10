@@ -1,0 +1,26 @@
+[formatter.haskell]
+command = "fourmolu"
+options = [
+    "--ghc-opt",
+    "-XImportQualifiedPost",
+    "--ghc-opt",
+    "-XTypeApplications",
+    "--mode",
+    "inplace",
+    "--check-idempotence",
+]
+includes = ["*.hs"]
+
+[formatter.cabal]
+command = "cabal-fmt"
+options = ["--inplace"]
+includes = ["*.cabal"]
+
+[formatter.nix]
+command = "nixpkgs-fmt"
+includes = ["*.nix"]
+
+[formatter.purscript]
+command = "purs-tidy"
+options = ["format-in-place"]
+includes = ["*.purs"]
