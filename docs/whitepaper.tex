@@ -1,16 +1,149 @@
-\documentclass{article} % Use the custom invoice class (invoice.cls)
-\usepackage{hyperref}
+\documentclass{article}
+\usepackage[hidelinks]{hyperref}
 \usepackage{todonotes}
 \setuptodonotes{inline}
 \setlength{\parindent}{0em}
+\setlength{\parskip}{1pt}
 
-\title{White Paper}
+\title{Danaswap specification}
 \begin{document}
 
 \maketitle
 
-\section{Section Here}
+\tableofcontents
+\newpage
 
-\subsection{subsection }
+\section{Introduction}
 
-\end{document} 
+This is an early draft of the DanaSwap spec. The document starts with the
+``Interactions'' section, defining what the protocol should be able to do. Next
+come the ``Acceptance criteria'', containing descriptions of requirements we
+have on those interactions. Any important implementation details are detailed in
+the ``Implementation Details'' section after that. Finally, the ``Tests''
+section provides an exhaustive list of the way we plan to falsify whether we
+should deploy.  \\
+
+Note: Every subsection that contain `TBD' (``to be determined'') in the title is
+not fully agreed upon yet. Every subsection containing `TBC' (``to be
+confirmed'', by Ryan) in the title is mostly agreed upon, but still requires
+last confirmation. The other sections are considered law.
+
+\section{Interactions}
+
+\subsection*{Initialize pool with liquidity}
+
+This should create a pool with some initial balance for both its assets, giving
+the creator the appropriate number of liquidity tokens. This Cardano
+transactions makes the enactor the `admin' user. \\
+
+Each pool only contains two assets and has its own liquidity token. Once a pool
+is created between assets A and B, the UI no longer allows to create a pool
+between these assets.
+
+\subsection*{Swap}
+
+A user can exchange tokens at a rate defined by the constant product invariant,
+$x \cdot y = k$. The user gets $\Delta y$ in return for paying $\Delta x$, where
+$(x + \Delta x) \cdot (y - \Delta y) = k$, minus the liquidity fee and admin
+fee.
+
+\subsection*{Add liquidity}
+
+A user should be able to add liquidity to a given pool, and mint that pool’s
+liquidity tokens in return. The number of liquidity tokens minted is
+proportional to the growth of the pool. Specifically, this means that $\Delta k
+/ k = \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y = k$,
+$L$ is the number of liquidity tokens minted and $\Delta L$ is the number of
+liquidity tokens minted again.
+
+\subsection*{Withdraw liquidity}
+
+A user who owns liquidity tokens for a given pool, can burn them in exchange for
+getting back a proportional part of the assets left in the pool.
+
+\subsection*{Withdraw liquidity in one asset class}
+
+A user who owns liquidity tokens for a given pool, can choose to withdraw
+liquidity in one token, again following the equation $x \cdot y = k$. This
+endpoint charges the liquidity fee and admin fee.
+
+\subsection*{Kill pool (admin)}
+
+Each pool has a kill switch, which disallows any transaction with the pool
+except for the regular ``Withdraw liquidity'' endpoint. Even the ``Withdraw
+liquidity in one asset class'' endpoint is no longer allowed. Only the admin
+user can kill a pool.
+
+\subsection*{Collect admin fees (admin)}
+
+the admin user can collect the admin fees from a pool which have aggregated from
+swaps and single-asset-class withdrawals.
+
+\subsection*{List pools}
+
+The UX show all Danaswap pools in existence.
+
+\subsection*{Show pool info}
+
+For each Danasawp pool in existence, the UX shows the asset amounts in the pool,
+total amount of liquidity tokens minted, exchange rates and price of the
+liquidity token.
+
+\section{Acceptance criteria}
+
+\todo{List acceptance criteria.}
+
+\section{Implementation details}
+
+This section discusses what we need in order to implement the interactions
+mentioned above.
+
+\todo{Write out this section.}
+
+The components we need:
+\begin{itemize}
+  \item \todo{Do we need Config UTXOs?}
+  \item DEX pools
+  \item Pool identifying NFTs
+  \item Liquidity tokens
+\end{itemize}
+
+\subsection*{Initialize pool}
+
+Initialize pool: Initially, $k = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
+initial amounts. This gives the admin user $k$ liquidity tokens.
+
+\section{Tests}
+
+\todo{Off-chain tests check that what should work on-chain, does work}
+\todo{Apropos-Tx???}
+
+\subsection{Unit tests}
+
+The following intended behaviors need to work:
+\begin{itemize}
+  \item Initializing a protocol and pool works
+  \item queries accurately reflect how the pool was setup
+  \item valid swaps work
+  \item the queries correctly report which swaps would be valid
+  \item queries accurately reflect the change from a swap
+  \item valid liquidity changes work
+  \item queries reflect the liquidity changes
+  \item admin can kill a pool
+  \item liquidity can be extracted from a dead pool
+\end{itemize}
+
+\subsection{Attacks}
+
+The following attacks need to not work:
+\begin{itemize}
+  \item Get a pool authorization nft away from a pool (this should include tests at each type of interaction)
+  \item non-admin kill a pool
+  \item extract too much in an exchange
+  \item over mint liquidity
+  \item under burn liquidity
+  \item burn the wrong pool’s liquidity token
+  \item mint the wrong tools liquidity token
+\end{itemize}
+
+\end{document}
