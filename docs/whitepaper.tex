@@ -33,13 +33,13 @@ last confirmation. The other sections are considered law.
 \subsection*{Initialize pool with liquidity}
 
 This should create a pool with some initial balance for both its assets, giving
-the creator the appropriate number of liquidity tokens. Note that the `admin'
-user is determined by a set of three pre-determined keys, which are hardcoded
-into the script. Anyone can initialize a pool through the UX. \\
+the creator the appropriate number of liquidity tokens. Anyone can initialize a
+pool through the UX. Each pool only contains two assets and has its own
+liquidity token. Once a pool is created between assets A and B, the UI no longer
+allows to create a pool between these assets. \\
 
-Each pool only contains two assets and has its own liquidity token. Once a pool
-is created between assets A and B, the UI no longer allows to create a pool
-between these assets.
+Note that the `admin' user is determined not by who creates pools, but by a set
+of three pre-determined public keys, which are hardcoded into the script. 
 
 \subsection*{Swap}
 
@@ -77,7 +77,7 @@ user can kill a pool.
 
 \subsection*{Collect admin fees (admin)}
 
-the admin user can collect the admin fees from a pool which have aggregated from
+The admin user can collect the admin fees from a pool which have aggregated from
 swaps and single-asset-class withdrawals.
 
 \subsection*{List pools}
