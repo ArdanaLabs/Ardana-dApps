@@ -33,8 +33,9 @@ last confirmation. The other sections are considered law.
 \subsection*{Initialize pool with liquidity}
 
 This should create a pool with some initial balance for both its assets, giving
-the creator the appropriate number of liquidity tokens. This Cardano
-transactions makes the enactor the `admin' user. \\
+the creator the appropriate number of liquidity tokens. Note that the `admin'
+user is determined by a set of three pre-determined keys, which are hardcoded
+into the script. Anyone can initialize a pool through the UX. \\
 
 Each pool only contains two assets and has its own liquidity token. Once a pool
 is created between assets A and B, the UI no longer allows to create a pool
@@ -91,7 +92,36 @@ liquidity token.
 
 \section{Acceptance criteria}
 
-\todo{List acceptance criteria.}
+\begin{itemize}
+  \item When initializing a pool, no asset balances can be $0$
+  \item Once a pool is initialized between assets $A$ and $B$, the UX disallows
+    creating another pool between the same assets
+  \item Any user can initialize a pool
+  \item The admin user is independent of who created the pool
+  \item The admin user can kill pools
+  \item Non-admin users cannot kill pools
+  \item A pool that is killed, only supports the ``Withdraw liquidity'' endpoint
+  \item Small swaps create low slippage
+  \item If the balances of the two assets in a pool are roughly equal, their
+    exchange rate is roughly $1$
+  \item Swaps selling $A$ to the pool in exchange for $B$ increase the exchange
+    rate $A \rightarrow B$ and decrease the exchange rate $B \rightarrow A$
+  \item When performing a swap, the correct fee is paid
+  \item Any user can add liquidity
+  \item When adding liquidity, the user receives the correct number of liquidity
+    tokens
+  \item When withdrawing liquidity, the user receives the correct amount of
+    assets
+  \item When withdrawing liquidity in one asset class, the correct fee is paid
+  \item When creating a new pool and then listing all existing pools, the new
+    pool shows up
+  \item Each pool is discoverable and traceable, as shown through its ``pool
+    info''
+  \item When showing a pool's info and then interacting with it (kill, swap, add
+    liquidity, withdraw liquidity), the pool's info updates appropriately
+  \item Each pool is verifiable, i.e. any pool which has been initialized
+    appropriately is considered a legitimate pool and vice versa
+\end{itemize}
 
 \section{Implementation details}
 
@@ -102,7 +132,6 @@ mentioned above.
 
 The components we need:
 \begin{itemize}
-  \item \todo{Do we need Config UTXOs?}
   \item DEX pools
   \item Pool identifying NFTs
   \item Liquidity tokens
@@ -110,8 +139,8 @@ The components we need:
 
 \subsection*{Initialize pool}
 
-Initialize pool: Initially, $k = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
-initial amounts. This gives the admin user $k$ liquidity tokens.
+Initialize pool: Initially, $k_0 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
+initial amounts. The admin user receives $k_0$ liquidity tokens.
 
 \section{Tests}
 
@@ -131,6 +160,12 @@ The following intended behaviors need to work:
   \item queries reflect the liquidity changes
   \item admin can kill a pool
   \item liquidity can be extracted from a dead pool
+\end{itemize}
+
+Nick's tests:
+\begin{itemize}
+  \item When adding liquidity, the number in the pool's datum representing the
+    total amount of liquidity minted goes up by the correct amount
 \end{itemize}
 
 \subsection{Attacks}
