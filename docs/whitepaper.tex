@@ -142,10 +142,6 @@ liquidity token.
 This section discusses what we need in order to implement the interactions
 mentioned above. \\
 
-
-The protocol consists of four parts. Three of them are very simple, while most
-of the logic is in the central component: The pool validator script. \\
-
 Firstly, in order to run a DEX based on an automated market model\footnote{
   The automated market model states that rather than having market makers and
   takers, such as is done in stock exchanges, the users will be liquidity
@@ -178,7 +174,7 @@ hash of the other scripts, which leads to a computationally very difficult
 problem to resolve. Therefore, we propose to use a different solution: The
 Config UTXO. \\
 
-The idea is that a Config UTXO is built, identified by an NFT, and holds in
+The idea is that a Config UTXO is built, identified by an NFT, which holds in
 its datum the hashes of all the scripts involved in the protocol. Each script
 can then refer to the hashes in the Config UTXO in order to verify the other
 scripts. In our case, the Config UTXO will only contain an NFT (to identify
@@ -248,20 +244,6 @@ Each pool datum consists of a number of parts:
   \item A boolean representing the pool's kill switch
 \end{itemize}
 
-The basic function of the protocol is to allow users to exchange
-currencies for each other for a small fee.
-Facilitating these exchanges requires liquidity so
-the protocol needs to allow some users (liquidity providers)
-to provide liquidity to the exchange, in exchange for doing so
-the liquidity providers are compensated with a share of the fees.
-
-The DEX pools store liquidity and allow users to exchange tokens
-for a small fee.
-The pool identifying NFTs allow for easy tracking of pools and
-certify that each pool was opened legitimately.
-The liquidity tokens represent ownership of a share of the liquidity
-in a pool. They can be given to users in exchange for depositing liquidity
-and then redeemed for that liquidity plus an appropriate share of the fees.
 
 \subsection{Pool Addresses validator}
 
