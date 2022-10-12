@@ -44,18 +44,24 @@ between these assets.
 \subsection*{Swap}
 
 A user can exchange tokens at a rate defined by the constant product invariant,
-$x \cdot y = k$. The user gets $\Delta y$ in return for paying $\Delta x$, where
-$(x + \Delta x) \cdot (y - \Delta y) = k$, minus the liquidity fee and admin
-fee.
+$x \cdot y = k^2$. The user gets $\Delta y$ in return for paying $\Delta x$,
+where $(x + \Delta x) \cdot (y - \Delta y) = k^2$, minus the liquidity fee and
+admin fee.
+
+Note: $k$ should not be computed on chain, everything can be done in terms of $k^2$
 
 \subsection*{Add liquidity}
 
 A user should be able to add liquidity to a given pool, and mint that pool’s
 liquidity tokens in return. The number of liquidity tokens minted is
 proportional to the growth of the pool. Specifically, this means that $\Delta k
-/ k = \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y = k$,
-$L$ is the number of liquidity tokens minted and $\Delta L$ is the number of
-liquidity tokens minted again.
+/ k = \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y =
+k^2$, $L$ is the number of liquidity tokens minted and $\Delta L$ is the number
+of liquidity tokens minted again.
+
+Note: Here also $k$ should not be computed on chain, we can use the equivalent
+constraint $(\Delta k / k)^2 = (\Delta L / L)^2$ which should avoid the square
+root.
 
 \subsection*{Withdraw liquidity}
 
@@ -65,7 +71,7 @@ getting back a proportional part of the assets left in the pool.
 \subsection*{Withdraw liquidity in one asset class}
 
 A user who owns liquidity tokens for a given pool, can choose to withdraw
-liquidity in one token, again following the equation $x \cdot y = k$. This
+liquidity in one token, again following the equation $x \cdot y = k^2$. This
 endpoint charges the liquidity fee and admin fee.
 
 \subsection*{Kill pool (admin)}
@@ -145,6 +151,7 @@ initial amounts. The admin user receives $k_0$ liquidity tokens.
 \section{Tests}
 
 \todo{Off-chain tests check that what should work on-chain, does work}
+
 \todo{Apropos-Tx???}
 
 \subsection{Unit tests}
