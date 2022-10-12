@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage[hidelinks]{hyperref}
+\usepackage{hyperref}
 \usepackage{todonotes}
 \setuptodonotes{inline}
 \setlength{\parindent}{0em}
@@ -10,7 +10,10 @@
 
 \maketitle
 
-\tableofcontents
+\begingroup
+  \hypersetup{hidelinks}
+  \tableofcontents
+\endgroup
 \newpage
 
 \section{Introduction}
@@ -44,23 +47,27 @@ between these assets.
 \subsection*{Swap}
 
 A user can exchange tokens at a rate defined by the constant product invariant,
-$x \cdot y = k^2$. The user gets $\Delta y$ in return for paying $\Delta x$, where
-$(x + \Delta x) \cdot (y - \Delta y) \geq k^2$, minus the liquidity fee and admin
-fee.
+$x \cdot y = k^2$. The user gets $\Delta y$ in return for paying $\Delta x$,
+where $(x + \Delta x) \cdot (y - \Delta y) = k^2$, minus the liquidity fee and
+admin fee. \\
 
-Note: $k$ should not be computed on chain, everything can be done in terms of $k^2$
+Note: No square roots ever need to be computed on-chain, since it only needs to
+verify what the off-chain code produced. This means that everything can be done
+in terms of $k^2$ and $L^2$, without any reference to $k$ and $L$ directly. This
+is the case across the entire protocol.
 
 \subsection*{Add liquidity}
 
 A user should be able to add liquidity to a given pool, and mint that pool’s
 liquidity tokens in return. The number of liquidity tokens minted is
 proportional to the growth of the pool. Specifically, this means that $\Delta k
-/ k \leq \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y = k^2$,
-$L$ is the number of liquidity tokens minted and $\Delta L$ is the number of
-liquidity tokens minted again.
+/ k = \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y =
+k^2$, $L$ is the number of liquidity tokens minted and $\Delta L$ is the number
+of liquidity tokens minted again. \\
 
-Note: Here also $k$ should not be computed on chain, we can use the equivalent constraint
-$(\Delta k / k)^2  \leq (\Delta L / L)^2$ which should avoid the square root.
+Note: Adding liquidity costs both admin and LP fees as well.
+
+\todo{How does this work, exactly?}
 
 \subsection*{Withdraw liquidity}
 
@@ -72,6 +79,8 @@ getting back a proportional part of the assets left in the pool.
 A user who owns liquidity tokens for a given pool, can choose to withdraw
 liquidity in one token, again following the equation $x \cdot y = k^2$. This
 endpoint charges the liquidity fee and admin fee.
+
+\todo{How does this work, exactly?}
 
 \subsection*{Kill pool (admin)}
 
@@ -91,7 +100,7 @@ The UX show all Danaswap pools in existence.
 
 \subsection*{Show pool info}
 
-For each Danasawp pool in existence, the UX shows the asset amounts in the pool,
+For each Danaswap pool in existence, the UX shows the asset amounts in the pool,
 total amount of liquidity tokens minted, exchange rates and price of the
 liquidity token.
 
@@ -131,15 +140,112 @@ liquidity token.
 \section{Implementation details}
 
 This section discusses what we need in order to implement the interactions
-mentioned above.
+mentioned above. \\
 
-\todo{Write a summary that makes this easier to understand on the first reading}
 
-The components we need:
+The protocol consists of four parts. Three of them are very simple, while most
+of the logic is in the central component: The pool validator script. \\
+
+Firstly, in order to run a DEX based on an automated market model\footnote{
+  The automated market model states that rather than having market makers and
+  takers, such as is done in stock exchanges, the users will be liquidity
+  providers (LPs) and traders. The LPs provide liquidity into a pool in exchange
+  for a liquidity token, which is used as a `receipt' of the amount of liquidity
+  they provided. Traders can then swap against the pool, according to an
+  invariant equation. For example, the initial invariant equation used by
+  Danaswap will be $x \cdot y = k^2$, where $L \sim k$. This means that the
+  amount $\Delta y$ a trader gets in exchange for adding $\Delta x$ is such that
+  $(x + \Delta x) \cdot (y - \Delta y) = k^2 = x \cdot y$. \\
+
+  When providing liquidity, $x \rightarrow x'$ and $y \rightarrow y'$ has the
+  effect that $k \rightarrow k'$. The number of liquidity tokens the LP
+  receives, $\Delta L$, then follows the rule $\Delta L / L = \Delta k / k$.
+}, we need a liquidity token to exist, with a minting policy linked to a
+specific pool.
+Secondly, as in the Cardano Application Template, we want each pool be
+identified by an NFT minted through a specific minting policy. This allows
+anyone to verify that a UTXO at the pool script address is valid, as well as to
+trace each pool.
+Finally, our protocol contains a number of cyclic dependencies between the
+different scripts. In order to resolve this, we follow the Config UTXO pattern.
+
+\subsection{Config UTXO}
+
+As mentioned above, our protocol will contain cyclic dependencies between the
+different scripts. Imagine we go about the situation naively, and we make each
+script dependent on the others. Now the hash of each script is dependent on the
+hash of the other scripts, which leads to a computationally very difficult
+problem to resolve. Therefore, we propose to use a different solution: The
+Config UTXO. \\
+
+The idea is that a Config UTXO is built, identified by an NFT, and holds in
+its datum the hashes of all the scripts involved in the protocol. Each script
+can then refer to the hashes in the Config UTXO in order to verify the other
+scripts. In our case, the Config UTXO will only contain an NFT (to identify
+itself) and a datum with the liquidity token
+minting policy hash, and the pool validator script address. \\
+
+In order to make swaps and liquidity interactions possible without
+the config utxo the following dependencies are passed as parameters:
 \begin{itemize}
-  \item DEX pools
-  \item Pool identifying NFTs
-  \item Liquidity tokens
+	\item Pool addresses $\rightarrow$ Liquidity token
+	\item Pool addresses $\rightarrow$ Pool id token
+	\item Liquidity token $\rightarrow$ Pool id token
+\end{itemize}
+Importantly this is acyclic. \\
+
+The remaining dependencies are read from the config utxo:
+\begin{itemize}
+	\item Pool id token $\rightarrow$ Pool addresses
+	\item Pool id token $\rightarrow$ Liquidity token
+\end{itemize}
+
+\subsubsection{Config utxo addresses validator}
+
+The config utxo needs an addresses where it can be used as a reference
+input but can't be changed. Since use as a reference input doesn't
+invoke a validator this validator can just always fail.
+
+\subsubsection{Config utxo identifying NFT minting policy}
+
+The config utxo also needs an NFT to distinguish it from any
+invalid config utxos. This can just be a boiler plate NFT contract,
+so we can use the one already in the CAT (Cardano App Template).
+
+\subsection{Pool ID minting policy}
+
+Each pool will be identified by an NFT. This allows anyone to verify that a UTXO
+at the pool script address is valid, as well as tracing each pool. This
+constitutes structurally the same minting policy as the one in
+\href{https://github.com/ArdanaLabs/cardano-app-template/blob/master/onchain/src/HelloDiscovery.hs}{
+  Hello Discovery}.
+The only distinction with the Hello Discovery minting policy is that the Pool ID
+policy will refer to the Danaswap Config UTXO.
+
+\subsection{Liquidity token minting policy}
+
+The liquidity token minting policy will allow any valid pool\footnote{
+  A valid pool is any UTXO at the pool script address which holds an NFT minted
+  by the Pool ID minting policy.
+} to mint and burn its corresponding liquidity token. The liquidity token
+minting policy knows which liquidity token belongs to which pool through the
+Pool ID (NFT).
+
+\subsection{DEX pool}
+
+When initializing a pool, $k_0^2 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
+initial balances of asset classes $X$ and $Y$. The admin user receives $L_0 =
+k_0$ liquidity tokens. \\
+
+Each pool datum consists of a number of parts:
+\begin{itemize}
+  \item Admin fee
+  \item Liquidity provider fee
+  \item The amount in each asset class ($X$ and $Y$) of collected admin fee.
+    These amounts are subtracted from the pool's balances in any calculations
+    involving the invariant equation.
+  \item The number of liquidity tokens ever minted (minus burned)
+  \item A boolean representing the pool's kill switch
 \end{itemize}
 
 The basic function of the protocol is to allow users to exchange
@@ -161,7 +267,8 @@ and then redeemed for that liquidity plus an appropriate share of the fees.
 
 The pool addresses validator controls when pools can be spent.
 It is therefore responsible for controlling swaps,
-liquidity deposits and withdrawals, and pool termination.
+liquidity deposits and withdrawals, pool termination
+and admin fee collection.
 It is also responsible for ensuring that
 pool id tokens never leave its addresses
 because they could then be used to open invalid pools.
@@ -178,7 +285,7 @@ To do this it enforces the following:
 			\item No liquidity tokens are minted
 			\item The input and output pools are both live
 		\end{itemize}
-	\item When the redeemer action Liquidity
+	\item When the redeemer action is Liquidity
 		\begin{itemize}
 			\item The liquidity invariant $L^2/k^2$ is non decreasing
 			\item Appropriate fees are paid
@@ -191,6 +298,13 @@ To do this it enforces the following:
 		\begin{itemize}
 			\item The admin signed the transaction
 			\item Nothing else is changed in the pool
+		\end{itemize}
+	\item When The redeemer action is Collect
+		\begin{itemize}
+			\item The admin fees are changed correctly
+				for the amount of value removed from the pool
+			\item The admin fees remain non-negative
+			\item The admin keys signed the tx
 		\end{itemize}
 \end{itemize}
 
@@ -215,12 +329,14 @@ To do so it should enforce all of the following:
 	\item The datum correctly reflects the number of liquidity tokens being minted
 	\item at least one liquidity token is being minted
 	\item the initial invariant is not zero ie. some liquidity is provided in each token
+	\item The issued liquidity is exactly the square root of the initial value?
+		\todo{That's in the pool section but I'm not sure why we would enforce this}
 	\todo{In the spec it says at most one pool per asset class pair
 				AFAICT that adds a lot of complexity so I'm not sure it's worth it
 		}
 \end{itemize}
 
-\section{Liquidity token minting policy}
+\subsection{Liquidity token minting policy}
 
 The liquidity tokens are used to represent ownership of liquidity in a pool.
 Their minting policy is responsible for ensuring that they are only minted
@@ -238,49 +354,35 @@ token minting policy doesn't have to do much. It just enforces the following:
 		\end{itemize}
 \end{itemize}
 
-\subsection{Config utxo}
+\subsection{Off-chain notes}
 
-In this protocol some of the components need to know
-each other's addresses and currency symbols.
-In our case the graph of these dependencies is not acyclic
-so to avoid circular hash dependencies a config utxo is needed.
-Fortunately it is possible for the config utxo to be needed
-only for the dependencies of the pool id token so it
-only needs to be used when opening a vault.
+Initialize pool: Initially, $k_0 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
+initial amounts. The admin user receives $k_0$ liquidity tokens.
 
-The following dependencies are passed as parameters:
+\todo{How to list the pools, and get the pool info?}
+
+\subsection{Remarks}
+
 \begin{itemize}
-	\item Pool addresses $\rightarrow$ Liquidity token
-	\item Pool addresses $\rightarrow$ Pool id token
-	\item Liquidity token $\rightarrow$ Pool id token
+  \item The protocol involves a number of equations which must be verified
+    on-chain. All on-chain code will exclusively use integers (representing e.g.
+    ADA amounts in lovelace, rather than ADA). We must thus define the concept
+    of the invariant equation equality a bit more subtly. We propose to do this
+    by claiming that $x \cdot y = k^2 \Leftrightarrow (k-1)^2 < x \cdot y <
+    (k+1)^2$.
+		%% I know the rounding is fairly small and letting users round against the exchange
+		%% is not a significant issue but this seems needlessly complicated
+		%% compared to the L^2/X*Y invariant solution.
 \end{itemize}
-Importantly this is acyclic.
-
-
-The following are read from the config utxo:
-\begin{itemize}
-	\item Pool id token $\rightarrow$ Pool addresses
-	\item Pool id token $\rightarrow$ Liquidity token
-\end{itemize}
-
-\subsubsection{Config utxo addresses validator}
-
-The config utxo needs an addresses where it can be used as a reference
-input but can't be changed. Since use as a reference input doesn't
-invoke a validator this validator can just always fail.
-
-\subsubsection{Config utxo identifying NFT minting policy}
-
-The config utxo also needs an NFT to distinguish it from any
-invalid config utxos. This can just be a boiler plate NFT contract,
-so we can use the one already in the CAT (Cardano App Template).
-
 
 \section{Tests}
 
-\todo{Off-chain tests check that what should work on-chain, does work}
+\todo{List off-chain tests.}
 
-\todo{Apropos-Tx???}
+Note: The off-chain tests also check that the on-chain code allows valid
+transactions.
+
+\todo{Should we write Apropos-Tx tests?}
 
 \subsection{Unit tests}
 
@@ -297,7 +399,7 @@ The following intended behaviors need to work:
   \item liquidity can be extracted from a dead pool
 \end{itemize}
 
-Nick's tests:
+Additional tests:
 \begin{itemize}
   \item When adding liquidity, the number in the pool's datum representing the
     total amount of liquidity minted goes up by the correct amount
