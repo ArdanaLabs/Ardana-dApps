@@ -273,7 +273,7 @@ To do this it enforces the following:
 			\item Appropriate fees are paid
 				\todo{how should fees work here?}
 			\item The datum correctly reflects the change in issued liquidity
-			\item If the "liveness" of the pool is not changed
+			\item The "liveness" of the pool is not changed
 			\item If the input pool is dead the issued liquidity decreases
 		\end{itemize}
 	\item When the redeemer action is Kill
@@ -313,10 +313,9 @@ To do so it should enforce all of the following:
 	\item the initial invariant is not zero ie. some liquidity is provided in each token
 	\item The issued liquidity is exactly the square root of the initial value?
 		\todo{That's in the pool section but I'm not sure why we would enforce this}
-	\todo{In the spec it says at most one pool per asset class pair
-				AFAICT that adds a lot of complexity so I'm not sure it's worth it
-		}
 \end{itemize}
+
+NOTE: pools not being duplicates will be checked in the browser app, but not enforced onchain.
 
 \subsection{Liquidity token minting policy}
 
