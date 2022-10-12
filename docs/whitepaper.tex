@@ -133,7 +133,7 @@ liquidity token.
 This section discusses what we need in order to implement the interactions
 mentioned above.
 
-\todo{Write out this section.}
+\todo{Write a summary that makes this easier to understand on the first reading}
 
 The components we need:
 \begin{itemize}
@@ -142,10 +142,139 @@ The components we need:
   \item Liquidity tokens
 \end{itemize}
 
-\subsection*{Initialize pool}
+The basic function of the protocol is to allow users to exchange
+currencies for each other for a small fee.
+Facilitating these exchanges requires liquidity so
+the protocol needs to allow some users (liquidity providers)
+to provide liquidity to the exchange, in exchange for doing so
+the liquidity providers are compensated with a share of the fees.
 
-Initialize pool: Initially, $k_0 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
-initial amounts. The admin user receives $k_0$ liquidity tokens.
+The DEX pools store liquidity and allow users to exchange tokens
+for a small fee.
+The pool identifying NFTs allow for easy tracking of pools and
+certify that each pool was opened legitimately.
+The liquidity tokens represent ownership of a share of the liquidity
+in a pool. They can be given to users in exchange for depositing liquidity
+and then redeemed for that liquidity plus an appropriate share of the fees.
+
+\subsection{Pool Addresses validator}
+
+The pool addresses validator controls when pools can be spent.
+It is therefore responsible for controlling swaps,
+liquidity deposits and withdrawals, and pool termination.
+It is also responsible for ensuring that
+pool id tokens never leave its addresses
+because they could then be used to open invalid pools.
+
+To do this it enforces the following:
+\begin{itemize}
+	\item The input and output pools are valid
+	\item The redeemer is valid
+	\item When the redeemer action is Swap:
+		\begin{itemize}
+			\item The exchange invariant doesn't decrease
+			\item The Admin fee is increased appropriately
+			\item The Fee amount is left in the pool
+			\item No liquidity tokens are minted
+			\item The input and output pools are both live
+		\end{itemize}
+	\item When the redeemer action Liquidity
+		\begin{itemize}
+			\item The liquidity invariant $L^2/k^2$ is non decreasing
+			\item Appropriate fees are paid
+				\todo{how should fees work here?}
+			\item The datum correctly reflects the change in issued liquidity
+			\item If the "liveness" of the pool is not changed
+			\item If the input pool is dead the issued liquidity decreases
+		\end{itemize}
+	\item When the redeemer action is Kill
+		\begin{itemize}
+			\item The admin signed the transaction
+			\item Nothing else is changed in the pool
+		\end{itemize}
+\end{itemize}
+
+
+\subsection{Pool id minting policy}
+
+The pool id token is a token used to track pools
+and to ensure that the pools protocol interacts with were opened legitimately.
+The pool id token's minting policy is responsible for ensuring
+that it is only minted as part of opening a valid vault.
+To do so it should enforce all of the following:
+
+\begin{itemize}
+	\item The config utxo is valid
+	\item Exactly one token is minted
+	\item That token is sent to a pool
+	\item The redeemer parses and provides a seed utxo
+	\item The token name of the minted token is the hash of the seed utxo
+	\item The seed utxo is spent in the transaction
+	\item The transaction is signed by the admin keys
+	\item The output pool datum is valid
+	\item The datum correctly reflects the number of liquidity tokens being minted
+	\item at least one liquidity token is being minted
+	\item the initial invariant is not zero ie. some liquidity is provided in each token
+	\todo{In the spec it says at most one pool per asset class pair
+				AFAICT that adds a lot of complexity so I'm not sure it's worth it
+		}
+\end{itemize}
+
+\section{Liquidity token minting policy}
+
+The liquidity tokens are used to represent ownership of liquidity in a pool.
+Their minting policy is responsible for ensuring that they are only minted
+during liquidity interactions with a pool and during pool initializations.
+
+Since the pools addresses validator and the pool id token minting policy
+already enforce the logic regarding how much should be minted the liquidity
+token minting policy doesn't have to do much. It just enforces the following:
+\begin{itemize}
+	\item Only one token name is being minted
+	\item The redeemer is valid
+		\begin{itemize}
+			\item When the redeemer is Initialize: A pool id token with the same id is being minted
+			\item When the redeemer is Pool: There is an input with a pool id token with the same id
+		\end{itemize}
+\end{itemize}
+
+\subsection{Config utxo}
+
+In this protocol some of the components need to know
+each other's addresses and currency symbols.
+In our case the graph of these dependencies is not acyclic
+so to avoid circular hash dependencies a config utxo is needed.
+Fortunately it is possible for the config utxo to be needed
+only for the dependencies of the pool id token so it
+only needs to be used when opening a vault.
+
+The following dependencies are passed as parameters:
+\begin{itemize}
+	\item Pool addresses $\rightarrow$ Liquidity token
+	\item Pool addresses $\rightarrow$ Pool id token
+	\item Liquidity token $\rightarrow$ Pool id token
+\end{itemize}
+Importantly this is acyclic.
+
+
+The following are read from the config utxo:
+\begin{itemize}
+	\item Pool id token $\rightarrow$ Pool addresses
+	\item Pool id token $\rightarrow$ Liquidity token
+\end{itemize}
+
+\subsubsection{Config utxo addresses validator}
+
+The config utxo needs an addresses where it can be used as a reference
+input but can't be changed. Since use as a reference input doesn't
+invoke a validator this validator can just always fail.
+
+\subsubsection{Config utxo identifying NFT minting policy}
+
+The config utxo also needs an NFT to distinguish it from any
+invalid config utxos. This can just be a boiler plate NFT contract,
+so we can use the one already in the CAT (Cardano App Template).
+
 
 \section{Tests}
 
