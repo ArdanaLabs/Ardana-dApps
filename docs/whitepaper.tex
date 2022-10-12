@@ -44,9 +44,9 @@ between these assets.
 \subsection*{Swap}
 
 A user can exchange tokens at a rate defined by the constant product invariant,
-$x \cdot y = k^2$. The user gets $\Delta y$ in return for paying $\Delta x$, where
-$(x + \Delta x) \cdot (y - \Delta y) \geq k^2$, minus the liquidity fee and admin
-fee.
+$x \cdot y = k^2$. The user gets $\Delta y$ in return for paying $\Delta x$,
+where $(x + \Delta x) \cdot (y - \Delta y) = k^2$, minus the liquidity fee and
+admin fee.
 
 Note: $k$ should not be computed on chain, everything can be done in terms of $k^2$
 
@@ -55,12 +55,13 @@ Note: $k$ should not be computed on chain, everything can be done in terms of $k
 A user should be able to add liquidity to a given pool, and mint that pool’s
 liquidity tokens in return. The number of liquidity tokens minted is
 proportional to the growth of the pool. Specifically, this means that $\Delta k
-/ k \leq \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y = k^2$,
-$L$ is the number of liquidity tokens minted and $\Delta L$ is the number of
-liquidity tokens minted again.
+/ k = \Delta L / L$, where $k$ is the parameter in the equation $x \cdot y =
+k^2$, $L$ is the number of liquidity tokens minted and $\Delta L$ is the number
+of liquidity tokens minted again.
 
-Note: Here also $k$ should not be computed on chain, we can use the equivalent constraint
-$(\Delta k / k)^2  \leq (\Delta L / L)^2$ which should avoid the square root.
+Note: Here also $k$ should not be computed on chain, we can use the equivalent
+constraint $(\Delta k / k)^2 = (\Delta L / L)^2$ which should avoid the square
+root.
 
 \subsection*{Withdraw liquidity}
 
