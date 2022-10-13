@@ -311,7 +311,6 @@ To do so it should enforce all of the following:
 	\item at least one liquidity token is being minted
 	\item the initial invariant is not zero ie. some liquidity is provided in each token
 	\item The issued liquidity is exactly the square root of the initial value?
-		\todo{That's in the pool section but I'm not sure why we would enforce this}
 \end{itemize}
 
 NOTE: pools not being duplicates will be checked in the browser app, but not enforced onchain.
@@ -339,7 +338,11 @@ token minting policy doesn't have to do much. It just enforces the following:
 Initialize pool: Initially, $k_0 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
 initial amounts. The admin user receives $k_0$ liquidity tokens.
 
-\todo{How to list the pools, and get the pool info?}
+\subsection{Queries}
+
+Pools can be listed by getting all the utxos at the pool addresses and filtering
+out pools which don't have valid ids. All the pool info for a given pool
+can be gotten by looking at the datum and value of the utxo.
 
 \subsection{Remarks}
 
