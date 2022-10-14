@@ -273,20 +273,19 @@ Config utxo address test
 
 \begin{itemize}
 	\item Can mint correct liquidity on pool open
-	\item Can't mint wrong liquidity token on pool open
+	\item Can't mint a different pool's liquidity token on pool open
 	\item Can't mint multiple liquidity token types on pool open
 	\item Can mint correct liquidity on deposit
 	\item Can burn liquidity on withdrawal
-	\item Can't mint liquidity for the wrong pool
-	\item Can't burn liquidity at wrong pool
+	\item Can't mint liquidity for a different pool than the pool being spent
+	\item Can't burn liquidity from a different pool than the pool being spent
 	\item Can't mint liquidity for pool at invalid address
 \end{itemize}
 
 \subsubsection{Pool id Token Minting Policy tests}
 
 \begin{itemize}
-	\item Initializing a pool works
-	\item Non admin can initialize a pool too
+	\item Non admin can initialize a pool
 	\item Can't under pay for liquidity on open
 	\item Can't open pool with 0 liquidity
 	\item Can't open pool with 0 of either exchange token
