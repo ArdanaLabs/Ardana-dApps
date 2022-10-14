@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{hyperref}
 \usepackage{todonotes}
+\usepackage{graphicx}
 \setuptodonotes{inline}
 \setlength{\parindent}{0em}
 \setlength{\parskip}{1pt}
@@ -182,19 +183,15 @@ itself) and a datum with the liquidity token
 minting policy hash, and the pool validator script address. \\
 
 In order to make swaps and liquidity interactions possible without
-the config utxo the following dependencies are passed as parameters:
-\begin{itemize}
-	\item Pool addresses $\rightarrow$ Liquidity token
-	\item Pool addresses $\rightarrow$ Pool id token
-	\item Liquidity token $\rightarrow$ Pool id token
-\end{itemize}
-Importantly this is acyclic. \\
+the config utxo some dependencies are passed as parameters.
+In the diagram bellow blue arrow represent passing hashes by
+config utxo and red arrows represent passing hashes by script parameter.
+It is important that the red sub-graph is acyclic so that
+the hashes are resolvable. Likewise it's important that
+the blue sub-graph only includes arrow from the pool id minting policy
+so that all other interactions can be performed without the config utxo.
 
-The remaining dependencies are read from the config utxo:
-\begin{itemize}
-	\item Pool id token $\rightarrow$ Pool addresses
-	\item Pool id token $\rightarrow$ Liquidity token
-\end{itemize}
+\scalebox{0.5}{\includegraphics{diagram}}
 
 \subsubsection{Config utxo addresses validator}
 
