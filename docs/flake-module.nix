@@ -21,7 +21,7 @@
     {
       packages = {
         docs = pkgs.stdenv.mkDerivation {
-          name = "build-docs" ;
+          name = "build-docs";
           src = ./.;
 
           buildInputs = with pkgs; [
