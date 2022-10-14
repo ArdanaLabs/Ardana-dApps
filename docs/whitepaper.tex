@@ -183,15 +183,21 @@ itself) and a datum with the liquidity token
 minting policy hash, and the pool validator script address. \\
 
 In order to make swaps and liquidity interactions possible without
-the config utxo some dependencies are passed as parameters.
-In the diagram bellow blue arrow represent passing hashes by
-config utxo and red arrows represent passing hashes by script parameter.
-It is important that the red sub-graph is acyclic so that
+the config utxo some dependencies are passed as parameters as shown in Figure 1. \\
+
+\begin{figure}
+\scalebox{0.5}{\includegraphics{diagram}}
+\caption{
+	In the diagram above blue arrow represent passing hashes by
+	config utxo and red arrows represent passing hashes by script parameter.
+}
+\end{figure}
+
+It is important that the parameter sub-graph is acyclic so that
 the hashes are resolvable. Likewise it's important that
-the blue sub-graph only includes arrow from the pool id minting policy
+the config utxo sub-graph only includes arrow from the pool id minting policy
 so that all other interactions can be performed without the config utxo.
 
-\scalebox{0.5}{\includegraphics{diagram}}
 
 \subsubsection{Config utxo addresses validator}
 
