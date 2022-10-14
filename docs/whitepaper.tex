@@ -314,10 +314,10 @@ To do so it should enforce all of the following:
 	\item The datum correctly reflects the number of liquidity tokens being minted
 	\item at least one liquidity token is being minted
 	\item the initial invariant is not zero ie. some liquidity is provided in each token
-	\item The issued liquidity is exactly the square root of the initial value?
+	\item The issued liquidity is exactly the square root of the initial value
 \end{itemize}
 
-NOTE: pools not being duplicates will be checked in the browser app, but not enforced onchain.
+NOTE: Pools not being duplicates will be checked in the browser app, but not enforced onchain.
 
 \subsection{Liquidity token minting policy}
 
@@ -325,11 +325,18 @@ The liquidity tokens are used to represent ownership of liquidity in a pool.
 Their minting policy is responsible for ensuring that they are only minted
 during liquidity interactions with a pool and during pool initializations.
 
-Since the pools addresses validator and the pool id token minting policy
+Since the Pools Address Validator and the pool id token minting policy
 already enforce the logic regarding how much should be minted the liquidity
-token minting policy doesn't have to do much. It just enforces the following:
+token minting policy doesn't have to do much. It's main responsibility is enforcing that
+some pool is involved either by being opened or an existing pool being used, and that
+the liquidity tokens being created correspond to the pool being used.
+The way we keep track of which liquidity tokens correspond to which pools
+is by having the token name be the id of the pool the liquidity tokens
+belong to.
+
+To do that it enforces the following:
 \begin{itemize}
-	\item Only one token name is being minted
+	\item The liquidity tokens being minted all have the same token name/pool id
 	\item The redeemer is valid
 		\begin{itemize}
 			\item When the redeemer is Initialize: A pool id token with the same id is being minted
