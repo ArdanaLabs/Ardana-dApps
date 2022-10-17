@@ -11,7 +11,7 @@ import Plutarch.Prelude
 
 import Utils (closedTermToHexString, globalConfig, validatorToHexString)
 
-import Plutarch.Api.V2 (PValidator, mkValidator, PMintingPolicy)
+import Plutarch.Api.V2 (PMintingPolicy, PValidator, mkValidator)
 import Plutarch.Extensions.Api (passert)
 
 import Plutarch.Api.V2.Tx (PTxOutRef)

@@ -1,5 +1,5 @@
 module TestUtil
-  (getEnvRunner
+  ( getEnvRunner
   , runEnvSpec
   , useRunnerSimple
   , Mode(..)

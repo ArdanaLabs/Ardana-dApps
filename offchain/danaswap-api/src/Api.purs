@@ -1,7 +1,7 @@
 module Api
-  (initProtocol
-  ,mintNft
-  ,seedTx
+  ( initProtocol
+  , mintNft
+  , seedTx
   ) where
 
 import Contract.Prelude
@@ -41,10 +41,12 @@ initProtocol = do
   logDebug' $ "cs:" <> show nftCs
   poolIdMP <- poolIdTokenMintingPolicy nftCs
   poolIdCS <- liftContractM "invalid hex string from mintingPolicyHash"
-    $ mpsSymbol $ mintingPolicyHash poolIdMP
+    $ mpsSymbol
+    $ mintingPolicyHash poolIdMP
   liquidityMP <- liqudityTokenMintingPolicy poolIdCS
   liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
-    $ mpsSymbol $ mintingPolicyHash liquidityMP
+    $ mpsSymbol
+    $ mintingPolicyHash liquidityMP
   poolVal <- poolAddressValidator poolIdCS liquidityCS
   let poolVH = validatorHash poolVal
   let poolAdr = scriptHashAddress poolVH
@@ -52,13 +54,13 @@ initProtocol = do
   logDebug' "about to submit config utxo"
   txid <- buildBalanceSignAndSubmitTx
     (mempty)
-    (Constraints.mustPayToScript
-      (validatorHash configAdrVal)
-      (Datum $ Constr zero [ toData poolAdr , toData liquidityCS ])
-      -- This could have a data type with a ToData instance
-      -- but it only gets used once so it seems unnesecary
-      DatumInline
-      (Value.singleton nftCs adaToken one)
+    ( Constraints.mustPayToScript
+        (validatorHash configAdrVal)
+        (Datum $ Constr zero [ toData poolAdr, toData liquidityCS ])
+        -- This could have a data type with a ToData instance
+        -- but it only gets used once so it seems unnesecary
+        DatumInline
+        (Value.singleton nftCs adaToken one)
     )
   logDebug' "config utxo submited waiting for confirmation"
   configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid

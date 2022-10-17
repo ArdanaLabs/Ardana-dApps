@@ -1,9 +1,9 @@
 module CborTyped
-  (poolAddressValidator
-  ,poolIdTokenMintingPolicy
-  ,liqudityTokenMintingPolicy
-  ,simpleNft
-  ,configAddressValidator
+  ( poolAddressValidator
+  , poolIdTokenMintingPolicy
+  , liqudityTokenMintingPolicy
+  , simpleNft
+  , configAddressValidator
   ) where
 
 import Contract.Prelude
@@ -18,10 +18,10 @@ import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 
 {- This module should be the only place where CBOR is imported
- - all of its exports should handle all of the validator's parameters
- - this way there is only one module that needs to be checked
- - for type errors between on and off chain code
- -}
+- all of its exports should handle all of the validator's parameters
+- this way there is only one module that needs to be checked
+- for type errors between on and off chain code
+-}
 
 -- | Placeholder
 poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validator
@@ -41,7 +41,7 @@ poolIdTokenMintingPolicy configUtxoNftCs = do
 -- | Placeholder
 liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
-  logDebug'  "creating liquidity token minting policy"
+  logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
   decodeCborMp CBOR.trivial
 
@@ -51,15 +51,19 @@ configAddressValidator = decodeCbor CBOR.configScript
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
   raw <- decodeCborMp CBOR.nft
-  applyArgsM raw [toData ref]
+  applyArgsM raw [ toData ref ]
     >>= liftContractM "failed to apply args"
 
 -- These helpers should not be exported
 
 decodeCbor :: String -> Contract () Validator
 decodeCbor cborHex = liftContractM "failed to decode cbor"
-  $ Validator <<< plutusV2Script <$> hexToByteArray cborHex
+  $ Validator
+  <<< plutusV2Script
+  <$> hexToByteArray cborHex
 
 decodeCborMp :: String -> Contract () MintingPolicy
 decodeCborMp cborHex = liftContractM "failed to decode cbor"
-  $ MintingPolicy <<< plutusV2Script <$> hexToByteArray cborHex
+  $ MintingPolicy
+  <<< plutusV2Script
+  <$> hexToByteArray cborHex

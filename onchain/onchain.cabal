@@ -121,22 +121,21 @@ library apropos-tx
     , transformers
 
 executable danaswap
-  import: lang
+  import:         lang
   type:           exitcode-stdio-1.0
   main-is:        GenCbor.hs
   hs-source-dirs: danaswap
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-  other-modules:
-    DanaSwap
+  other-modules:  DanaSwap
   build-depends:
     , base
     , bytestring
     , directory
     , onchain
-    , plutus-ledger-api
-    , serialise
     , plutarch
     , plutarch-extra
+    , plutus-ledger-api
+    , serialise
 
 executable hello-world
   import:         lang
