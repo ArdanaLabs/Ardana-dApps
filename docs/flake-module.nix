@@ -5,11 +5,11 @@
       pkgs = inputs'.nixpkgs.legacyPackages;
 
       diagram = pkgs.runCommand "diagram"
-      { buildInputs = [ pkgs.xdot ]; }
-      ''
-        mkdir $out
-        dot ${./diagram.dot} -Tpng > $out/diagram.png
-      ''
+        { buildInputs = [ pkgs.xdot ]; }
+        ''
+          mkdir $out
+          dot ${./diagram.dot} -Tpng > $out/diagram.png
+        ''
       ;
     in
     {
