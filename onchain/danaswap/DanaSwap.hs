@@ -28,18 +28,17 @@ instance DerivePlutusType HelloRedemer where type DPTStrat _ = PlutusTypeData
 trivialCbor :: Maybe String
 trivialCbor = closedTermToHexString trivial
 
+trivial :: ClosedTerm (PData :--> PValidator)
+trivial = plam $ \_ _ _ _ -> popaque $ pcon PUnit
+
 trivialFailCbor :: Maybe String
 trivialFailCbor = closedTermToHexString trivialFail
 
 trivialFail :: ClosedTerm PValidator
 trivialFail = perror
 
-trivial :: ClosedTerm (PData :--> PValidator)
-trivial = plam $ \_ _ _ _ -> popaque $ pcon PUnit
-
 configScriptCbor :: String
 configScriptCbor = validatorToHexString $ mkValidator globalConfig configScript
-
 
 configScript :: ClosedTerm PValidator
 configScript = perror

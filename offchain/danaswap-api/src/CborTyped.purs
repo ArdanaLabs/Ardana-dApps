@@ -1,13 +1,21 @@
-module CborTyped (trivial,simpleNft) where
+module CborTyped
+  (poolAddressValidator
+  ,poolIdTokenMintingPolicy
+  ,liqudityTokenMintingPolicy
+  ,simpleNft
+  ,configAddressValidator
+  ) where
 
 import Contract.Prelude
 
 import CBOR as CBOR
+import Contract.Log (logDebug')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.Scripts (MintingPolicy(..), Validator(..), applyArgsM)
 import Contract.Transaction (TransactionInput, plutusV2Script)
+import Contract.Value (CurrencySymbol)
 
 {- This module should be the only place where CBOR is imported
  - all of its exports should handle all of the validator's parameters
@@ -15,8 +23,30 @@ import Contract.Transaction (TransactionInput, plutusV2Script)
  - for type errors between on and off chain code
  -}
 
-trivial :: Contract () Validator
-trivial = decodeCbor CBOR.trivial
+-- | Placeholder
+poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validator
+poolAddressValidator poolIdToken liquidityToken = do
+  logDebug' "creating pool addres validator"
+  logDebug' $ "pool id:" <> show poolIdToken
+  logDebug' $ "liquidityToken:" <> show liquidityToken
+  decodeCbor CBOR.trivial
+
+-- | Placeholder
+poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
+poolIdTokenMintingPolicy configUtxoNftCs = do
+  logDebug' "creating pool id token minting policy"
+  logDebug' $ "nft cs:" <> show configUtxoNftCs
+  decodeCborMp CBOR.trivial
+
+-- | Placeholder
+liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
+liqudityTokenMintingPolicy poolId = do
+  logDebug'  "creating liquidity token minting policy"
+  logDebug' $ "pool id:" <> show poolId
+  decodeCborMp CBOR.trivial
+
+configAddressValidator :: Contract () Validator
+configAddressValidator = decodeCbor CBOR.configScript
 
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
