@@ -1,5 +1,7 @@
 module Api
   (initProtocol
+  ,mintNft
+  ,seedTx
   ) where
 
 import Contract.Prelude
