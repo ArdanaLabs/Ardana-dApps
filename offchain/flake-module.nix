@@ -31,6 +31,15 @@
         };
       };
 
+      danaswap-cbor =
+        purs-nix.build
+          {
+            name = "danaswap-cbor";
+            src.path = self'.packages."onchain:danaswap-cbor-purs";
+            info.dependencies = [ ];
+            info.version = "0.0.1";
+          };
+
       hello-world-cbor =
         purs-nix.build
           {
@@ -119,6 +128,7 @@
       };
       packages = {
         "offchain:hello-world-cbor" = hello-world-cbor;
+        "offchain:danaswap-cbor" = danaswap-cbor;
         "offchain:docs" =
           pkgs.runCommand "offchain-all-docs" { }
             ''
