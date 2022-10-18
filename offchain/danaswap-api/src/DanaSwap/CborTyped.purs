@@ -1,4 +1,4 @@
-module CborTyped
+module DanaSwap.CborTyped
   ( poolAddressValidator
   , poolIdTokenMintingPolicy
   , liqudityTokenMintingPolicy

@@ -1,4 +1,4 @@
-module Api
+module DanaSwap.Api
   ( initProtocol
   , mintNft
   , seedTx
@@ -6,7 +6,6 @@ module Api
 
 import Contract.Prelude
 
-import CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
@@ -19,12 +18,13 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
 import Contract.Value (CurrencySymbol, adaToken, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
+import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt as BigInt
 import Data.List (head)
 import Data.Map (keys)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
-import Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 type Protocol =
   { configUtxo :: TransactionInput
