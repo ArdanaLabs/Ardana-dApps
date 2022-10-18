@@ -38,7 +38,7 @@ runOurSpec :: Mode -> Aff EnvRunner -> EnvSpec -> Aff Unit
 runOurSpec mode runnerGetter s =
   runSpec'
     defaultConfig
-    { timeout = Nothing }
+      { timeout = Nothing }
     [ consoleReporter ]
     $ (_ `runEnvSpec` runnerGetter)
     $ (if mode == Local then parallel else sequential)
@@ -76,44 +76,43 @@ freePort :: Aff Int
 freePort = do
   nextTry <- liftEffect $ randomInt 1024 0xFFFF
   isGood <- isPortAvailable (UInt.fromInt nextTry)
-  if isGood
-    then pure nextTry
-    else freePort
+  if isGood then pure nextTry
+  else freePort
 
 plutipConfig :: Aff PlutipConfig
 plutipConfig = do
   toUnfoldable <$> replicateM 5 freePort >>= case _ of
-    [p1,p2,p3,p4,p5] -> pure $
-        { host: "127.0.0.1"
-        , port: UInt.fromInt p1
-        , logLevel: Warn
-        -- Server configs are used to deploy the corresponding services.
-        , ogmiosConfig:
-            { port: UInt.fromInt p2
-            , host: "127.0.0.1"
-            , secure: false
-            , path: Nothing
-            }
-        , ogmiosDatumCacheConfig:
-            { port: UInt.fromInt p3
-            , host: "127.0.0.1"
-            , secure: false
-            , path: Nothing
-            }
-        , ctlServerConfig: Just
-            { port: UInt.fromInt p4
-            , host: "127.0.0.1"
-            , secure: false
-            , path: Nothing
-            }
-        , postgresConfig:
-            { host: "127.0.0.1"
-            , port: UInt.fromInt p5
-            , user: "ctxlib"
-            , password: "ctxlib"
-            , dbname: "ctxlib"
-            }
-        , customLogger: Nothing -- TODO api logger here
-        , suppressLogs: false
-        }
+    [ p1, p2, p3, p4, p5 ] -> pure $
+      { host: "127.0.0.1"
+      , port: UInt.fromInt p1
+      , logLevel: Warn
+      -- Server configs are used to deploy the corresponding services.
+      , ogmiosConfig:
+          { port: UInt.fromInt p2
+          , host: "127.0.0.1"
+          , secure: false
+          , path: Nothing
+          }
+      , ogmiosDatumCacheConfig:
+          { port: UInt.fromInt p3
+          , host: "127.0.0.1"
+          , secure: false
+          , path: Nothing
+          }
+      , ctlServerConfig: Just
+          { port: UInt.fromInt p4
+          , host: "127.0.0.1"
+          , secure: false
+          , path: Nothing
+          }
+      , postgresConfig:
+          { host: "127.0.0.1"
+          , port: UInt.fromInt p5
+          , user: "ctxlib"
+          , password: "ctxlib"
+          , dbname: "ctxlib"
+          }
+      , customLogger: Nothing -- TODO api logger here
+      , suppressLogs: false
+      }
     _ -> liftEffect $ throw "replicateM returned list of the wrong length in plutipConfig"
