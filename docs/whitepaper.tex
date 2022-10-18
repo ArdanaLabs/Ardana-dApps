@@ -220,6 +220,16 @@ Each pool datum consists of a number of parts:
   \item A boolean representing the pool's kill switch
 \end{itemize}
 
+\subsection{Initializing the protocol}
+
+The first step to initialize the protocol, is to mint an NFT, which will be
+considered the `master' identifier of the protocol, namely the NFT identifying
+the Config UTXO. Next, using the name of this NFT, we can calculate the hash
+associated with the three other scripts (pool validator script, liquidity token
+minting policy and Pool ID minting policy). Finally, a Config UTXO is
+initialized with the `master' NFT and a datum that contains the three hashes, in
+that order: Pool script, liquidity token script and pool ID script.
+
 \subsection{Off-chain notes}
 
 \todo{How to list the pools, and get the pool info?}
@@ -279,6 +289,8 @@ The following attacks need to not work:
   \item under burn liquidity
   \item burn the wrong pool’s liquidity token
   \item mint the wrong tools liquidity token
+  \item Add liquidity and then withdraw it in order to essentially swap with
+    reduced fees
 \end{itemize}
 
 \end{document}
