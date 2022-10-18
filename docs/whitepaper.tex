@@ -172,34 +172,32 @@ As mentioned above, our protocol consists of a number of scripts whose functiona
 where some of those functional dependencies are cyclic.
 A naive solution to model/ lock these functional dependencies would be to 
 make the hash of one script a parameter of the other script and thus a dependency of the hash of the other scripts.
-This approach is difficult to implement, as the realation is cyclic.
-We propose to use a different solution to this problem: The
-Config UTXO. \\
+This approach is difficult to implement, as the relation is cyclic. \\
 
+An alternative solution we propose this problem is the Config UTXO.
 The Config UTXO is a dedicated UTxO which is identified by a NFT, its datum 
 keeps track of all the script hashes involved in the protocol. Each script
 is then able refer to the script hashes in the Config UTXO in order to verify the other
-scripts. In our case, the Config UTXO will contain the following data in the datum: 
-the liquidity token minting policy hash and the pool validator script address. \\
+scripts. \\
 
-% TODO explain what do we want to decouple from/ motivate why we want to decouple
-% the swaps and (what liquidity interactions, all of them?) possible without the config utxo
-% The following sentence implies that we actually make use of a hybrid between 
-% Config UTXO and the naive approach
-In order to make swaps and liquidity interactions possible without
-the Config UTXO, some dependencies are passed as parameters as shown in Figure 1. \\
+A drawback of the Config UTXO is the greater transaction size and thus higher transaction fees.
+Therefore we make use of an hybrid approach between the naive and Config UTXO.
+In our case, the Config UTXO will contain the following data in the datum:
+the liquidity token minting policy hash and the pool address validator script hash.
+The other hashes will be passed as parameters. See Figure \ref{hashGraph}  \\
 
 \begin{figure}
-\scalebox{0.5}{\includegraphics{diagram}}
-\caption{
-	In the diagram above blue arrows represent passing hashes by
-	Config UTXO and red arrows represent passing hashes by script parameter.
-}
+  \scalebox{0.5}{\includegraphics{diagram}}
+  \caption{
+	  In the diagram above blue arrows represent passing hashes by
+	  Config UTXO and red arrows represent passing hashes by script parameter.
+  }
+  \label{hashGraph}
 \end{figure}
 
 It is important that the parameter sub-graph is acyclic so that
 the hashes are resolvable. Likewise it's important that
-the Config UTXO sub-graph only includes an arrow from the pool id minting policy
+the Config UTXO sub-graph only includes arrows from the pool id minting policy
 so that all other interactions can be performed without the Config UTXO.
 
 
