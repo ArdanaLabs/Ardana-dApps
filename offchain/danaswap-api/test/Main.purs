@@ -4,8 +4,6 @@ module Test.Main
 
 import Contract.Prelude
 
-import DanaSwap.Api (initProtocol, mintNft, seedTx)
-import DanaSwap.CborTyped (simpleNft)
 import Contract.Address (getWalletAddress)
 import Contract.Log (logInfo')
 import Contract.Monad (launchAff_, liftContractM)
@@ -16,15 +14,15 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
+import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import DanaSwap.Api (initProtocol, mintNft, seedTx)
+import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import Test.Spec.Reporter (consoleReporter)
-import Test.Spec.Runner (defaultConfig, runSpec')
-import TestUtil (Mode(..), getEnvRunner, runEnvSpec, useRunnerSimple)
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import TestUtil (Mode(..), getEnvRunner, runOurSpec, useRunnerSimple)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -36,9 +34,9 @@ main = launchAff_ $ do
       pure Testnet
     Just e -> throw $ "expected local or testnet got: " <> e
     Nothing -> throw "expected MODE to be set"
-  envRunner <- getEnvRunner mode
   log "about to start"
-  runSpec' defaultConfig { timeout = Nothing } [ consoleReporter ] $ (_ `runEnvSpec` envRunner) $ do
+  runnerGetter <- getEnvRunner mode
+  runOurSpec mode runnerGetter $ do
     describe "protocol init" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
