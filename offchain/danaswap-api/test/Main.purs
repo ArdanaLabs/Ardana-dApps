@@ -4,8 +4,8 @@ module Test.Main
 
 import Contract.Prelude
 
-import Api (initProtocol, mintNft, seedTx)
-import CborTyped (simpleNft)
+import DanaSwap.Api (initProtocol, mintNft, seedTx)
+import DanaSwap.CborTyped (simpleNft)
 import Contract.Address (getWalletAddress)
 import Contract.Log (logInfo')
 import Contract.Monad (launchAff_, liftContractM)
@@ -24,7 +24,7 @@ import Test.Spec.Assertions (expectError, shouldEqual)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
 import TestUtil (Mode(..), getEnvRunner, runEnvSpec, useRunnerSimple)
-import Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 main :: Effect Unit
 main = launchAff_ $ do
