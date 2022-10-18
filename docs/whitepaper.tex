@@ -259,25 +259,30 @@ pool id tokens never leave its addresses
 because they could then be used to open invalid pools.
 
 To do this it enforces the following:
+Note: ``The output pool" refers to
+the pool in the outputs which has the same pool id
+as the input pool invoking the validator.
+
 \begin{itemize}
 	\item The input and output pools are valid
 	\item The redeemer is valid
 	\item When the redeemer action is Swap:
 		\begin{itemize}
-			\item The exchange invariant doesn't decrease
-			\item The Admin fee is increased appropriately
-			\item The Fee amount is left in the pool
+			\item The exchange invariant doesn't decrease before fees
+			\item The Admin fee is increased by $0.3\%$ of the output
+			\item The pool increases by $0.3\%$ of the output
 			\item No liquidity tokens are minted
 			\item The input and output pools are both live
 		\end{itemize}
 	\item When the redeemer action is Liquidity
 		\begin{itemize}
-			\item The liquidity invariant $L^2/k^2$ is non decreasing
-			\item Appropriate fees are paid
+			\item The liquidity invariant $L^2/k^2$ is non decreasing before fees
+			and appropriate fees are paid.
 				\todo{how should fees work here?}
 			\item The datum correctly reflects the change in issued liquidity
-			\item The "liveness" of the pool is not changed
+			\item The ``liveness" of the pool is not changed
 			\item If the input pool is dead the issued liquidity decreases
+			\item If the input pool is dead the withdraw is balanced
 		\end{itemize}
 	\item When the redeemer action is Kill
 		\begin{itemize}
@@ -287,9 +292,9 @@ To do this it enforces the following:
 		\end{itemize}
 	\item When The redeemer action is Collect
 		\begin{itemize}
-			\item The admin fees are changed correctly
-				for the amount of value removed from the pool
-			\item The admin fees remain non-negative
+			\item The admin fees in the output pool are zero
+			\item the non admin fees balance stays the same
+			\item the output value remains correct for the datum
 			\item The admin keys signed the tx
 		\end{itemize}
 \end{itemize}
