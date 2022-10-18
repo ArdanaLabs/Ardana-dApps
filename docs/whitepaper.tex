@@ -275,11 +275,11 @@ Config utxo address test
 	\item Can mint $\sqrt{A_0B_0}$ liquidity tokens on pool open
 	\item Can't mint a different pool's liquidity token on pool open
 	\item Can't mint multiple liquidity token types on pool open
-	\item Can mint correct liquidity on deposit
+	\item Can mint liquidity tokens corresponding to the pool on deposit
 	\item Can burn liquidity on withdrawal
 	\item Can't mint liquidity for a different pool than the pool being spent
 	\item Can't burn liquidity from a different pool than the pool being spent
-	\item Can't mint liquidity for pool at invalid address
+	\item Can't mint liquidity for pool at any address other than the pool address
 \end{itemize}
 
 \subsubsection{Pool id Token Minting Policy tests}
@@ -291,7 +291,7 @@ Config utxo address test
 	\item Can't open pool with 0 of either exchange token
 		%% This is sorta redundant cause the liquidity needs to be
 		%% wrong or 0
-	\item Invalid config utxo can't be used to open a pool
+	\item A utxo without the config NFT can't be used to open a pool
 	\item Can't mint more than 1 token
 	\item Can't send identifier token to non-pool address
 	\item Can't mint without spending seed Tx
@@ -322,7 +322,7 @@ Config utxo address test
 The following intended behaviors need to work:
 \begin{itemize}
 	\item New pools show up in queries
-	\item New invalid pools do not show up in queries
+	\item New pools without pool id tokens do not show up in queries
 	\todo{Do we need to worry about a large number of invalid pools slowing down
 	queries? If so should we add an interaction to remove them?}
 	\item Queries accurately reflect how the pool was setup
@@ -336,7 +336,7 @@ The following intended behaviors need to work:
 Additional tests:
 \begin{itemize}
 	\item When adding liquidity, the number in the pool's datum representing the
-    total amount of liquidity minted goes up by the correct amount
+    total amount of liquidity minted goes up by the same amount as the actual amount minted
 \end{itemize}
 
 Note: We should improve on the template by making better tools for checking that tests fail for the right reason.
