@@ -252,7 +252,7 @@ transactions.
 Tests are broken down by the onchain component they test. Each test case implies an attempt 
 and expected result when submitting a transaction. 
 
-\subsubsection{Config UTxO tests}
+\subsubsection{NFT}
 
 \begin{itemize}
 	\item When minting an NFT with the seed UTxO an an input, validation passes.
@@ -261,13 +261,13 @@ and expected result when submitting a transaction.
 	\item When burning an NFT, validation fails.
 \end{itemize}
 
-\subsubsection{Config UTxO address test}
+\subsubsection{Config UTxO}
 
 \begin{itemize}
 	\item When spending the config UTxO, validation fails.
 \end{itemize}
 
-\subsubsection{Liquidity Token Minting Policy tests}
+\subsubsection{Liquidity Token Minting Policy}
 
 \begin{itemize}
 	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
@@ -298,7 +298,7 @@ and expected result when submitting a transaction.
     , validation fails.  
 \end{itemize}
 
-\subsubsection{Pool ID Token Minting Policy tests}
+\subsubsection{Pool ID Token Minting Policy}
 
 \begin{itemize}
 	\item Non admin can initialize a pool
@@ -320,7 +320,7 @@ and expected result when submitting a transaction.
 	\item Can't add liquidity to a dead pool
 \end{itemize}
 
-\subsubsection{Pool Address Validator tests}
+\subsubsection{Pool Address Validator}
 
 \begin{itemize}
 	\item can perform valid swaps
@@ -333,7 +333,7 @@ and expected result when submitting a transaction.
 	\item liquidity can be extracted from a dead pool
 \end{itemize}
 
-\subsubsection{Query tests}
+\subsubsection{Query}
 
 The following intended behaviors need to work:
 \begin{itemize}
