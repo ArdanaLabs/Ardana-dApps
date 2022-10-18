@@ -249,40 +249,56 @@ transactions.
 
 \subsection{Components}
 
-Tests are broken down by the onchain component they test.
+Tests are broken down by the onchain component they test. Each test case implies an attempt 
+and expected result when submitting a transaction. 
 
-\subsubsection{Config utxo tests}
-
-NFT tests
+\subsubsection{Config UTxO tests}
 
 \begin{itemize}
-	\item Minting an NFT actually produces an NFT
-	\item Minting an NFT fails if the seed Tx is a reference input
-	\item Trying to mint the NFT twice fails
-	\item The seed Tx has been spent after minting an NFT
-	\item The NFT can't be burned
+	\item When minting an NFT with the seed UTxO an an input, validation passes.
+	\item When minting an NFT with the seed UTxO as a reference input, validation fails.
+	\item When minting an NFT more than once, validation fails.
+	\item When burning an NFT, validation fails.
 \end{itemize}
 
-Config utxo address test
+\subsubsection{Config UTxO address test}
 
 \begin{itemize}
-	\item The config utxo can't be spent
+	\item When spending the config UTxO, validation fails.
 \end{itemize}
 
 \subsubsection{Liquidity Token Minting Policy tests}
 
 \begin{itemize}
-	\item Can mint $\sqrt{A_0B_0}$ liquidity tokens on pool open
-	\item Can't mint a different pool's liquidity token on pool open
-	\item Can't mint multiple liquidity token types on pool open
-	\item Can mint correct liquidity on deposit
-	\item Can burn liquidity on withdrawal
-	\item Can't mint liquidity for a different pool than the pool being spent
-	\item Can't burn liquidity from a different pool than the pool being spent
-	\item Can't mint liquidity for pool at invalid address
+	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
+	\item When minting a different pool's liquidity token on pool open, validation fails.
+	\item When minting multiple liquidity token types on pool open, validation fails.                   
+	\item When minting liquidity tokens for a different pool than the pool being spent, validation fails.
+	\item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
+	\item When minting liquidity for a pool at an address that is not the Pool Address Validator, validation fails.
+  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+  pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
+  and mints a quantity of liquidity tokens less than or equal to
+  $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
+  , validation passes.
+  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
+    and mints a quantity of liquidity tokens greater than 
+    $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
+    , validation fails.
+  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns 
+    their liquidity token quantity $\Delta t$ and receives a quantity of $A$ less than or equal to
+    $ a \cdot \Delta t/t $ and quantity of $B$ less than or equal to $ a \cdot \delta t/t $  
+    , validation passes.
+  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns 
+    their liquidity token quantity $\Delta t$ and receives a quantity of $A$ greater than
+    $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $  
+    , validation fails.  
 \end{itemize}
 
-\subsubsection{Pool id Token Minting Policy tests}
+\subsubsection{Pool ID Token Minting Policy tests}
 
 \begin{itemize}
 	\item Non admin can initialize a pool
