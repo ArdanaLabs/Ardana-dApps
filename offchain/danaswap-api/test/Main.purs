@@ -47,7 +47,7 @@ main = launchAff_ $ do
       it "mint runs" $ useRunnerSimple do
         mintNft
 
-      it "can't use refference input to mint" $ useRunnerSimple do
+      it "cannot mint with the seed UTxO as a reference input" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
