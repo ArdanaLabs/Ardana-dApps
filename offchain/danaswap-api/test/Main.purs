@@ -45,7 +45,7 @@ main = launchAff_ $ do
         initProtocol
     describe "NFT" do
 
-      it "mint runs" $ useRunnerSimple do
+      it "mints an NFT with the seed UTxO an an input" $ useRunnerSimple do
         mintNft
 
       it "cannot mint with the seed UTxO as a reference input" $ useRunnerSimple do
