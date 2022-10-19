@@ -40,6 +40,7 @@ main = launchAff_ $ do
   log "about to start"
   runSpec' defaultConfig { timeout = Nothing } [ consoleReporter ] $ (_ `runEnvSpec` envRunner) $ do
     describe "Protocol Init" $ do
+      -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
     describe "NFT" do
