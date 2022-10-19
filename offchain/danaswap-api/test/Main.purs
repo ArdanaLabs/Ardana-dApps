@@ -39,7 +39,7 @@ main = launchAff_ $ do
   envRunner <- getEnvRunner mode
   log "about to start"
   runSpec' defaultConfig { timeout = Nothing } [ consoleReporter ] $ (_ `runEnvSpec` envRunner) $ do
-    describe "protocol init" $ do
+    describe "Protocol Init" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
     describe "NFT" do
