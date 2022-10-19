@@ -1,6 +1,6 @@
-# Cardano App Templates (CAT)
+# Hello Cardano Template (CAT)
 
-A template for starting an application on Cardano.
+A template for writing a decentralized application on Cardano.
 
 ## Using the Nix Binary Cache via Cachix
 
