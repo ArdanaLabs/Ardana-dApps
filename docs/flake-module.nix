@@ -3,20 +3,14 @@
   perSystem = { config, self', inputs', system, ... }:
     let
       pkgs = inputs'.nixpkgs.legacyPackages;
-      diagram = pkgs.stdenv.mkDerivation {
-        buildInputs = with pkgs; [
-          xdot
-        ];
-        name = "diagram";
-        src = ./.;
-        buildPhase = ''
-          dot diagram.dot -Tpng > diagram.png
-        '';
-        installPhase = ''
-          mkdir -p $out
-          cp diagram.png $out
-        '';
-      };
+
+      diagram = pkgs.runCommand "diagram"
+        { buildInputs = [ pkgs.xdot ]; }
+        ''
+          mkdir $out
+          dot ${./diagram.dot} -Tpng > $out/diagram.png
+        ''
+      ;
     in
     {
       packages = {
