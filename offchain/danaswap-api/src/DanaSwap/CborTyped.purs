@@ -26,7 +26,7 @@ import Contract.Value (CurrencySymbol)
 -- | Placeholder
 poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validator
 poolAddressValidator poolIdToken liquidityToken = do
-  logDebug' "creating pool addres validator"
+  logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
   logDebug' $ "liquidityToken:" <> show liquidityToken
   decodeCbor CBOR.trivial
