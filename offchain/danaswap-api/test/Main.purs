@@ -109,7 +109,7 @@ main = launchAff_ $ do
         let nfts = Value.valueOf bal cs adaToken
         nfts `shouldEqual` (BigInt.fromInt 1)
 
-      it "burning nft fails" $ useRunnerSimple do
+      it "cannot burn an NFT" $ useRunnerSimple do
         txOut <- seedTx
         nftPolicy <- simpleNft txOut
         cs <- liftContractM "hash failed" $ scriptCurrencySymbol nftPolicy
