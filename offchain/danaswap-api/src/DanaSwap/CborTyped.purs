@@ -28,7 +28,7 @@ poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validato
 poolAddressValidator poolIdToken liquidityToken = do
   logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
-  logDebug' $ "liquidityToken:" <> show liquidityToken
+  logDebug' $ "liquidity token:" <> show liquidityToken
   decodeCbor CBOR.trivial
 
 -- | Placeholder
