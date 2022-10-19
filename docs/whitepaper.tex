@@ -249,8 +249,8 @@ transactions.
 
 \subsection{Components}
 
-Tests are broken down by the onchain component they test. Each test case implies an attempt 
-and expected result when submitting a transaction. 
+Tests are broken down by the onchain component they test. Each test case implies an attempt
+and expected result when submitting a transaction.
 
 \subsubsection{NFT}
 
@@ -272,7 +272,7 @@ and expected result when submitting a transaction.
 \begin{itemize}
   \item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
   \item When minting a different pool's liquidity token on pool open, validation fails.
-  \item When minting multiple liquidity token types on pool open, validation fails.                   
+  \item When minting multiple liquidity token types on pool open, validation fails.
   \item When minting liquidity tokens for a different pool than the pool being spent, validation fails.
   \item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
   \item When minting liquidity tokens for a pool at an address that is not the Pool Address Validator, validation fails.
@@ -283,19 +283,19 @@ and expected result when submitting a transaction.
   , validation passes.
   \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
     pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
-    and mints a quantity of liquidity tokens greater than 
+    and mints a quantity of liquidity tokens greater than
     $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
     , validation fails.
   \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns 
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns
     their liquidity token quantity $\Delta t$ and receives a quantity of $A$ less than or equal to
-    $ a \cdot \Delta t/t $ and quantity of $B$ less than or equal to $ a \cdot \delta t/t $  
+    $ a \cdot \Delta t/t $ and quantity of $B$ less than or equal to $ a \cdot \delta t/t $
     , validation passes.
   \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns 
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns
     their liquidity token quantity $\Delta t$ and receives a quantity of $A$ greater than
-    $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $  
-    , validation fails.  
+    $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $
+    , validation fails.
 \end{itemize}
 
 \subsubsection{Pool ID Token Minting Policy}
@@ -307,7 +307,7 @@ and expected result when submitting a transaction.
 	\item Can't open pool with 0 of either exchange token
 		%% This is sorta redundant cause the liquidity needs to be
 		%% wrong or 0
-	\item Invalid config utxo can't be used to open a pool
+	\item A utxo without the config NFT can't be used to open a pool
 	\item Can't mint more than 1 token
 	\item Can't send identifier token to non-pool address
 	\item Can't mint without spending seed Tx
@@ -338,7 +338,7 @@ and expected result when submitting a transaction.
 The following intended behaviors need to work:
 \begin{itemize}
 	\item New pools show up in queries
-	\item New invalid pools do not show up in queries
+	\item New pools without pool id tokens do not show up in queries
 	\todo{Do we need to worry about a large number of invalid pools slowing down
 	queries? If so should we add an interaction to remove them?}
 	\item Queries accurately reflect how the pool was setup
@@ -352,7 +352,7 @@ The following intended behaviors need to work:
 Additional tests:
 \begin{itemize}
 	\item When adding liquidity, the number in the pool's datum representing the
-    total amount of liquidity minted goes up by the correct amount
+    total amount of liquidity minted goes up by the same amount as the actual amount minted
 \end{itemize}
 
 Note: We should improve on the template by making better tools for checking that tests fail for the right reason.
