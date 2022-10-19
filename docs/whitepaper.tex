@@ -277,9 +277,9 @@ and expected result when submitting a transaction.
   \item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
   \item When minting liquidity tokens for a pool at an address that is not the Pool Address Validator, validation fails.
   \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-  pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
-  and mints a quantity of liquidity tokens less than or equal to
-  $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
+    pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
+    and mints a quantity of liquidity tokens less than or equal to
+    $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
   , validation passes.
   \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
     pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
