@@ -247,12 +247,12 @@ transactions.
 
 \todo{Should we write Apropos-Tx tests?}
 
-\subsection{Components}
-
-Tests are broken down by the onchain component they test. Each test case implies an attempt
-and expected result when submitting a transaction.
+\subsection{Config utxo tests}
 
 \subsubsection{NFT}
+
+
+NFT tests
 
 \begin{itemize}
 	\item When minting an NFT with the seed UTxO an an input, validation passes.
@@ -267,7 +267,7 @@ and expected result when submitting a transaction.
 	\item When spending the config UTxO, validation fails.
 \end{itemize}
 
-\subsubsection{Liquidity Token Minting Policy}
+\subsection{Liquidity Token Minting Policy tests}
 
 \begin{itemize}
 	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
@@ -298,7 +298,7 @@ and expected result when submitting a transaction.
 	      , validation fails.
 \end{itemize}
 
-\subsubsection{Pool ID Token Minting Policy}
+\subsection{Pool id Token Minting Policy tests}
 
 \begin{itemize}
 	\item Non admin can initialize a pool
@@ -318,9 +318,10 @@ and expected result when submitting a transaction.
 	\item Can't kill a pool with a liquidity change
 	\item Can't swap on a dead pool
 	\item Can't add liquidity to a dead pool
+	\item Can't make unbalanced withdrawals from a dead pool
 \end{itemize}
 
-\subsubsection{Pool Address Validator}
+\subsection{Pool Address Validator tests}
 
 \begin{itemize}
 	\item can perform valid swaps
@@ -331,9 +332,11 @@ and expected result when submitting a transaction.
 	\item non-admin can't kill a pool
 	\item admin can't over extract fees
 	\item liquidity can be extracted from a dead pool
+	\item Can't steal pool ID tokens (this should consist of tests at each endpoint)
+	\item Pool ids can't be swapped between two pools
 \end{itemize}
 
-\subsubsection{Query}
+\subsection{Query tests}
 
 The following intended behaviors need to work:
 \begin{itemize}
