@@ -13,8 +13,8 @@
           pkgs.runCommand "build-danaswap-ui"
             { buildInputs = [ self'.packages."offchain:danaswap-browser" ]; }
             ''
-              mkdir -p $out
-              cp -r ${ui}/lib/node_modules/danaswap-ui/build $out && chmod -R +w $out/build
+              mkdir -p $out/build/assets/scripts
+              cp -r ${ui}/lib/node_modules/danaswap-ui/build $out
               cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/build/assets/scripts
             '';
       };
