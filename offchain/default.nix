@@ -4,5 +4,6 @@
     ./nix/flake-modules/default.nix
     ./ctl-utils
     ./danaswap-api/flake-module.nix
+    ./danaswap-cli
   ];
 }
