@@ -37,7 +37,7 @@
           in
           hci-effects.netlifyDeploy {
             productionDeployment = (branch == "main");
-            content = "${self.packages.${system}.${projectName}}/lib/node_modules/${projectName}/build";
+            content = "${self.packages.${system}.${projectName}}/build";
             secretName = "default-netlify";
             secretField = "authToken";
             siteId = siteId;
