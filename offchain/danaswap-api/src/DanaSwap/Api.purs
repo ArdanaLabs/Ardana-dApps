@@ -93,7 +93,7 @@ mintNft = do
       <> Constraints.mustSpendPubKeyOutput txOut
   logDebug' "about to submit"
   txId <- buildBalanceSignAndSubmitTx lookups constraints
-  logDebug' "submited"
+  logDebug' "submitted"
   _ <- waitForTx adr txId
   pure $ cs
 
