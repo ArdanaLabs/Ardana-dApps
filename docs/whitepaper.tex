@@ -174,7 +174,7 @@ A naive solution to model/ lock these functional dependencies would be to
 make the hash of one script a parameter of the other script and thus a dependency of the hash of the other scripts.
 This approach is difficult to implement, as the relation is cyclic. \\
 
-An alternative solution we propose this problem is the Config UTXO.
+An alternative solution to this problem is the Config UTXO.
 The Config UTXO is a dedicated UTxO which is identified by a NFT, its datum 
 keeps track of all the script hashes involved in the protocol. Each script
 is then able refer to the script hashes in the Config UTXO in order to verify the other
