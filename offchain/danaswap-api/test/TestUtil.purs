@@ -25,7 +25,7 @@ import Effect.Exception (throw)
 import Effect.Random (randomInt)
 import Node.Process (lookupEnv)
 import Test.Spec (Spec, SpecT, before, parallel, sequential)
-import Test.Spec.Reporter (consoleReporter)
+import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
 
 data Mode = Local | Testnet
@@ -39,7 +39,7 @@ runOurSpec mode runnerGetter s =
   runSpec'
     defaultConfig
       { timeout = Nothing }
-    [ consoleReporter ]
+    [ specReporter ]
     $ (_ `runEnvSpec` runnerGetter)
     $ (if mode == Local then parallel else sequential)
     $ s

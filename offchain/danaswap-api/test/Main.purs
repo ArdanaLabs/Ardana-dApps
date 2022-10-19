@@ -15,12 +15,12 @@ import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.Api (initProtocol, mintNft, openPool, seedTx)
+import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
 import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Api (openPoolWrongToken)
+import Test.Api (depositLiquidityWrongToken, openPoolMultipleTokens, openPoolWrongToken)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), getEnvRunner, runOurSpec, useRunnerSimple)
@@ -39,6 +39,11 @@ main = launchAff_ $ do
   runnerGetter <- getEnvRunner mode
   runOurSpec mode runnerGetter $ do
     describe "Liquidity Token Minting Policy" $ do
+
+      -- TODO there are more liquidity tests but
+      -- they depend partially on the pool address validator as well
+      -- so they will be added in a later PR
+
       it "Allows minting on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
         openPool protocol
@@ -47,9 +52,24 @@ main = launchAff_ $ do
         protocol <- initProtocol
         expectError $ openPoolWrongToken protocol
 
+      it "Fails to validate minting multiple token names on pool open" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        expectError $ openPoolMultipleTokens protocol
+
+      it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        poolId <- openPool protocol
+        depositLiquidity protocol poolId
+
+      it "Fails to validate minting liquidity token for a pool other than the pool being spent" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        poolId <- openPool protocol
+        expectError $ depositLiquidityWrongToken protocol poolId
+
     describe "Protocol Initialization" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
+
     describe "nft" do
 
       it "mint runs" $ useRunnerSimple do

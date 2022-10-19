@@ -1,6 +1,9 @@
 module DanaSwap.Api
   ( initProtocol
   , openPool
+  , getAllPools
+  , getPoolById
+  , depositLiquidity
   -- Types
   , Protocol
   , PoolId
@@ -18,19 +21,20 @@ import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
-import Contract.Transaction (TransactionInput)
+import Contract.Transaction (TransactionInput, TransactionOutputWithRefScript)
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
-import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
+import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol, symbols, valueOf)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt as BigInt
 import Data.List (head)
-import Data.Map (keys)
+import Data.Map (Map, keys)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
+import Effect.Exception (throw)
 
 type Protocol =
   { configUtxo :: TransactionInput
@@ -42,6 +46,53 @@ type Protocol =
 -- TODO should this be a newtype?
 type PoolId = TokenName
 
+getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
+getAllPools protocol@{poolVal} =
+  getUtxos (scriptHashAddress $ validatorHash poolVal)
+    <#> Map.filter (hasNft protocol)
+
+getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
+getPoolById protocol@{poolIdMP} token = do
+  pools <- getAllPools protocol
+  cs <- liftContractM "invalid protocol" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
+  case Map.toUnfoldable valid of
+    [] -> liftEffect $ throw "no pools with that ID"
+    [ vault ] -> pure vault
+    _ -> liftEffect $ throw "more than one pool with the same ID, this is really bad"
+
+hasNft :: Protocol -> TransactionOutputWithRefScript -> Boolean
+hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
+  Nothing -> false -- protocol was invalid
+  Just cs -> cs `elem` (symbols $ (unwrap (unwrap out).output).amount)
+
+-- TODO this is a placeholder implementation
+depositLiquidity :: Protocol -> PoolId -> Contract () Unit
+depositLiquidity protocol@{poolVal,liquidityMP,poolIdMP} poolID = do
+  (poolIn /\ poolOut) <- getPoolById protocol poolID
+  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let idNft = Value.singleton poolIdCs poolID one
+  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+    buildBalanceSignAndSubmitTx
+      (Lookups.unspentOutputs (Map.singleton poolIn poolOut)
+      <> Lookups.mintingPolicy liquidityMP
+      <> Lookups.validator poolVal
+      )
+      (Constraints.mustSpendScriptOutput
+        poolIn
+        (Redeemer $ toData unit)
+      <> Constraints.mustMintCurrencyWithRedeemer
+          (mintingPolicyHash liquidityMP)
+          (Redeemer $ toData unit)
+          poolID
+          (BigInt.fromInt 10)
+      <> Constraints.mustPayToScript
+        (validatorHash poolVal)
+        (Datum $ toData unit)
+        DatumInline
+        idNft
+      )
+
 -- TODO this is a placeholder implementation
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
@@ -50,7 +101,6 @@ openPool {poolVal,liquidityMP,poolIdMP,configUtxo} = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
