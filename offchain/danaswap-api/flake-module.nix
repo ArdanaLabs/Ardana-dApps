@@ -20,6 +20,7 @@
             ordered-collections
             aff-retry
             self'.packages."offchain:danaswap-cbor"
+            self'.packages."offchain:ctl-utils"
           ];
         test-dependencies =
           with ps-pkgs;
