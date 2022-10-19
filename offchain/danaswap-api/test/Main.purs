@@ -15,11 +15,12 @@ import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.Api (initProtocol, mintNft, seedTx)
+import DanaSwap.Api (initProtocol, mintNft, openPool, seedTx)
 import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
+import Test.Api (openPoolWrongToken)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), getEnvRunner, runOurSpec, useRunnerSimple)
@@ -37,7 +38,16 @@ main = launchAff_ $ do
   log "about to start"
   runnerGetter <- getEnvRunner mode
   runOurSpec mode runnerGetter $ do
-    describe "protocol init" $ do
+    describe "Liquidity Token Minting Policy" $ do
+      it "Allows minting on pool open" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        openPool protocol
+
+      it "Fails to validate minting tokens for a different pool on pool open" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        expectError $ openPoolWrongToken protocol
+
+    describe "Protocol Initialization" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
     describe "nft" do
@@ -134,3 +144,4 @@ main = launchAff_ $ do
         expectError
           $ void
           $ buildBalanceSignAndSubmitTx burnLookups burnConstraints
+

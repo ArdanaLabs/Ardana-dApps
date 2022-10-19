@@ -1,5 +1,10 @@
 module DanaSwap.Api
   ( initProtocol
+  , openPool
+  -- Types
+  , Protocol
+  , PoolId
+  -- Testing
   , mintNft
   , seedTx
   ) where
@@ -9,14 +14,15 @@ import Contract.Prelude
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..), toData)
+import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
+import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
 import Contract.Transaction (TransactionInput)
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
-import Contract.Value (CurrencySymbol, adaToken, mpsSymbol, scriptCurrencySymbol)
+import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
@@ -32,6 +38,46 @@ type Protocol =
   , liquidityMP :: MintingPolicy
   , poolIdMP :: MintingPolicy
   }
+
+-- TODO should this be a newtype?
+type PoolId = TokenName
+
+-- TODO this is a placeholder implementation
+-- The real implementation will also take more arguments
+-- it should generate a usable pool for some tests
+openPool :: Protocol -> Contract () PoolId
+openPool {poolVal,liquidityMP,poolIdMP,configUtxo} = do
+  poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
+  let poolIdMph = mintingPolicyHash poolIdMP
+  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
+  --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
+  let idNft = Value.singleton poolIdCs poolID one
+  configVal <- configAddressValidator
+  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  txid <- buildBalanceSignAndSubmitTx
+    (Lookups.mintingPolicy poolIdMP
+    <> Lookups.mintingPolicy liquidityMP
+    <> Lookups.unspentOutputs configAdrUtxos
+    )
+    (Constraints.mustMintCurrencyWithRedeemer -- Pool id token
+      poolIdMph
+      (Redeemer $ toData unit)
+      poolID
+      one
+    <> Constraints.mustMintCurrencyWithRedeemer -- Liquidity tokens
+      (mintingPolicyHash liquidityMP)
+      (Redeemer $ Constr one []) -- This should be correct but should probably be a named constant
+      poolID
+      one
+    <> Constraints.mustReferenceOutput configUtxo
+    <> Constraints.mustPayToScript
+        (validatorHash poolVal)
+        (Datum $ toData unit) -- TODO real pool datum
+        DatumInline
+        idNft
+    )
+  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  pure poolID
 
 initProtocol :: Contract () Protocol
 initProtocol = do
