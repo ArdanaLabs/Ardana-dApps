@@ -36,13 +36,16 @@
             # see bundlePursProject: https://github.com/Plutonomicon/cardano-transaction-lib/blob/c906ead97563fef3b554320bb321afc31956a17e/nix/default.nix#L149
             ''
               export BROWSER_RUNTIME=1
-              cp -r ${danaswap-browser.ps.modules.Main.output { }} output
-              cp ${./index.js} index.js
+              cp -r ${danaswap-browser.ps.modules."DanaSwapBrowser.Home".output { }} homeOutput
+              cp -r ${danaswap-browser.ps.modules."DanaSwapBrowser.Pools".output { }} poolsOutput
+              cp ${./home.js} home.js
+              cp ${./pools.js} pools.js
               cp -r ${nodeModules}/* .
               export NODE_PATH="node_modules"
               export PATH="bin:$PATH"
               mkdir -p $out/dist
-              webpack --mode=production -c ${../webpack.config.js} -o $out/dist --entry ./index.js
+              webpack --mode=production -c ${../webpack.config.js} -o $out/dist/home --entry ./home.js
+              webpack --mode=production -c ${../webpack.config.js} -o $out/dist/pools --entry ./pools.js
             '';
       };
     in

@@ -15,7 +15,7 @@
             ''
               mkdir -p $out
               cp -r ${ui}/lib/node_modules/danaswap-ui/build $out && chmod -R +w $out/build
-              cp ${self'.packages."offchain:danaswap-browser"}/dist/*.js $out/build/assets/scripts
+              cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/build/assets/scripts
             '';
       };
     };

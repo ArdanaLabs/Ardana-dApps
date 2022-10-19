@@ -1,4 +1,4 @@
-module Main where
+module DanaSwapBrowser.Home where
 
 import Contract.Prelude
 
@@ -16,19 +16,14 @@ main = HA.runHalogenAff do
   _ <- HA.awaitLoad
   mbHome <- HA.selectElement $ QuerySelector "#home"
   case mbHome of
-    Nothing -> pure unit
-    Just elem -> void $ runUI homeComponent unit elem
+    Nothing -> throwError $ error "Cannot find #home"
+    Just elem -> void $ runUI component unit elem
 
-  mbPools <- HA.selectElement $ QuerySelector "#pools"
-  case mbPools of
-    Nothing -> pure unit
-    Just elem -> void $ runUI poolsComponent unit elem
-
-homeComponent
+component
   :: forall q i o m
    . MonadAff m
   => H.Component q i o m
-homeComponent =
+component =
   H.mkComponent
     { initialState: const unit
     , render
@@ -38,20 +33,4 @@ homeComponent =
   render _ =
     HH.div_
       [ HH.text "this is Home"
-      ]
-
-poolsComponent
-  :: forall q i o m
-   . MonadAff m
-  => H.Component q i o m
-poolsComponent =
-  H.mkComponent
-    { initialState: const unit
-    , render
-    , eval: H.mkEval $ H.defaultEval
-    }
-  where
-  render _ =
-    HH.div_
-      [ HH.text "this is Pools"
       ]
