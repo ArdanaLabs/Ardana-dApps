@@ -38,7 +38,7 @@ initProtocol = do
   logDebug' "starting protocol init"
   nftCs <- mintNft
   logDebug' "nft minted"
-  logDebug' $ "cs:" <> show nftCs
+  logDebug' $ "currency symbol:" <> show nftCs
   poolIdMP <- poolIdTokenMintingPolicy nftCs
   poolIdCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
