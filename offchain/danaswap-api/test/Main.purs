@@ -42,7 +42,7 @@ main = launchAff_ $ do
     describe "protocol init" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
-    describe "nft" do
+    describe "NFT" do
 
       it "mint runs" $ useRunnerSimple do
         mintNft
