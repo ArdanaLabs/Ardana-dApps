@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{hyperref}
 \usepackage{todonotes}
+\usepackage{graphicx}
 \setuptodonotes{inline}
 \setlength{\parindent}{0em}
 \setlength{\parskip}{1pt}
@@ -142,9 +143,6 @@ liquidity token.
 This section discusses what we need in order to implement the interactions
 mentioned above. \\
 
-The protocol consists of four parts. Three of them are very simple, while most
-of the logic is in the central component: The pool validator script. \\
-
 Firstly, in order to run a DEX based on an automated market model\footnote{
   The automated market model states that rather than having market makers and
   takers, such as is done in stock exchanges, the users will be liquidity
@@ -159,34 +157,66 @@ Firstly, in order to run a DEX based on an automated market model\footnote{
   When providing liquidity, $x \rightarrow x'$ and $y \rightarrow y'$ has the
   effect that $k \rightarrow k'$. The number of liquidity tokens the LP
   receives, $\Delta L$, then follows the rule $\Delta L / L = \Delta k / k$.
-}, we need a liquidity token to exist, with a minting policy linked to a
-specific pool.
-Secondly, as in the Cardano Application Template, we want each pool be
-identified by an NFT minted through a specific minting policy. This allows
-anyone to verify that a UTXO at the pool script address is valid, as well as to
-trace each pool.
-Finally, our protocol contains a number of cyclic dependencies between the
-different scripts. In order to resolve this, we follow the Config UTXO pattern.
+}, we need a liquidity token linked to the respective pool to exist. This association between liquidity token and pool is achieved by encoding the pool identifier into the token name of the liquidity token. The currency-symbol i.e. the minting policy's hash is equal for all liquidity tokens, this requires one common minting policy for all tokens.
+
+Secondly, as in the Cardano Application Template, we want the pools to be
+identifiable, traceable and verifiable (valid or not).
+We achieve this by minting an NFT to identify each pool.
+This NFT's minting policy will only pass when initializing a new pool, and each pool will enforce the NFT not to leave.
+Lastly, our protocol consists of a number of scripts whose functionalities are dependent
+on each other, where some of those functional dependencies are cyclic. We model/ lock these
+functional dependencies using the \textit{Config UTxO} pattern.
 
 \subsection{Config UTXO}
 
-As mentioned above, our protocol will contain cyclic dependencies between the
-different scripts. Imagine we go about the situation naively, and we make each
-script dependent on the others. Now the hash of each script is dependent on the
-hash of the other scripts, which leads to a computationally very difficult
-problem to resolve. Therefore, we propose to use a different solution: The
-Config UTXO. \\
+As mentioned above, our protocol consists of a number of scripts whose functionalities are dependent on each other,
+where some of those functional dependencies are cyclic.
+A naive solution to model/ lock these functional dependencies would be to 
+make the hash of one script a parameter of the other script and thus a dependency of the hash of the other scripts.
+This approach is difficult to implement, as the relation is cyclic. \\
 
-The idea is that a Config UTXO is built, identified by an NFT, which holds in
-its datum the hashes of all the scripts involved in the protocol. Each script
-can then refer to the hashes in the Config UTXO in order to verify the other
-scripts. In our case, the Config UTXO will only contain an NFT (to identify
-itself) and a datum with the pool ID minting policy hash, the liquidity token
-minting policy hash, and the pool validator script address.
+An alternative solution to this problem is the Config UTXO.
+The Config UTXO is a dedicated on-chain component which tracks the script hashes involved in the protocol.
+It is identified by an NFT. Each script is then able refer to the script
+hashes in the Config UTXO in order to verify the other
+scripts. \\
 
-\subsection{Pool ID minting policy}
+A drawback of the Config UTXO is the greater transaction size and thus higher transaction fees.
+Therefore we make use of an hybrid approach between the naive and Config UTXO.
+In our case, the Config UTXO will contain the following data in the datum:
+the liquidity token minting policy hash and the pool address validator script hash.
+The other hash, namely the pool ID minting policy will be passed as parameters. See Figure \ref{hashGraph}  \\
 
-Each pool will be identified by an NFT. This allows anyone to verify that a UTXO
+\begin{figure}
+  \scalebox{0.5}{\includegraphics{diagram}}
+  \caption{
+	  In the diagram above blue arrows represent passing hashes by
+	  Config UTXO and red arrows represent passing hashes by script parameter.
+  }
+  \label{hashGraph}
+\end{figure}
+
+It is important that the parameter sub-graph is acyclic so that
+the hashes are resolvable. Likewise it's important that
+the config UTXO sub-graph only includes arrows from the pool ID minting policy
+so that all other interactions can be performed without the config UTXO.
+
+
+\subsubsection{Config UTXO: Addresses Validator}
+
+The config UTXO needs an address where it can be used as a reference
+input but can't be changed. Since use as a reference input doesn't
+invoke a validator, this validator can just always fail.
+
+\subsubsection{Config UTXO: Identifier NFT Minting Policy}
+
+The config UTXO also needs an NFT to distinguish it from any
+invalid config UTXOs. This can just be a boiler plate NFT contract,
+so we can use the one already in the CAT (Cardano App Template).
+
+\subsection{DEX Pool: Identifier NFT Minting Policy}
+
+Each pool will be identified by a NFT. This allows anyone to verify that a UTXO
 at the pool script address is valid, as well as tracing each pool. This
 constitutes structurally the same minting policy as the one in
 \href{https://github.com/ArdanaLabs/cardano-app-template/blob/master/onchain/src/HelloDiscovery.hs}{
@@ -194,16 +224,16 @@ constitutes structurally the same minting policy as the one in
 The only distinction with the Hello Discovery minting policy is that the Pool ID
 policy will refer to the Danaswap Config UTXO.
 
-\subsection{Liquidity token minting policy}
+\subsection{DEX Pool: Liquidity Token Minting Policy}
 
 The liquidity token minting policy will allow any valid pool\footnote{
   A valid pool is any UTXO at the pool script address which holds an NFT minted
   by the Pool ID minting policy.
 } to mint and burn its corresponding liquidity token. The liquidity token
-minting policy knows which liquidity token belongs to which pool through the
+minting policy needs to know which liquidity token belongs to which pool through the
 Pool ID (NFT).
 
-\subsection{DEX pool}
+\subsection{DEX Pool}
 
 When initializing a pool, $k_0^2 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
 initial balances of asset classes $X$ and $Y$. The admin user receives $L_0 =
@@ -220,9 +250,118 @@ Each pool datum consists of a number of parts:
   \item A boolean representing the pool's kill switch
 \end{itemize}
 
+
+\subsection{Pool Addresses Validator}
+
+The pool addresses validator controls when pools can be spent.
+It is therefore responsible for controlling swaps,
+liquidity deposits and withdrawals, pool termination
+and admin fee collection.
+It is also responsible for ensuring that
+pool ID tokens never leave its addresses
+because they could then be used to open invalid pools.
+
+To do this it enforces the following:
+Note: ``The output pool" refers to
+the pool in the outputs which has the same pool id
+as the input pool invoking the validator.
+
+\begin{itemize}
+	\item The input and output pools are valid
+	\item The redeemer is valid
+	\item When the redeemer action is Swap:
+		\begin{itemize}
+			\item The exchange invariant doesn't decrease before fees
+			\item The Admin fee is increased by $0.3\%$ of the output
+			\item The pool increases by $0.3\%$ of the output
+			\item No liquidity tokens are minted
+			\item The input and output pools are both live
+		\end{itemize}
+	\item When the redeemer action is Liquidity
+		\begin{itemize}
+			\item The liquidity invariant $L^2/k^2$ is non decreasing before fees
+			and appropriate fees are paid.
+				\todo{how should fees work here?}
+			\item The datum correctly reflects the change in issued liquidity
+			\item The ``liveness" of the pool is not changed
+			\item If the input pool is dead the issued liquidity decreases
+			\item If the input pool is dead the withdraw is balanced
+		\end{itemize}
+	\item When the redeemer action is Kill
+		\begin{itemize}
+			\item The admin signed the transaction
+			\item The output pool is dead
+			\item Nothing else is changed in the pool
+		\end{itemize}
+	\item When The redeemer action is Collect
+		\begin{itemize}
+			\item The admin fees in the output pool are zero
+			\item the non admin fees balance stays the same
+			\item the output value remains correct for the datum
+			\item At least one admin key signed the tx
+		\end{itemize}
+\end{itemize}
+
+
+\subsection{Pool ID minting policy}
+
+The pool ID token is a token used to track pools
+and to ensure that the pools the protocol interacts with were opened legitimately.
+The pool ID token's minting policy is responsible for ensuring
+that it is only minted as part of opening a valid vault.
+To do so it should enforce all of the following:
+
+\begin{itemize}
+	\item The config UTXO is valid
+	\item Exactly one token is minted
+	\item That token is sent to a pool
+	\item The redeemer provides a seed UTXO
+	\item The token name of the minted token is the hash of the seed UTXO
+	\item The seed UTXO is spent in the transaction
+	\item The output pool datum is valid
+	\item The datum correctly reflects the number of liquidity tokens being minted
+	\item at least one liquidity token is being minted
+	\item the initial invariant is not zero ie. some liquidity is provided in each token
+	\item The issued liquidity is exactly the square root of the initial value
+\end{itemize}
+
+NOTE: Pools not being duplicates will be checked in the browser app, but not enforced onchain.
+
+\subsection{Liquidity token minting policy}
+
+The liquidity tokens are used to represent ownership of liquidity in a pool.
+Their minting policy is responsible for ensuring that they are only minted
+during liquidity interactions with a pool and during pool initializations.
+
+Since the Pools Address Validator and the pool ID token minting policy
+already enforce the logic regarding how much should be minted the liquidity
+token minting policy doesn't have to do much. It's main responsibility is enforcing that
+some pool is involved either by being opened or an existing pool being used, and that
+the liquidity tokens being created correspond to the pool being used.
+The way we keep track of which liquidity tokens correspond to which pools
+is by having the token name be the ID of the pool the liquidity tokens
+belong to.
+
+To do that it enforces the following:
+\begin{itemize}
+	\item The liquidity tokens being minted all have the same token name/pool id
+	\item The redeemer is valid
+		\begin{itemize}
+			\item When the redeemer is Initialize: A pool ID token with the same ID is being minted
+			\item When the redeemer is Pool: There is an input with a pool ID token with the same id
+		\end{itemize}
+\end{itemize}
+
 \subsection{Off-chain notes}
 
-\todo{How to list the pools, and get the pool info?}
+Initialize pool: Initially, $k_0 = x_0 \cdot y_0$ where $x_0$ and $y_0$ are the
+initial amounts. The admin user receives $k_0$ liquidity tokens.
+
+\subsection{Queries}
+
+Pools can be listed by getting all the UTXOs at the pool addresses and filtering
+out pools which don't have valid ids. All the pool info for a given pool
+can be gotten by looking at the datum and value of the UTXO.
 
 \subsection{Remarks}
 
@@ -233,6 +372,9 @@ Each pool datum consists of a number of parts:
     of the invariant equation equality a bit more subtly. We propose to do this
     by claiming that $x \cdot y = k^2 \Leftrightarrow (k-1)^2 < x \cdot y <
     (k+1)^2$.
+		%% I know the rounding is fairly small and letting users round against the exchange
+		%% is not a significant issue but this seems needlessly complicated
+		%% compared to the L^2/X*Y invariant solution.
 \end{itemize}
 
 \todo{Figure out how rounding should actually be handled, both on-chain and
