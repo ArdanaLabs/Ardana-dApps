@@ -43,7 +43,9 @@ liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
-  decodeCborMp CBOR.trivial
+  raw <- decodeCborMp CBOR.liqudityTokenMP
+  applyArgsM raw [ toData poolId ]
+    >>= liftContractM "failed to apply args"
 
 configAddressValidator :: Contract () Validator
 configAddressValidator = decodeCbor CBOR.configScript

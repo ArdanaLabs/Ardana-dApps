@@ -83,7 +83,7 @@ depositLiquidity protocol@{poolVal,liquidityMP,poolIdMP} poolID = do
         (Redeemer $ toData unit)
       <> Constraints.mustMintCurrencyWithRedeemer
           (mintingPolicyHash liquidityMP)
-          (Redeemer $ toData unit)
+          (Redeemer $ Constr zero [ toData poolID , Constr one [] ])
           poolID
           (BigInt.fromInt 10)
       <> Constraints.mustPayToScript
@@ -116,7 +116,7 @@ openPool {poolVal,liquidityMP,poolIdMP,configUtxo} = do
       one
     <> Constraints.mustMintCurrencyWithRedeemer -- Liquidity tokens
       (mintingPolicyHash liquidityMP)
-      (Redeemer $ Constr one []) -- This should be correct but should probably be a named constant
+      (Redeemer $ Constr zero [ toData poolID , Constr zero [] ])
       poolID
       one
     <> Constraints.mustReferenceOutput configUtxo

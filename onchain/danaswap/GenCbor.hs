@@ -8,6 +8,7 @@ import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
 import Utils (Cbor (..), toPureScript)
+import DanaSwap (liqudityTokenCBor)
 
 {- | Main takes a directory as a comand line argument
   and creates a file CBOR.purs in that directory
@@ -35,4 +36,5 @@ cbors =
   , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
+  , Cbor "liqudityTokenMP" liqudityTokenCBor
   ]
