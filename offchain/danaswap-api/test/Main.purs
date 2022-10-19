@@ -103,7 +103,7 @@ main = launchAff_ $ do
           Nothing -> pure unit
           Just _ -> liftEffect $ throw "seed tx still existed"
 
-      it "wallet has nft after mint" $ useRunnerSimple do
+      it "sends the NFT to the wallet after minting" $ useRunnerSimple do
         cs <- mintNft
         bal <- liftContractM "no ballance" =<< getWalletBalance
         let nfts = Value.valueOf bal cs adaToken
