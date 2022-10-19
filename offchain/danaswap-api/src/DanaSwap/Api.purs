@@ -18,7 +18,7 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
 import Contract.Value (CurrencySymbol, adaToken, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt as BigInt
 import Data.List (head)

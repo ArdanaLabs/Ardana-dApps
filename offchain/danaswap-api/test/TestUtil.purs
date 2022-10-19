@@ -19,7 +19,7 @@ import Data.Identity (Identity)
 import Data.UInt as UInt
 import Node.Process (lookupEnv)
 import Test.Spec (Spec, SpecT, before)
-import Ctl.Util (withOurLogger)
+import Ctl.Utils (withOurLogger)
 
 data Mode = Local | Testnet
 type EnvRunner = (ContractEnv () -> KeyWallet -> Aff Unit) -> Aff Unit

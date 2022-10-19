@@ -24,7 +24,7 @@ import Test.Spec.Assertions (expectError, shouldEqual)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
 import TestUtil (Mode(..), getEnvRunner, runEnvSpec, useRunnerSimple)
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 main :: Effect Unit
 main = launchAff_ $ do
