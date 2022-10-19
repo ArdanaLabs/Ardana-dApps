@@ -157,11 +157,12 @@ Firstly, in order to run a DEX based on an automated market model\footnote{
   When providing liquidity, $x \rightarrow x'$ and $y \rightarrow y'$ has the
   effect that $k \rightarrow k'$. The number of liquidity tokens the LP
   receives, $\Delta L$, then follows the rule $\Delta L / L = \Delta k / k$.
-}, we need a liquidity token linked to the respective pool to exist. 
-This implies that the liquidity token needs to be minted/ burnt using a minting policy linked to a specific pool.
-Secondly, as in the Cardano Application Template, we want the liquidity pools to be
+}, we need a liquidity token linked to the respective pool to exist. This association between liquidity token and pool is achieved by encoding the pool identifier into the token name of the liquidity token. The currency-symbol i.e. the minting policy's hash is equal for all liquidity tokens, this requires one common minting policy for all tokens.
+
+Secondly, as in the Cardano Application Template, we want the pools to be
 identifiable, traceable and verifiable (valid or not).
-We achieve this by minting an identifier NFT which requires its own minting policy.
+We achieve this by minting an NFT to identify each pool.
+This NFT's minting policy will only pass when initializing a new pool, and each pool will enforce the NFT not to leave.
 Lastly, our protocol consists of a number of scripts whose functionalities are dependent
 on each other, where some of those functional dependencies are cyclic. We model/ lock these
 functional dependencies using the \textit{Config UTxO} pattern.
@@ -175,16 +176,16 @@ make the hash of one script a parameter of the other script and thus a dependenc
 This approach is difficult to implement, as the relation is cyclic. \\
 
 An alternative solution to this problem is the Config UTXO.
-The Config UTXO is a dedicated UTxO which is identified by a NFT, its datum 
-keeps track of all the script hashes involved in the protocol. Each script
-is then able refer to the script hashes in the Config UTXO in order to verify the other
+The Config UTXO is a dedicated on-chain component which tracks the script hashes involved in the protocol.
+It is identified by an NFT. Each script is then able refer to the script
+hashes in the Config UTXO in order to verify the other
 scripts. \\
 
 A drawback of the Config UTXO is the greater transaction size and thus higher transaction fees.
 Therefore we make use of an hybrid approach between the naive and Config UTXO.
 In our case, the Config UTXO will contain the following data in the datum:
 the liquidity token minting policy hash and the pool address validator script hash.
-The other hashes will be passed as parameters. See Figure \ref{hashGraph}  \\
+The other hash, namely the pool ID minting policy will be passed as parameters. See Figure \ref{hashGraph}  \\
 
 \begin{figure}
   \scalebox{0.5}{\includegraphics{diagram}}
@@ -205,7 +206,7 @@ so that all other interactions can be performed without the config UTXO.
 
 The config UTXO needs an address where it can be used as a reference
 input but can't be changed. Since use as a reference input doesn't
-invoke a validator this validator can just always fail.
+invoke a validator, this validator can just always fail.
 
 \subsubsection{Config UTXO: Identifier NFT Minting Policy}
 
