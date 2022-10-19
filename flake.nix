@@ -57,6 +57,7 @@
     };
     treefmt-flake.url = "github:srid/treefmt-flake";
     yubihsm.url = "github:ArdanaLabs/yubihsm-ed-sign?rev=6fc4b462fc400cc2058df81f760228c2088db8d4";
+    hercules-ci-effects.url = "github:hercules-ci/hercules-ci-effects";
 
   };
 
