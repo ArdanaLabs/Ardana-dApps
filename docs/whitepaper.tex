@@ -270,32 +270,32 @@ and expected result when submitting a transaction.
 \subsubsection{Liquidity Token Minting Policy}
 
 \begin{itemize}
-  \item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
-  \item When minting a different pool's liquidity token on pool open, validation fails.
-  \item When minting multiple liquidity token types on pool open, validation fails.
-  \item When minting liquidity tokens for a different pool than the pool being spent, validation fails.
-  \item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
-  \item When minting liquidity tokens for a pool at an address that is not the Pool Address Validator, validation fails.
-  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
-    and mints a quantity of liquidity tokens less than or equal to
-    $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
-  , validation passes.
-  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
-    and mints a quantity of liquidity tokens greater than
-    $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
-    , validation fails.
-  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns
-    their liquidity token quantity $\Delta t$ and receives a quantity of $A$ less than or equal to
-    $ a \cdot \Delta t/t $ and quantity of $B$ less than or equal to $ a \cdot \delta t/t $
-    , validation passes.
-  \item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
-    pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns
-    their liquidity token quantity $\Delta t$ and receives a quantity of $A$ greater than
-    $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $
-    , validation fails.
+	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
+	\item When minting a different pool's liquidity token on pool open, validation fails.
+	\item When minting multiple liquidity token types on pool open, validation fails.
+	\item When minting liquidity tokens for a different pool than the pool being spent, validation fails.
+	\item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
+	\item When minting liquidity tokens for a pool at an address that is not the Pool Address Validator, validation fails.
+	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+	      pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
+  	      and mints a quantity of liquidity tokens less than or equal to
+	      $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
+	      , validation passes.
+	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+	      pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
+	      and mints a quantity of liquidity tokens greater than
+              $T \cdot \frac{\sqrt{ (a + \Delta a) \cdot (b + \Delta b)} - \sqrt{a \cdot b}}{\sqrt{a \cdot b}}$
+	      , validation fails.
+	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset pair of quantities
+	      $a$ of $A$ and $b$ of $B$, when the user burns
+	      their liquidity token quantity $\Delta t$ and receives a quantity of $A$ less than or equal to
+	      $ a \cdot \Delta t/t $ and quantity of $B$ less than or equal to $ a \cdot \delta t/t $
+	      , validation passes.
+	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
+	      pair of quantities $a$ of $A$ and $b$ of $B$, when the user burns
+	      their liquidity token quantity $\Delta t$ and receives a quantity of $A$ greater than
+	      $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $
+	      , validation fails.
 \end{itemize}
 
 \subsubsection{Pool ID Token Minting Policy}
