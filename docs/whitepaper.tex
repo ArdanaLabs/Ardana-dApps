@@ -171,7 +171,7 @@ functional dependencies using the \textit{Config UTxO} pattern.
 
 As mentioned above, our protocol consists of a number of scripts whose functionalities are dependent on each other,
 where some of those functional dependencies are cyclic.
-A naive solution to model/ lock these functional dependencies would be to 
+A naive solution to model/ lock these functional dependencies would be to
 make the hash of one script a parameter of the other script and thus a dependency of the hash of the other scripts.
 This approach is difficult to implement, as the relation is cyclic. \\
 
@@ -249,7 +249,6 @@ Each pool datum consists of a number of parts:
   \item The number of liquidity tokens ever minted (minus burned)
   \item A boolean representing the pool's kill switch
 \end{itemize}
-
 
 \subsection{Pool Addresses Validator}
 
@@ -351,6 +350,16 @@ To do that it enforces the following:
 			\item When the redeemer is Pool: There is an input with a pool ID token with the same id
 		\end{itemize}
 \end{itemize}
+
+\subsection{Initializing the protocol}
+
+The first step to initialize the protocol, is to mint an NFT, which will be
+considered the `master' identifier of the protocol, namely the NFT identifying
+the Config UTXO. Next, using the name of this NFT, we can calculate the hash
+associated with the three other scripts (pool validator script, liquidity token
+minting policy and Pool ID minting policy). Finally, a Config UTXO is
+initialized with the `master' NFT and a datum that contains the two hashes, in
+that order: Pool script and pool ID script.
 
 \subsection{Off-chain notes}
 
@@ -476,6 +485,8 @@ NFT tests
 	\item liquidity can be extracted from a dead pool
 	\item Can't steal pool ID tokens (this should consist of tests at each endpoint)
 	\item Pool ids can't be swapped between two pools
+  \item It shouldn't be possible to add liquidity and then withdraw it in order to essentially swap with
+    reduced fees
 \end{itemize}
 
 \subsection{Query tests}
