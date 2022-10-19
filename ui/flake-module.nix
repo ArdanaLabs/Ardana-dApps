@@ -56,7 +56,7 @@
       {
         danaswap-ui = mkWebsite
           "danaswap-ui"
-          "";
+          "a7219476-6e9c-438b-b43c-4b858051ecce";
       };
   };
 }
