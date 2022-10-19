@@ -62,7 +62,7 @@ initProtocol = do
         DatumInline
         (Value.singleton nftCs adaToken one)
     )
-  logDebug' "config utxo submited waiting for confirmation"
+  logDebug' "config utxo submitted, waiting for confirmation"
   configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
   logDebug' "protocol init complete"
   pure
