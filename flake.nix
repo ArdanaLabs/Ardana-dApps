@@ -71,6 +71,7 @@
           ./onchain
           ./docs
           ./nix/flake-modules
+          ./ui
         ];
       }
     ).config.flake;
