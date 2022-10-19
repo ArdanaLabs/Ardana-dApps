@@ -82,7 +82,7 @@ main = launchAff_ $ do
         _ <- waitForTx adr txId
         expectError $ buildBalanceSignAndSubmitTx lookups constraints
 
-      it "seedTx is spent after mint" $ useRunnerSimple do
+      it "spends the seed UTxO after minting" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
