@@ -106,33 +106,108 @@ liquidity token.
 
 \section{Acceptance criteria}
 
+\subsection*{Initialize pool with liquidity}
+
 \begin{itemize}
   \item When initializing a pool, no asset balances can be $0$
   \item Once a pool is initialized between assets $A$ and $B$, the UX disallows
     creating another pool between the same assets
+    \todo{@Leo: This has no corresponding test descriptions yet.}
   \item Any user can initialize a pool
-  \item The admin user is independent of who created the pool
-  \item The admin user can kill pools
-  \item Non-admin users cannot kill pools
-  \item A pool that is killed, only supports the ``Withdraw liquidity'' endpoint
+\end{itemize}
+
+\subsection*{Swap}
+
+\begin{itemize}
   \item Small swaps create low slippage
   \item If the balances of the two assets in a pool are roughly equal, their
     exchange rate is roughly $1$
   \item Swaps selling $A$ to the pool in exchange for $B$ increase the exchange
     rate $A \rightarrow B$ and decrease the exchange rate $B \rightarrow A$
-  \item When performing a swap, the correct fee is paid
+  \item When performing a swap, the user gets $99.4\%$ of what the invariant
+    equation says he should get. $0.3\%$ is put into the admin balances (in the
+    datum).
+\end{itemize}
+
+\subsection*{Add liquidity}
+
+\begin{itemize}
   \item Any user can add liquidity
-  \item When adding liquidity, the user receives the correct number of liquidity
+  \item When adding liquidity, the user receives all newly minted liquidity
     tokens
-  \item When withdrawing liquidity, the user receives the correct amount of
-    assets
-  \item When withdrawing liquidity in one asset class, the correct fee is paid
+  \item When adding liquidity, the total number of liquidity tokens (in the
+    pool's datum) is increased by the same amount as the tokens minted
+  \item When adding liquidity, the pool's value increases with the liquidity
+    provided, and the admin balances increase by $0.3\%$ of the paid assets
+  \item No transaction has more than one pool in the outputs\footnote{
+      The goal of this rule is to simplify the space of protocol attacks.}
+\end{itemize}
+
+\subsection*{Withdraw liquidity}
+
+\begin{itemize}
+  \item Any user can withdraw liquidity
+  \item When withdrawing liquidity in one asset class, $x \cdot y / L^2$
+    increases, where $x$, $y$ and $L$ are calculated pre-fee, and $0.6\%$ of
+    $\Delta x$ (or $\Delta y$) is retained in the pool (half for admin fees, the
+    other half is left in the pool). In other words, when withdrawing $\Delta L$
+    liquidity in asset class $X$, $\Delta x$ is the amount the value in the pool
+    (value, not datum) changes.
   \item When creating a new pool and then listing all existing pools, the new
     pool shows up
-  \item Each pool is discoverable and traceable, as shown through its ``pool
-    info''
-  \item When showing a pool's info and then interacting with it (kill, swap, add
-    liquidity, withdraw liquidity), the pool's info updates appropriately
+\end{itemize}
+
+\subsection*{Swaps \& liquidity transactions}
+
+All swaps and liquidity transactions have a rule in common: After any
+transaction, $x \cdot y / L^2$ has increased. In that statement:
+\begin{itemize}
+  \item $x$, $y$ and $L$ before the transaction come from the (non-admin)
+    balance of the old pool
+  \item After the transaction, $x' = x + \Delta x$, where $\Delta x$ is the
+    amount $X$ changed in the value of the pool (value, not balances in the
+    datum)
+  \item $L' = L + \Delta L$, where $\Delta L$ is the amount of $L$ burned/minted
+    in the transaction
+\end{itemize}
+
+The other rule that all these transactions have in common, is that non-admin
+balances $+$ admin balances is equal to the value in the pool.
+
+\subsection*{Kill pool}
+
+\begin{itemize}
+  \item The admin user (i.e. he who can kill pools) is independent of who
+    created the pool
+  \item The admin user can kill pools
+  \item Non-admin users cannot kill pools
+  \item A pool that is killed, only supports the ``Withdraw liquidity'' endpoint
+\end{itemize}
+
+\subsection*{Collect admin fees}
+
+\begin{itemize}
+  \item Admin can collect the admin fees: The value of the pool becomes the
+    non-admin part of the old pool, the non-admin part is not changes, the admin
+    balances in the pool's datum are set to zero, and the admin part is paid out
+    to the admin user's wallet.
+  \item Non-admin cannot collect admin fees
+\end{itemize}
+
+\subsection*{Pool info}
+
+\begin{itemize}
+  \item A list of pools can be queried
+  \item When a new pool is initialized, the list of valid pools increases by one
+  \item When an invalid pool is created, the list of valid pools increases by
+    one
+  \item When a pool is updated (kill, swap, add liquidity, withdraw liquidity,
+    collect admin fees), the list of valid pools doesn't change
+  \item For each valid pool, its pool info can be queried
+  \item When a valid pool is updated, its pool info is updated appropriately:
+    Killing a pool makes the pool info say it is killed, adding liquidity mints
+    the same number of liquidity tokens as are added to the ``total number of
+    liquidity tokens minted'' etc.
   \item Each pool is verifiable, i.e. any pool which has been initialized
     appropriately is considered a legitimate pool and vice versa
 \end{itemize}
