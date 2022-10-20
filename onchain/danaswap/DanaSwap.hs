@@ -19,7 +19,6 @@ import Plutarch.Api.V1 (PTokenName, PValue (PValue))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V2.Tx (PTxOutRef)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
-import Plutarch.Extensions.Monad (pletFieldC)
 import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 
 data LiquidityAction (s :: S)
@@ -80,7 +79,7 @@ liqudityTokenMP = phoistAcyclic $
       poolIdCs <- pletC $ pfromData (ptryFromData poolIdCsData)
       poolIdTn <- pletC $ getField @"poolId" redemerRec
       PMinting liquidityCsRec <- pmatchC $ getField @"purpose" scRec
-      infoRec <- pletFieldsC @'[ "mint" , "inputs" ] (getField @"txInfo" scRec)
+      infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scRec)
       let minting = getField @"mint" infoRec
       PValue mintingMap <- pmatchC minting
       PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCsRec) # mintingMap
@@ -99,15 +98,15 @@ liqudityTokenMP = phoistAcyclic $
           let inputs = pfromData $ getField @"inputs" infoRec
           passert "token name matched redeemer" $
             pany # isRightPool # inputs
-              where
-                isRightPool = plam $ \input -> unTermCont $ do
-                    PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
-                    pmatchC (PMap.plookup # poolIdCs # val) >>= \case
-                      PNothing -> pure $ pcon PFalse
-                      PJust poolIdToken ->
-                        pmatchC (PMap.plookup # poolIdTn # poolIdToken) >>= \case
-                          PNothing -> pure $ pcon PFalse
-                          PJust _ -> pure $ pcon PTrue
+          where
+            isRightPool = plam $ \input -> unTermCont $ do
+              PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
+              pmatchC (PMap.plookup # poolIdCs # val) >>= \case
+                PNothing -> pure $ pcon PFalse
+                PJust poolIdToken ->
+                  pmatchC (PMap.plookup # poolIdTn # poolIdToken) >>= \case
+                    PNothing -> pure $ pcon PFalse
+                    PJust _ -> pure $ pcon PTrue
 
 nftCbor :: Maybe String
 nftCbor = closedTermToHexString standardNft
