@@ -3,6 +3,14 @@
   perSystem = { config, self', inputs', system, ... }:
     let
       pkgs = inputs'.nixpkgs.legacyPackages;
+
+      diagram = pkgs.runCommand "diagram"
+        { buildInputs = [ pkgs.xdot ]; }
+        ''
+          mkdir $out
+          dot ${./diagram.dot} -Tpng > $out/diagram.png
+        ''
+      ;
     in
     {
       packages = {
@@ -22,6 +30,7 @@
           ];
 
           buildPhase = ''
+            cp ${diagram}/diagram.png .
             HOME=$TMP latexmk -output-directory="tmp" -pdf ./*.tex
           '';
           doCheck = false;
