@@ -136,7 +136,7 @@ initProtocol = do
   logDebug' "starting protocol init"
   nftCs <- mintNft
   logDebug' "nft minted"
-  logDebug' $ "cs:" <> show nftCs
+  logDebug' $ "currency symbol:" <> show nftCs
   poolIdMP <- poolIdTokenMintingPolicy nftCs
   poolIdCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
@@ -160,7 +160,7 @@ initProtocol = do
         DatumInline
         (Value.singleton nftCs adaToken one)
     )
-  logDebug' "config utxo submited waiting for confirmation"
+  logDebug' "config utxo submitted, waiting for confirmation"
   configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
   logDebug' "protocol init complete"
   pure
@@ -191,7 +191,7 @@ mintNft = do
       <> Constraints.mustSpendPubKeyOutput txOut
   logDebug' "about to submit"
   txId <- buildBalanceSignAndSubmitTx lookups constraints
-  logDebug' "submited"
+  logDebug' "submitted"
   _ <- waitForTx adr txId
   pure $ cs
 

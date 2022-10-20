@@ -1,0 +1,7 @@
+digraph {
+    "Pool id token minting policy" -> "Liquidity token minting policy" [color=blue];
+    "Pool id token minting policy" -> "Pool address validator" [color=blue];
+    "Pool address validator" -> "Pool id token minting policy" [color=red];
+    "Pool address validator" -> "Liquidity token minting policy" [color=red];
+    "Liquidity token minting policy" -> "Pool id token minting policy" [color=red];
+}
