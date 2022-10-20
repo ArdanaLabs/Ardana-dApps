@@ -20,7 +20,7 @@ import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Api (depositLiquidityWrongToken, openPoolMultipleTokens, openPoolWrongToken)
+import Test.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), getEnvRunner, runOurSpec, useRunnerSimple)
@@ -48,9 +48,14 @@ main = launchAff_ $ do
         protocol <- initProtocol
         openPool protocol
 
-      it "Fails to validate minting tokens for a different pool on pool open" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        expectError $ openPoolWrongToken protocol
+      describe "Fails to validate minting tokens for a different pool on pool open" $ do
+        it "wrong redeemer" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPoolWrongTokenWrongRedeemer protocol
+
+        it "right redeemer" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPoolWrongTokenRightRedeemer protocol
 
       it "Fails to validate minting multiple token names on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
@@ -61,10 +66,18 @@ main = launchAff_ $ do
         poolId <- openPool protocol
         depositLiquidity protocol poolId
 
-      it "Fails to validate minting liquidity token for a pool other than the pool being spent" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        poolId <- openPool protocol
-        expectError $ depositLiquidityWrongToken protocol poolId
+      describe ("Fails to validate minting liquidity token"
+        <> "for a pool other than the pool being spent") $ do
+
+          it "right redeemer" $ useRunnerSimple $ do
+            protocol <- initProtocol
+            poolId <- openPool protocol
+            expectError $ depositLiquidityWrongTokenRightRedeemer protocol poolId
+
+          it "wrong redeemer" $ useRunnerSimple $ do
+            protocol <- initProtocol
+            poolId <- openPool protocol
+            expectError $ depositLiquidityWrongTokenWrongRedeemer protocol poolId
 
     describe "Protocol Initialization" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do
