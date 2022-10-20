@@ -80,15 +80,15 @@ liqudityTokenMP = phoistAcyclic $
       poolIdCs <- pletC $ pfromData (ptryFromData poolIdCsData)
       poolIdTn <- pletC $ getField @"poolId" redemerRec
       PMinting liquidityCsRec <- pmatchC $ getField @"purpose" scRec
-      minting <- pletFieldC @"mint" (getField @"txInfo" scRec)
+      infoRec <- pletFieldsC @'[ "mint" , "inputs" ] (getField @"txInfo" scRec)
+      let minting = getField @"mint" infoRec
       PValue mintingMap <- pmatchC minting
       PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCsRec) # mintingMap
-      PMap.PMap asList <- pmatchC liquidity
+      PMap.PMap liquidityAsList <- pmatchC liquidity
       passert_ "minted exactly one token name of liquidity tokens" $
-        plength # asList #== 1
-      ent <- pletC $ pfstBuiltin #$ phead # asList
+        plength # liquidityAsList #== 1
       passert_ "token name matched redeemer" $
-        pfromData ent #== poolIdTn
+        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTn
       pmatchC (pfromData $ getField @"action" redemerRec) >>= \case
         Open _ -> do
           PJust idTokens <- pmatchC $ PMap.plookup # poolIdCs # mintingMap
@@ -96,11 +96,11 @@ liqudityTokenMP = phoistAcyclic $
           -- TODO should we check that it is just 1? It should be redundant so for now I'm not checking
           pure $ popaque $ pcon PUnit
         Spend _ -> do
-          inputs <- pletFieldC @"inputs" $ getField @"txInfo" scRec
+          let inputs = pfromData $ getField @"inputs" infoRec
           passert "token name matched redeemer" $
-            pany
-              # plam
-                ( \input -> unTermCont $ do
+            pany # isRightPool # inputs
+              where
+                isRightPool = plam $ \input -> unTermCont $ do
                     PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
                     pmatchC (PMap.plookup # poolIdCs # val) >>= \case
                       PNothing -> pure $ pcon PFalse
@@ -108,8 +108,6 @@ liqudityTokenMP = phoistAcyclic $
                         pmatchC (PMap.plookup # poolIdTn # poolIdToken) >>= \case
                           PNothing -> pure $ pcon PFalse
                           PJust _ -> pure $ pcon PTrue
-                )
-              # inputs
 
 nftCbor :: Maybe String
 nftCbor = closedTermToHexString standardNft
