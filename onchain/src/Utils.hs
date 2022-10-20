@@ -31,7 +31,7 @@ validatorToHexString :: Validator -> String
 validatorToHexString v = concatMap byteToHex $ BSL.unpack $ serialise (v :: Validator)
 
 globalConfig :: Config
-globalConfig = def {tracingMode = DetTracing}
+globalConfig = def {tracingMode = NoTracing}
 
 closedTermToHexString :: forall (p :: PType). ClosedTerm p -> Maybe String
 closedTermToHexString t = do
