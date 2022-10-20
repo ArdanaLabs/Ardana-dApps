@@ -38,14 +38,15 @@ main = launchAff_ $ do
   runnerGetter <- getEnvRunner mode
   runOurSpec mode runnerGetter $ do
     describe "protocol init" $ do
+      -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
-    describe "nft" do
+    describe "NFT" do
 
-      it "mint runs" $ useRunnerSimple do
+      it "mints an NFT with the seed UTxO an an input" $ useRunnerSimple do
         mintNft
 
-      it "can't use refference input to mint" $ useRunnerSimple do
+      it "cannot mint with the seed UTxO as a reference input" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
@@ -79,7 +80,7 @@ main = launchAff_ $ do
         _ <- waitForTx adr txId
         expectError $ buildBalanceSignAndSubmitTx lookups constraints
 
-      it "seedTx is spent after mint" $ useRunnerSimple do
+      it "spends the seed UTxO after minting" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
@@ -100,13 +101,13 @@ main = launchAff_ $ do
           Nothing -> pure unit
           Just _ -> liftEffect $ throw "seed tx still existed"
 
-      it "wallet has nft after mint" $ useRunnerSimple do
+      it "sends the NFT to the wallet after minting" $ useRunnerSimple do
         cs <- mintNft
         bal <- liftContractM "no ballance" =<< getWalletBalance
         let nfts = Value.valueOf bal cs adaToken
         nfts `shouldEqual` (BigInt.fromInt 1)
 
-      it "burning nft fails" $ useRunnerSimple do
+      it "cannot burn an NFT" $ useRunnerSimple do
         txOut <- seedTx
         nftPolicy <- simpleNft txOut
         cs <- liftContractM "hash failed" $ scriptCurrencySymbol nftPolicy

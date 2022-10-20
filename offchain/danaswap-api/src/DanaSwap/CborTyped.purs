@@ -26,16 +26,16 @@ import Contract.Value (CurrencySymbol)
 -- | Placeholder
 poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validator
 poolAddressValidator poolIdToken liquidityToken = do
-  logDebug' "creating pool addres validator"
+  logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
-  logDebug' $ "liquidityToken:" <> show liquidityToken
+  logDebug' $ "liquidity token:" <> show liquidityToken
   decodeCbor CBOR.trivial
 
 -- | Placeholder
 poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
-poolIdTokenMintingPolicy configUtxoNftCs = do
+poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' "creating pool id token minting policy"
-  logDebug' $ "nft cs:" <> show configUtxoNftCs
+  logDebug' $ "nft cs:" <> show configUtxoNftCS
   decodeCborMp CBOR.trivial
 
 -- | Placeholder
@@ -48,6 +48,7 @@ liqudityTokenMintingPolicy poolId = do
 configAddressValidator :: Contract () Validator
 configAddressValidator = decodeCbor CBOR.configScript
 
+-- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
   raw <- decodeCborMp CBOR.nft
