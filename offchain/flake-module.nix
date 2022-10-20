@@ -40,14 +40,6 @@
             info.version = "0.0.1";
           };
 
-      hello-world-cbor =
-        purs-nix.build
-          {
-            name = "hello-world-cbor";
-            src.path = self'.packages."onchain:hello-world-cbor-purs";
-            info.dependencies = [ ];
-            info.version = "0.0.1";
-          };
       makeTestAllApp = mode:
         let
           getTestScript = outputName:
@@ -60,9 +52,7 @@
               # shellcheck disable=SC2016
               ${pkgs.parallel}/bin/parallel --will-cite \
                 '. {} &> "$(basename {.})-output"' ::: \
-                ${getTestScript "hello-world-api:test:${mode}"} \
-                ${getTestScript "hello-world-cli:test:${mode}"} \
-                ${getTestScript "hello-world-browser:test:${mode}"}
+                ${getTestScript "danaswap-api:test:${mode}"} \
               printf "$?" > "$TEST_EXITCODE_FILE"
             '';
         in
@@ -127,14 +117,13 @@
         "offchain:test:testnet" = makeTestAllApp "testnet";
       };
       packages = {
-        "offchain:hello-world-cbor" = hello-world-cbor;
         "offchain:danaswap-cbor" = danaswap-cbor;
         "offchain:docs" =
           pkgs.runCommand "offchain-all-docs" { }
             ''
               mkdir -p $out
-              # link hello-world-api docs
-              ln -sf ${self'.packages."offchain:hello-world-api:docs"}/generated-docs/html $out/html
+              # link danaswap-api docs
+              ln -sf ${self'.packages."offchain:danaswap-api:docs"}/generated-docs/html $out/html
               if ! [ -f "$out/html/index.html" ]; then
                 echo "doc generation did not create index.html in the expected location"
                 exit 1
