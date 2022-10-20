@@ -23,6 +23,22 @@
         "danaswap-ui:serve" =
           cat-lib.makeServeApp self'.packages."danaswap-ui";
       };
+
+      checks = {
+        "danaswap-ui:lighthouse" =
+          pkgs.callPackage ./nixos/tests/danaswap-ui-lighthouse.nix {
+            lighthouse =
+              (dream2nix.lib.makeOutputs { source = self.inputs.lighthouse-src; }).packages.lighthouse;
+            danaswap-ui = self'.packages."danaswap-ui";
+            # TODO these values need to be increased once the improvements were done
+            categories = {
+              performance = 0.1;
+              accessibility = 0.1;
+              seo = 0.1;
+              best-practices = 0.1;
+            };
+          };
+      };
     };
   flake = {
     effects = { branch, rev, ... }:
