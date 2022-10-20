@@ -3,7 +3,7 @@
   perSystem = { config, self', inputs', system, ... }:
     let
       pkgs = inputs'.nixpkgs.legacyPackages;
-      inherit (config) dream2nix;
+      inherit (config) cat-lib dream2nix;
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.danaswap-ui;
     in
@@ -13,10 +13,15 @@
           pkgs.runCommand "build-danaswap-ui"
             { buildInputs = [ self'.packages."offchain:danaswap-browser" ]; }
             ''
-              mkdir -p $out/build/assets/scripts
-              cp -r ${ui}/lib/node_modules/danaswap-ui/build $out
-              cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/build/assets/scripts
+              mkdir -p $out/assets/scripts
+              cp -r ${ui}/lib/node_modules/danaswap-ui/build/* $out/
+              cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/assets/scripts
             '';
+      };
+
+      apps = {
+        "danaswap-ui:serve" =
+          cat-lib.makeServeApp self'.packages."danaswap-ui";
       };
     };
   flake = {
@@ -37,7 +42,7 @@
           in
           hci-effects.netlifyDeploy {
             productionDeployment = (branch == "main");
-            content = "${self.packages.${system}.${projectName}}/build";
+            content = "${self.packages.${system}.${projectName}}";
             secretName = "default-netlify";
             secretField = "authToken";
             siteId = siteId;
