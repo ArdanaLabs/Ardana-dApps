@@ -47,12 +47,12 @@ type Protocol =
 type PoolId = TokenName
 
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
-getAllPools protocol@{poolVal} =
+getAllPools protocol@{ poolVal } =
   getUtxos (scriptHashAddress $ validatorHash poolVal)
     <#> Map.filter (hasNft protocol)
 
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
-getPoolById protocol@{poolIdMP} token = do
+getPoolById protocol@{ poolIdMP } token = do
   pools <- getAllPools protocol
   cs <- liftContractM "invalid protocol" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
@@ -68,36 +68,36 @@ hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
 
 -- TODO this is a placeholder implementation
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
-depositLiquidity protocol@{poolVal,liquidityMP,poolIdMP} poolID = do
+depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCs poolID one
   void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
     buildBalanceSignAndSubmitTx
-      (Lookups.unspentOutputs (Map.singleton poolIn poolOut)
-      <> Lookups.mintingPolicy liquidityMP
-      <> Lookups.validator poolVal
+      ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
+          <> Lookups.mintingPolicy liquidityMP
+          <> Lookups.validator poolVal
       )
-      (Constraints.mustSpendScriptOutput
-        poolIn
-        (Redeemer $ toData unit)
-      <> Constraints.mustMintCurrencyWithRedeemer
-          (mintingPolicyHash liquidityMP)
-          (Redeemer $ List [ toData poolID , Constr one [] ])
-          poolID
-          (BigInt.fromInt 10)
-      <> Constraints.mustPayToScript
-        (validatorHash poolVal)
-        (Datum $ toData unit)
-        DatumInline
-        idNft
+      ( Constraints.mustSpendScriptOutput
+          poolIn
+          (Redeemer $ toData unit)
+          <> Constraints.mustMintCurrencyWithRedeemer
+            (mintingPolicyHash liquidityMP)
+            (Redeemer $ List [ toData poolID, Constr one [] ])
+            poolID
+            (BigInt.fromInt 10)
+          <> Constraints.mustPayToScript
+            (validatorHash poolVal)
+            (Datum $ toData unit)
+            DatumInline
+            idNft
       )
 
 -- TODO this is a placeholder implementation
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
 openPool :: Protocol -> Contract () PoolId
-openPool {poolVal,liquidityMP,poolIdMP,configUtxo} = do
+openPool { poolVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
@@ -105,26 +105,28 @@ openPool {poolVal,liquidityMP,poolIdMP,configUtxo} = do
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
   txid <- buildBalanceSignAndSubmitTx
-    (Lookups.mintingPolicy poolIdMP
-    <> Lookups.mintingPolicy liquidityMP
-    <> Lookups.unspentOutputs configAdrUtxos
+    ( Lookups.mintingPolicy poolIdMP
+        <> Lookups.mintingPolicy liquidityMP
+        <> Lookups.unspentOutputs configAdrUtxos
     )
-    (Constraints.mustMintCurrencyWithRedeemer -- Pool id token
-      poolIdMph
-      (Redeemer $ toData unit)
-      poolID
-      one
-    <> Constraints.mustMintCurrencyWithRedeemer -- Liquidity tokens
-      (mintingPolicyHash liquidityMP)
-      (Redeemer $ List [ toData poolID , Constr zero [] ])
-      poolID
-      one
-    <> Constraints.mustReferenceOutput configUtxo
-    <> Constraints.mustPayToScript
-        (validatorHash poolVal)
-        (Datum $ toData unit) -- TODO real pool datum
-        DatumInline
-        idNft
+    ( Constraints.mustMintCurrencyWithRedeemer -- Pool id token
+
+        poolIdMph
+        (Redeemer $ toData unit)
+        poolID
+        one
+        <> Constraints.mustMintCurrencyWithRedeemer -- Liquidity tokens
+
+          (mintingPolicyHash liquidityMP)
+          (Redeemer $ List [ toData poolID, Constr zero [] ])
+          poolID
+          one
+        <> Constraints.mustReferenceOutput configUtxo
+        <> Constraints.mustPayToScript
+          (validatorHash poolVal)
+          (Datum $ toData unit) -- TODO real pool datum
+          DatumInline
+          idNft
     )
   void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
   pure poolID

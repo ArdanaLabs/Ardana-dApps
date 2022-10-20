@@ -66,18 +66,20 @@ main = launchAff_ $ do
         poolId <- openPool protocol
         depositLiquidity protocol poolId
 
-      describe ("Fails to validate minting liquidity token"
-        <> "for a pool other than the pool being spent") $ do
+      describe
+        ( "Fails to validate minting liquidity token"
+            <> "for a pool other than the pool being spent"
+        ) $ do
 
-          it "right redeemer" $ useRunnerSimple $ do
-            protocol <- initProtocol
-            poolId <- openPool protocol
-            expectError $ depositLiquidityWrongTokenRightRedeemer protocol poolId
+        it "right redeemer" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          poolId <- openPool protocol
+          expectError $ depositLiquidityWrongTokenRightRedeemer protocol poolId
 
-          it "wrong redeemer" $ useRunnerSimple $ do
-            protocol <- initProtocol
-            poolId <- openPool protocol
-            expectError $ depositLiquidityWrongTokenWrongRedeemer protocol poolId
+        it "wrong redeemer" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          poolId <- openPool protocol
+          expectError $ depositLiquidityWrongTokenWrongRedeemer protocol poolId
 
     describe "Protocol Initialization" $ do
       it "init protocol doesn't error" $ useRunnerSimple $ do

@@ -4,11 +4,11 @@ import Hello
 import HelloDiscovery
 
 import Control.Monad (unless)
+import DanaSwap (liqudityTokenCBor)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
 import Utils (Cbor (..), toPureScript)
-import DanaSwap (liqudityTokenCBor)
 
 {- | Main takes a directory as a comand line argument
   and creates a file CBOR.purs in that directory
