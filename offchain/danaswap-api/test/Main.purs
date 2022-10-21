@@ -23,7 +23,7 @@ import Node.Process (lookupEnv)
 import Test.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), getEnvRunner, runOurSpec, useRunnerSimple)
+import TestUtil (Mode(..), runWithMode, useRunnerSimple)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -36,8 +36,8 @@ main = launchAff_ $ do
     Just e -> throw $ "expected local or testnet got: " <> e
     Nothing -> throw "expected MODE to be set"
   log "About to start tests"
-  runnerGetter <- getEnvRunner mode
-  runOurSpec mode runnerGetter $ do
+  log "about to start"
+  runWithMode mode $ do
     describe "Pool id minting Policy tests" $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do
