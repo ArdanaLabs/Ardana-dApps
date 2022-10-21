@@ -232,31 +232,39 @@ Firstly, in order to run a DEX based on an automated market model\footnote{
   When providing liquidity, $x \rightarrow x'$ and $y \rightarrow y'$ has the
   effect that $k \rightarrow k'$. The number of liquidity tokens the LP
   receives, $\Delta L$, then follows the rule $\Delta L / L = \Delta k / k$.
-}, we need a liquidity token linked to the respective pool to exist. This association between liquidity token and pool is achieved by encoding the pool identifier into the token name of the liquidity token. The currency-symbol i.e. the minting policy's hash is equal for all liquidity tokens, this requires one common minting policy for all tokens.
+}, we need a liquidity token linked to the respective pool to exist. This
+association between liquidity token and pool is achieved by encoding the pool
+identifier into the token name of the liquidity token. The currency-symbol i.e.
+the minting policy's hash is equal for all liquidity tokens, this requires one
+common minting policy for all tokens.
 
 Secondly, as in the Cardano Application Template, we want the pools to be
-identifiable, traceable and verifiable (valid or not).
-We achieve this by minting an NFT to identify each pool.
-This NFT's minting policy will only pass when initializing a new pool, and each pool will enforce the NFT not to leave.
-Lastly, our protocol consists of a number of scripts whose functionalities are dependent
-on each other, where some of those functional dependencies are cyclic. We model/ lock these
-functional dependencies using the \textit{Config UTxO} pattern.
+identifiable, traceable and verifiable (valid or not). We achieve this by
+minting an NFT to identify each pool. This NFT's minting policy will only pass
+when initializing a new pool, and each pool will enforce the NFT not to leave.
+Lastly, our protocol consists of a number of scripts whose functionalities are
+dependent on each other, where some of those functional dependencies are cyclic.
+We model/ lock these functional dependencies using the \textit{Config UTxO}
+pattern.
 
 \subsection{Config UTXO}
 
-As mentioned above, our protocol consists of a number of scripts whose functionalities are dependent on each other,
-where some of those functional dependencies are cyclic.
-A naive solution to model/ lock these functional dependencies would be to
-make the hash of one script a parameter of the other script and thus a dependency of the hash of the other scripts.
-This approach is difficult to implement, as the relation is cyclic. \\
+As mentioned above, our protocol consists of a number of scripts whose
+functionalities are dependent on each other, where some of those functional
+dependencies are cyclic. A naive solution to model/lock these functional
+dependencies would be to make the hash of one script a parameter of the other
+script and thus a dependency of the hash of the other scripts. This approach is
+difficult to implement, as the relation is cyclic. \\
 
-An alternative solution to this problem is the Config UTXO.
-The Config UTXO is a dedicated on-chain component which tracks the script hashes involved in the protocol.
-It is identified by an NFT. Each script is then able refer to the script
-hashes in the Config UTXO in order to verify the other
-scripts. \\
+An alternative solution to this problem is a dedicated on-chain component which
+tracks the script hashes involved in the protocol. This pattern is named a
+Config UTXO. It is identified by an NFT. Each script is then able refer to the
+script hashes in the Config UTXO in order to verify the other scripts. \\
 
-A drawback of the Config UTXO is the greater transaction size and thus higher transaction fees.
+A drawback of the Config UTXO is the greater transaction size and thus higher
+transaction fees.
+% Note: Mention that we're going to try and avoid this transaction size problem
+% where it matters, namely in anything but the Pool ID.
 Therefore we make use of an hybrid approach between the naive and Config UTXO.
 In our case, the Config UTXO will contain the following data in the datum:
 the liquidity token minting policy hash and the pool address validator script hash.
@@ -265,31 +273,29 @@ The other hash, namely the pool ID minting policy will be passed as parameters. 
 \begin{figure}
   \scalebox{0.5}{\includegraphics{diagram}}
   \caption{
-	  In the diagram above blue arrows represent passing hashes by
-	  Config UTXO and red arrows represent passing hashes by script parameter.
+    In the diagram above blue arrows represent passing hashes by Config UTXO and
+    red arrows represent passing hashes by script parameter.
   }
   \label{hashGraph}
 \end{figure}
 
-It is important that the parameter sub-graph is acyclic so that
-the hashes are resolvable. Likewise it's important that
-the config UTXO sub-graph only includes arrows from the pool ID minting policy
-so that all other interactions can be performed without the config UTXO.
+It is important that the parameter sub-graph is acyclic so that the hashes are
+resolvable. Likewise it's important that the config UTXO sub-graph only includes
+arrows from the pool ID minting policy so that all other interactions can be
+performed without the config UTXO. \\
 
+This leaves two remaining notes:
+\begin{itemize}
+  \item The Config UTXO should never change. This means it should be put at an
+    address associated with a script which make any transaction fail.\footnote{
+      Note that reference inputs don't require their validator scripts to be
+      invoked.}
+  \item The config UTXO needs an NFT to distinguish it from any invalid config
+    UTXOs. This NFT will be generated through a boilerplate minting policy from
+    the Hello Cardano Template.
+\end{itemize}
 
-\subsubsection{Config UTXO: Addresses Validator}
-
-The config UTXO needs an address where it can be used as a reference
-input but can't be changed. Since use as a reference input doesn't
-invoke a validator, this validator can just always fail.
-
-\subsubsection{Config UTXO: Identifier NFT Minting Policy}
-
-The config UTXO also needs an NFT to distinguish it from any
-invalid config UTXOs. This can just be a boiler plate NFT contract,
-so we can use the one already in the CAT (Cardano App Template).
-
-\subsection{DEX Pool: Identifier NFT Minting Policy}
+\subsection{Pool ID Minting Policy}
 
 Each pool will be identified by a NFT. This allows anyone to verify that a UTXO
 at the pool script address is valid, as well as tracing each pool. This
