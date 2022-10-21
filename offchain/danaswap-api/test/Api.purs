@@ -2,6 +2,7 @@ module Test.Api
   ( openPoolWrongTokenRightRedeemer
   , openPoolWrongTokenWrongRedeemer
   , openPoolMultipleTokens
+  , openPoolSneaky
   , depositLiquidityWrongTokenWrongRedeemer
   , depositLiquidityWrongTokenRightRedeemer
   ) where
@@ -16,13 +17,91 @@ import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash, validatorHash)
 import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
-import Contract.Value (mkTokenName, mpsSymbol)
+import Contract.Value (TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.Api (PoolId, Protocol, getPoolById)
+import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol, getPoolById)
 import DanaSwap.CborTyped (configAddressValidator)
+import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
 import Data.Map as Map
+
+type SneakyOptionsOpen =
+  { reportIssued :: Maybe BigInt
+  , actuallyMint :: Maybe (TokenName -> Value)
+  , redeemer :: Maybe Redeemer
+  }
+
+
+-- | like open pool but takes several "sneaky" options
+-- usefull for atack testing
+openPoolSneaky ::
+ SneakyOptionsOpen ->
+ Protocol ->
+ AssetClass ->
+ AssetClass ->
+ BigInt ->
+ BigInt ->
+ Contract () PoolId
+openPoolSneaky
+  sneaky
+  { poolVal, liquidityMP, poolIdMP, configUtxo }
+  ac1
+  ac2
+  amt1
+  amt2
+  = do
+  poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
+  let poolIdMph = mintingPolicyHash poolIdMP
+  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
+  let idNft = Value.singleton poolIdCs poolID one
+  configVal <- configAddressValidator
+  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  let liquidity = amt1*amt2
+  liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
+  txid <- buildBalanceSignAndSubmitTx
+    ( Lookups.mintingPolicy poolIdMP
+        <> Lookups.mintingPolicy liquidityMP
+        <> Lookups.unspentOutputs configAdrUtxos
+    )
+    ( Constraints.mustMintCurrencyWithRedeemer -- Pool id token
+        poolIdMph
+        (Redeemer $ toData unit)
+        poolID
+        one
+        <> Constraints.mustMintValueWithRedeemer -- Liquidity tokens
+          (Redeemer $ List [ toData poolID, Constr zero [] ])
+          (fromMaybe
+            (Value.singleton
+            liquidityCs
+            poolID
+            liquidity
+            )
+            (sneaky.actuallyMint <#> (_ $ poolID))
+          )
+        <> Constraints.mustReferenceOutput configUtxo
+        <> Constraints.mustPayToScript
+          (validatorHash poolVal)
+          (Datum $ toData $
+            PoolDatum
+            { ac1
+            , ac2
+            , bal1 : amt1
+            , bal2 : amt1
+            , adminBal1 : zero
+            , adminBal2 : zero
+            , liquidity : fromMaybe liquidity sneaky.reportIssued
+            , live : true
+            }
+          )
+          DatumInline
+          (idNft
+            <> Value.singleton (fst ac1) (snd ac1) amt1
+            <> Value.singleton (fst ac2) (snd ac2) amt2
+          )
+    )
+  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  pure poolID
 
 -- TODO rework this when the real open pool gets updated
 openPoolWrongTokenWrongRedeemer :: Protocol -> Contract () PoolId
@@ -31,7 +110,6 @@ openPoolWrongTokenWrongRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } =
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
@@ -68,7 +146,6 @@ openPoolWrongTokenRightRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } =
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)

@@ -12,7 +12,7 @@ import Contract.ScriptLookups as Lookups
 import Contract.TxConstraints (TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
-import Contract.Value (adaToken, scriptCurrencySymbol)
+import Contract.Value (adaSymbol, adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
@@ -35,9 +35,15 @@ main = launchAff_ $ do
       pure Testnet
     Just e -> throw $ "expected local or testnet got: " <> e
     Nothing -> throw "expected MODE to be set"
-  log "about to start"
+  log "About to start tests"
   runnerGetter <- getEnvRunner mode
   runOurSpec mode runnerGetter $ do
+    describe "Pool id minting Policy tests" $ do
+
+      it "Allows minting id on pool open" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+
     describe "Liquidity Token Minting Policy" $ do
 
       -- TODO there are more liquidity tests but
@@ -46,7 +52,7 @@ main = launchAff_ $ do
 
       it "Allows minting on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
-        openPool protocol
+        openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
 
       describe "Fails to validate minting tokens for a different pool on pool open" $ do
         it "wrong redeemer" $ useRunnerSimple $ do
@@ -63,7 +69,7 @@ main = launchAff_ $ do
 
       it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
         protocol <- initProtocol
-        poolId <- openPool protocol
+        poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
         depositLiquidity protocol poolId
 
       describe
@@ -73,12 +79,12 @@ main = launchAff_ $ do
 
         it "right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol
+          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
           expectError $ depositLiquidityWrongTokenRightRedeemer protocol poolId
 
         it "wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol
+          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
           expectError $ depositLiquidityWrongTokenWrongRedeemer protocol poolId
 
     describe "Protocol Initialization" $ do

@@ -5,9 +5,11 @@ module DanaSwap.Api
   , getPoolById
   , depositLiquidity
   -- Types
+  , AssetClass
   , Protocol
   , PoolId
   -- Testing
+  , PoolDatum(..)
   , mintNft
   , seedTx
   ) where
@@ -17,7 +19,7 @@ import Contract.Prelude
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
+import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData,toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
@@ -29,6 +31,7 @@ import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymb
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
+import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
 import Data.List (head)
 import Data.Map (Map, keys)
@@ -45,6 +48,31 @@ type Protocol =
 
 -- TODO should this be a newtype?
 type PoolId = TokenName
+type AssetClass = CurrencySymbol /\ TokenName
+
+newtype PoolDatum =
+  PoolDatum
+  { ac1 :: AssetClass
+  , ac2 :: AssetClass
+  , bal1 :: BigInt
+  , bal2 :: BigInt
+  , adminBal1 :: BigInt
+  , adminBal2 :: BigInt
+  , liquidity :: BigInt
+  , live :: Boolean
+  }
+
+instance ToData PoolDatum where
+  toData (PoolDatum{ac1,ac2,bal1,bal2,adminBal1,adminBal2,liquidity})
+    = List
+    [ toData ac1
+    , toData ac2
+    , toData bal1
+    , toData bal2
+    , toData adminBal1
+    , toData adminBal2
+    , toData liquidity
+    ]
 
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
 getAllPools protocol@{ poolVal } =
@@ -96,8 +124,8 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
 -- TODO this is a placeholder implementation
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
-openPool :: Protocol -> Contract () PoolId
-openPool { poolVal, liquidityMP, poolIdMP, configUtxo } = do
+openPool :: Protocol -> AssetClass -> AssetClass -> BigInt -> BigInt -> Contract () PoolId
+openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
@@ -120,13 +148,27 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } = do
           (mintingPolicyHash liquidityMP)
           (Redeemer $ List [ toData poolID, Constr zero [] ])
           poolID
-          one
+          (amt1 * amt2)
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
-          (Datum $ toData unit) -- TODO real pool datum
+          (Datum $ toData $
+            PoolDatum
+            { ac1
+            , ac2
+            , bal1 : amt1
+            , bal2 : amt1
+            , adminBal1 : zero
+            , adminBal2 : zero
+            , liquidity : amt1*amt2
+            , live : true
+            }
+          )
           DatumInline
-          idNft
+          (idNft
+            <> Value.singleton (fst ac1) (snd ac1) amt1
+            <> Value.singleton (fst ac2) (snd ac2) amt2
+          )
     )
   void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
   pure poolID
