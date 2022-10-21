@@ -22,7 +22,7 @@ import Data.Log.Message (Message)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
-import Effect.Exception (Error, name, throw)
+import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile)
@@ -66,7 +66,7 @@ retryOkayErrs aff =
   recovering
     (limitRetries 5)
     [ \_ err' -> do
-        let err = name err'
+        let err = message err'
         if err `elem` badErrors then pure false
         else do
           log $ "failed with an error not makred as retryable"
