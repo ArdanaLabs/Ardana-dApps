@@ -4,6 +4,8 @@ module DanaSwap.CborTyped
   , liqudityTokenMintingPolicy
   , simpleNft
   , configAddressValidator
+  -- Test exports
+  , testToken
   ) where
 
 import Contract.Prelude
@@ -14,9 +16,10 @@ import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), PlutusScript(..), Validator(..), applyArgs, applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
+import Data.BigInt (BigInt)
 import Effect.Exception (throw)
 
 {- This module should be the only place where CBOR is imported
@@ -56,6 +59,17 @@ simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
   raw <- decodeCborMp CBOR.nft
   applyArgsWithErr raw [ toData ref ]
+
+-- | Simple always accepts mintingPolicy
+-- the integer is ignored by the script
+-- but is coded in the script so it affects the
+-- script hash so each value gets a new currency symbols
+testToken :: BigInt -> Contract () MintingPolicy
+testToken n  = do
+  logDebug' "Creating test token"
+  logDebug' $ "index:" <> show n
+  raw <- decodeCborMp CBOR.trivial
+  applyArgsWithErr raw [ toData n ]
 
 -- These helpers should not be exported
 

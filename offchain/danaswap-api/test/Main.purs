@@ -13,7 +13,7 @@ import Contract.ScriptLookups as Lookups
 import Contract.TxConstraints (TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
-import Contract.Value (adaSymbol, adaToken, mkTokenName, scriptCurrencySymbol)
+import Contract.Value (adaToken, mkTokenName, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
@@ -21,6 +21,7 @@ import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
+import Setup (prepTestTokens)
 import Test.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
@@ -42,10 +43,11 @@ main = launchAff_ $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
         openPool
           protocol
-          (adaSymbol /\ adaToken)
-          (adaSymbol /\ adaToken)
+          ac1
+          ac2
           (BigInt.fromInt 100)
           (BigInt.fromInt 100)
         -- This is the same as the liquidity test of the same name
@@ -53,68 +55,74 @@ main = launchAff_ $ do
       describe "Can't open with zero liqudity" $ do
         it "Both zero" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPool
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 0)
             (BigInt.fromInt 0)
 
         it "first zero" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPool
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 0)
             (BigInt.fromInt 100)
 
         it "second zero" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPool
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 100)
             (BigInt.fromInt 0)
 
         it "pay both set zero" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           openPoolSneaky
             regularOpen
             { reportIssued = Just zero
             , actuallyMint = Just $ \_ _ -> mempty
             }
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
 
       describe "Can't under pay" $ do
         it "report correctly" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPoolSneaky
             regularOpen
               { reportIssued = Just $ BigInt.fromInt (90*90)
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
               }
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
         it "report paying in full" $ useRunnerSimple $ do
           protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPoolSneaky
             regularOpen
               { reportIssued = Just $ BigInt.fromInt 10_000
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
               }
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
@@ -126,10 +134,11 @@ main = launchAff_ $ do
 
       it "Allows minting on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
         openPool
           protocol
-          (adaSymbol /\ adaToken)
-          (adaSymbol /\ adaToken)
+          ac1
+          ac2
           (BigInt.fromInt 100)
           (BigInt.fromInt 100)
 
@@ -137,6 +146,7 @@ main = launchAff_ $ do
         it "wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $
             openPoolSneaky
               ( regularOpen
@@ -145,14 +155,15 @@ main = launchAff_ $ do
                   }
               )
               protocol
-              (adaSymbol /\ adaToken)
-              (adaSymbol /\ adaToken)
+              ac1
+              ac2
               (BigInt.fromInt 100)
               (BigInt.fromInt 100)
 
         it "right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
+          (ac1 /\ ac2) <- prepTestTokens
           expectError $
             openPoolSneaky
               ( regularOpen
@@ -160,14 +171,15 @@ main = launchAff_ $ do
                   }
               )
               protocol
-              (adaSymbol /\ adaToken)
-              (adaSymbol /\ adaToken)
+              ac1
+              ac2
               (BigInt.fromInt 100)
               (BigInt.fromInt 100)
 
       it "Fails to validate minting multiple token names on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
         wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
+        (ac1 /\ ac2) <- prepTestTokens
         expectError $
           openPoolSneaky
             ( regularOpen
@@ -177,14 +189,20 @@ main = launchAff_ $ do
                 }
             )
             protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
+            ac1
+            ac2
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
 
       it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
         protocol <- initProtocol
-        poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+        (ac1 /\ ac2) <- prepTestTokens
+        poolId <- openPool
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 100)
+          (BigInt.fromInt 100)
         depositLiquidity protocol poolId
 
       describe
@@ -194,7 +212,13 @@ main = launchAff_ $ do
 
         it "multiple token names" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+          (ac1 /\ ac2) <- prepTestTokens
+          poolId <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
@@ -208,7 +232,13 @@ main = launchAff_ $ do
 
         it "right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+          (ac1 /\ ac2) <- prepTestTokens
+          poolId <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
@@ -221,7 +251,13 @@ main = launchAff_ $ do
 
         it "wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+          (ac1 /\ ac2) <- prepTestTokens
+          poolId <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
