@@ -21,7 +21,8 @@ import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
-import Effect.Exception (throw)
+import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Exception (Error, name, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile)
@@ -55,12 +56,41 @@ runWithMode mode spec = do
 -- the function `it` transforms this type into an EnvSpec
 useRunnerSimple :: forall a. Contract () a -> EnvRunner -> Aff Unit
 useRunnerSimple contract runner = do
-  runner \env alice ->
+  retryOkayErrs $ runner \env alice ->
     runContractInEnv env
       $ withKeyWallet alice
       $ void contract
 
--- | returns a contiunation that gets the EnvRunner
+retryOkayErrs :: Aff Unit -> Aff Unit
+retryOkayErrs aff =
+  recovering
+    (limitRetries 5)
+    [ \_ err' -> do
+      let err = name err'
+      if err `elem` badErrors
+        then pure false
+        else do
+          log $ "failed with an error not makred as retryable"
+          log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"
+          log $ "exact error was:" <> show err
+          pure $ show err `elem` okayErrs
+    ]
+    \_ -> aff
+
+-- Errors where we don't
+-- want to suggest adding
+-- them to okayErrs
+badErrors :: Array String
+badErrors =
+  [ "Expected Error"
+  ]
+
+okayErrs :: Array String
+okayErrs =
+  [ "Process ogmios-datum-cache exited. Output:" -- todo is this right?
+  ]
+
+-- returns a contiunation that gets the EnvRunner
 -- This is nesecary to allow control over which parts
 -- run once vs each time
 getEnvRunner :: Mode -> Aff (Aff EnvRunner)
