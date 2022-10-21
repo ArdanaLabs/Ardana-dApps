@@ -3,7 +3,6 @@ module Ctl.Util
   , buildBalanceSignAndSubmitTx
   , getUtxos
   , getTxScanUrl
-  , withOurLogger
   , maxWait
   , getDatum
   ) where
@@ -13,7 +12,7 @@ import Contract.Prelude
 import Aeson (Aeson, getField, toArray, toObject)
 import Contract.Address (Address, NetworkId(..))
 import Contract.Log (logDebug', logError', logInfo', logWarn')
-import Contract.Monad (Contract, ContractEnv, liftedE, liftContractM)
+import Contract.Monad (Contract, liftContractM, liftedE)
 import Contract.PlutusData (Datum, PlutusData, getDatumByHash)
 import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArray)
 import Contract.ScriptLookups as Lookups
@@ -23,16 +22,12 @@ import Contract.Utxos (utxosAt, getUtxo)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (toUnfoldable, fromFoldable, catMaybes)
 import Data.List (filterM, List)
-import Data.Log.Formatter.Pretty (prettyFormatter)
-import Data.Log.Message (Message)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Time.Duration (Milliseconds(..), Seconds(..), Minutes(..), class Duration, fromDuration, convertDuration, negateDuration)
 import Effect.Aff (delay)
 import Effect.Aff.Retry (retrying, limitRetries, RetryStatus(RetryStatus))
 import Effect.Exception (throw, error)
-import Node.Encoding (Encoding(UTF8))
-import Node.FS.Aff (appendTextFile)
 
 waitForTx :: Address -> TransactionHash -> Contract () TransactionInput
 waitForTx adr th = waitForTx' maxWait adr th
@@ -170,25 +165,11 @@ getTxScanUrl MainnetId (TransactionInput { transactionId: TransactionHash hash }
 isSpent :: TransactionInput -> Contract () Boolean
 isSpent input = isNothing <$> getUtxo input
 
-withOurLogger :: String -> ContractEnv () -> ContractEnv ()
-withOurLogger path env = wrap $ (unwrap env)
-  { config
-      { customLogger = Just $ ourLogger path
-      , logLevel = Warn
-      }
-  }
-
 getDatum :: OutputDatum -> Contract () Datum
 getDatum = case _ of
   NoOutputDatum -> liftEffect $ throw "no output datum"
   OutputDatumHash dh -> getDatumByHash dh >>= liftContractM "Datum hash lookup failed"
   OutputDatum d -> pure d
-
-ourLogger :: String -> Message -> Aff Unit
-ourLogger path msg = do
-  pretty <- prettyFormatter msg
-  when (msg.level >= Warn) $ log pretty
-  appendTextFile UTF8 path ("\n" <> pretty)
 
 -- The time to wait between ogmios querries when retrying
 waitTime :: Seconds
