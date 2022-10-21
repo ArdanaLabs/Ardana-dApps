@@ -64,42 +64,10 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             openPoolSneaky
-            (regularOpen
-              { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
-              , redeemer = Just $ \_poolId -> Redeemer $ List [ toData wrongId , Constr zero [] ]
-              }
-            )
-            protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
-            (BigInt.fromInt 100)
-            (BigInt.fromInt 100)
-
-        it "right redeemer" $ useRunnerSimple $ do
-          protocol <- initProtocol
-          wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectError $
-            openPoolSneaky
-            (regularOpen
-              { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
-              }
-            )
-            protocol
-            (adaSymbol /\ adaToken)
-            (adaSymbol /\ adaToken)
-            (BigInt.fromInt 100)
-            (BigInt.fromInt 100)
-
-      it "Fails to validate minting multiple token names on pool open" $ useRunnerSimple $ do
-          protocol <- initProtocol
-          wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectError $
-              openPoolSneaky
-              (regularOpen
-                { actuallyMint = Just \lcs poolId ->
-                  Value.singleton lcs wrongId (BigInt.fromInt 10_000)
-                  <> Value.singleton lcs poolId (BigInt.fromInt 10_000)
-                }
+              ( regularOpen
+                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
+                  , redeemer = Just $ \_poolId -> Redeemer $ List [ toData wrongId, Constr zero [] ]
+                  }
               )
               protocol
               (adaSymbol /\ adaToken)
@@ -107,10 +75,42 @@ main = launchAff_ $ do
               (BigInt.fromInt 100)
               (BigInt.fromInt 100)
 
-      it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
+        it "right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
-          poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
-          depositLiquidity protocol poolId
+          wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
+          expectError $
+            openPoolSneaky
+              ( regularOpen
+                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
+                  }
+              )
+              protocol
+              (adaSymbol /\ adaToken)
+              (adaSymbol /\ adaToken)
+              (BigInt.fromInt 100)
+              (BigInt.fromInt 100)
+
+      it "Fails to validate minting multiple token names on pool open" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
+        expectError $
+          openPoolSneaky
+            ( regularOpen
+                { actuallyMint = Just \lcs poolId ->
+                    Value.singleton lcs wrongId (BigInt.fromInt 10_000)
+                      <> Value.singleton lcs poolId (BigInt.fromInt 10_000)
+                }
+            )
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
+
+      it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        poolId <- openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+        depositLiquidity protocol poolId
 
       describe
         ( "Fails to validate minting liquidity token"
@@ -123,13 +123,13 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
-            regularDeposit
-              { actuallyMint = Just \liquidityCs ->
-                Value.singleton liquidityCs wrongId (BigInt.fromInt 10)
-                <> Value.singleton liquidityCs poolId (BigInt.fromInt 10)
-              }
-            protocol
-            poolId
+              regularDeposit
+                { actuallyMint = Just \liquidityCs ->
+                    Value.singleton liquidityCs wrongId (BigInt.fromInt 10)
+                      <> Value.singleton liquidityCs poolId (BigInt.fromInt 10)
+                }
+              protocol
+              poolId
 
         it "right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
@@ -137,12 +137,12 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
-            regularDeposit
-              { actuallyMint = Just \liquidityCs ->
-                Value.singleton liquidityCs wrongId $ BigInt.fromInt 10
-              }
-            protocol
-            poolId
+              regularDeposit
+                { actuallyMint = Just \liquidityCs ->
+                    Value.singleton liquidityCs wrongId $ BigInt.fromInt 10
+                }
+              protocol
+              poolId
 
         it "wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
@@ -150,14 +150,13 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectError $
             depositLiquiditySneaky
-            regularDeposit
-              { redeemer = Just $ Redeemer $ List [ toData wrongId, Constr zero [] ]
-              , actuallyMint = Just \liquidityCs ->
-                Value.singleton liquidityCs wrongId $ BigInt.fromInt 10
-              }
-            protocol
-            poolId
-
+              regularDeposit
+                { redeemer = Just $ Redeemer $ List [ toData wrongId, Constr zero [] ]
+                , actuallyMint = Just \liquidityCs ->
+                    Value.singleton liquidityCs wrongId $ BigInt.fromInt 10
+                }
+              protocol
+              poolId
 
     describe "Protocol Initialization" $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16

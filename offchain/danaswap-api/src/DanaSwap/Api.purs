@@ -19,7 +19,7 @@ import Contract.Prelude
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData,toData)
+import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
@@ -52,19 +52,18 @@ type AssetClass = CurrencySymbol /\ TokenName
 
 newtype PoolDatum =
   PoolDatum
-  { ac1 :: AssetClass
-  , ac2 :: AssetClass
-  , bal1 :: BigInt
-  , bal2 :: BigInt
-  , adminBal1 :: BigInt
-  , adminBal2 :: BigInt
-  , liquidity :: BigInt
-  , live :: Boolean
-  }
+    { ac1 :: AssetClass
+    , ac2 :: AssetClass
+    , bal1 :: BigInt
+    , bal2 :: BigInt
+    , adminBal1 :: BigInt
+    , adminBal2 :: BigInt
+    , liquidity :: BigInt
+    , live :: Boolean
+    }
 
 instance ToData PoolDatum where
-  toData (PoolDatum{ac1,ac2,bal1,bal2,adminBal1,adminBal2,liquidity})
-    = List
+  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, liquidity }) = List
     [ toData ac1
     , toData ac2
     , toData bal1
@@ -152,22 +151,22 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
-          (Datum $ toData $
-            PoolDatum
-            { ac1
-            , ac2
-            , bal1 : amt1
-            , bal2 : amt1
-            , adminBal1 : zero
-            , adminBal2 : zero
-            , liquidity : amt1*amt2
-            , live : true
-            }
+          ( Datum $ toData $
+              PoolDatum
+                { ac1
+                , ac2
+                , bal1: amt1
+                , bal2: amt1
+                , adminBal1: zero
+                , adminBal2: zero
+                , liquidity: amt1 * amt2
+                , live: true
+                }
           )
           DatumInline
-          (idNft
-            <> Value.singleton (fst ac1) (snd ac1) amt1
-            <> Value.singleton (fst ac2) (snd ac2) amt2
+          ( idNft
+              <> Value.singleton (fst ac1) (snd ac1) amt1
+              <> Value.singleton (fst ac2) (snd ac2) amt2
           )
     )
   void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
