@@ -1,4 +1,4 @@
-module TestUtil
+module Ctl.Utils.Test
   ( Mode(..)
   , runWithMode
   , useRunnerSimple
@@ -29,7 +29,6 @@ import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, parallel, sequential)
 import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
-import Ctl.Utils (withOurLogger)
 
 data Mode = Local | Testnet
 

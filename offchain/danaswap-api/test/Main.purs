@@ -14,7 +14,6 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (initProtocol, mintNft, seedTx)
 import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
@@ -22,7 +21,7 @@ import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), runWithMode, useRunnerSimple)
+import Ctl.Utils.Test (Mode(..), runWithMode, useRunnerSimple)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 main :: Effect Unit
