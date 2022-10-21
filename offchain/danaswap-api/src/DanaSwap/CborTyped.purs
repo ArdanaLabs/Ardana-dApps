@@ -8,14 +8,16 @@ module DanaSwap.CborTyped
 
 import Contract.Prelude
 
+import Aeson (class DecodeAeson)
 import CBOR as CBOR
-import Contract.Log (logDebug')
+import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (toData)
+import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), Validator(..), applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript(..), Validator(..), applyArgs, applyArgsM)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
+import Effect.Exception (throw)
 
 {- This module should be the only place where CBOR is imported
 - all of its exports should handle all of the validator's parameters
@@ -44,8 +46,7 @@ liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
   raw <- decodeCborMp CBOR.liqudityTokenMP
-  applyArgsM raw [ toData poolId ]
-    >>= liftContractM "failed to apply args"
+  applyArgsWithErr raw [ toData poolId ]
 
 configAddressValidator :: Contract () Validator
 configAddressValidator = decodeCbor CBOR.configScript
@@ -54,10 +55,18 @@ configAddressValidator = decodeCbor CBOR.configScript
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
   raw <- decodeCborMp CBOR.nft
-  applyArgsM raw [ toData ref ]
-    >>= liftContractM "failed to apply args"
+  applyArgsWithErr raw [ toData ref ]
 
 -- These helpers should not be exported
+
+-- Applies args and throws an error on failure
+applyArgsWithErr :: forall a. DecodeAeson a => Newtype a PlutusScript => a -> Array PlutusData -> Contract () a
+applyArgsWithErr val args = do
+  applyArgs val args >>= case _ of
+    Left err -> do
+      logError' $ "error in apply args:" <> show err
+      liftEffect $ throw $ show err
+    Right newVal -> pure newVal
 
 decodeCbor :: String -> Contract () Validator
 decodeCbor cborHex = liftContractM "failed to decode cbor"

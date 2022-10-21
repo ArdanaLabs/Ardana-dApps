@@ -42,7 +42,81 @@ main = launchAff_ $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
-        openPool protocol (adaSymbol /\ adaToken) (adaSymbol /\ adaToken) (BigInt.fromInt 100) (BigInt.fromInt 100)
+        openPool
+          protocol
+          (adaSymbol /\ adaToken)
+          (adaSymbol /\ adaToken)
+          (BigInt.fromInt 100)
+          (BigInt.fromInt 100)
+        -- This is the same as the liquidity test of the same name
+
+      describe "Can't open with zero liqudity" $ do
+        it "Both zero" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPool
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 0)
+            (BigInt.fromInt 0)
+
+        it "first zero" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPool
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 0)
+            (BigInt.fromInt 100)
+
+        it "second zero" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPool
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 0)
+
+        it "pay both set zero" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          openPoolSneaky
+            regularOpen
+            { reportIssued = Just zero
+            , actuallyMint = Just $ \_ _ -> mempty
+            }
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
+
+      describe "Can't under pay" $ do
+        it "report correctly" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPoolSneaky
+            regularOpen
+              { reportIssued = Just $ BigInt.fromInt (90*90)
+              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
+              }
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
+
+        it "report paying in full" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          expectError $ openPoolSneaky
+            regularOpen
+              { reportIssued = Just $ BigInt.fromInt 10_000
+              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
+              }
+            protocol
+            (adaSymbol /\ adaToken)
+            (adaSymbol /\ adaToken)
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
     describe "Liquidity Token Minting Policy" $ do
 
@@ -52,7 +126,8 @@ main = launchAff_ $ do
 
       it "Allows minting on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
-        openPool protocol
+        openPool
+          protocol
           (adaSymbol /\ adaToken)
           (adaSymbol /\ adaToken)
           (BigInt.fromInt 100)
