@@ -1,6 +1,6 @@
 module Setup
-  (prepTestTokens
-  )where
+  ( prepTestTokens
+  ) where
 
 import Contract.Prelude
 
@@ -30,17 +30,17 @@ prepTestTokens = do
   testTn2 <- (mkTokenName =<< hexToByteArray "aabb") # liftContractM "bad hex string"
   adr <- getWalletAddress >>= liftContractM "no wallet"
   void $ waitForTx adr =<< buildBalanceSignAndSubmitTx
-    (Lookups.mintingPolicy testMp1
-    <> Lookups.mintingPolicy testMp2
+    ( Lookups.mintingPolicy testMp1
+        <> Lookups.mintingPolicy testMp2
     )
-    (Constraints.mustMintCurrency
-      (mintingPolicyHash testMp1)
-      testTn1
-      (BigInt.fromInt 1_000_000)
-    <> Constraints.mustMintCurrency
-      (mintingPolicyHash testMp2)
-      testTn2
-      (BigInt.fromInt 1_000_000)
+    ( Constraints.mustMintCurrency
+        (mintingPolicyHash testMp1)
+        testTn1
+        (BigInt.fromInt 1_000_000)
+        <> Constraints.mustMintCurrency
+          (mintingPolicyHash testMp2)
+          testTn2
+          (BigInt.fromInt 1_000_000)
     )
   pure $ (testCs1 /\ testTn1) /\ (testCs2 /\ testTn2)
 

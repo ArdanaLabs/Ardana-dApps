@@ -65,7 +65,7 @@ simpleNft ref = do
 -- but is coded in the script so it affects the
 -- script hash so each value gets a new currency symbols
 testToken :: BigInt -> Contract () MintingPolicy
-testToken n  = do
+testToken n = do
   logDebug' "Creating test token"
   logDebug' $ "index:" <> show n
   raw <- decodeCborMp CBOR.trivial

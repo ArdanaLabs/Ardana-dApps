@@ -66,9 +66,8 @@ retryOkayErrs aff =
   recovering
     (limitRetries 5)
     [ \_ err' -> do
-      let err = name err'
-      if err `elem` badErrors
-        then pure false
+        let err = name err'
+        if err `elem` badErrors then pure false
         else do
           log $ "failed with an error not makred as retryable"
           log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"

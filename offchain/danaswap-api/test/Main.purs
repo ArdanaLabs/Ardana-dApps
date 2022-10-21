@@ -50,7 +50,7 @@ main = launchAff_ $ do
           ac2
           (BigInt.fromInt 100)
           (BigInt.fromInt 100)
-        -- This is the same as the liquidity test of the same name
+      -- This is the same as the liquidity test of the same name
 
       describe "Can't open with zero liqudity" $ do
         it "Both zero" $ useRunnerSimple $ do
@@ -88,9 +88,9 @@ main = launchAff_ $ do
           (ac1 /\ ac2) <- prepTestTokens
           openPoolSneaky
             regularOpen
-            { reportIssued = Just zero
-            , actuallyMint = Just $ \_ _ -> mempty
-            }
+              { reportIssued = Just zero
+              , actuallyMint = Just $ \_ _ -> mempty
+              }
             protocol
             ac1
             ac2
@@ -103,7 +103,7 @@ main = launchAff_ $ do
           (ac1 /\ ac2) <- prepTestTokens
           expectError $ openPoolSneaky
             regularOpen
-              { reportIssued = Just $ BigInt.fromInt (90*90)
+              { reportIssued = Just $ BigInt.fromInt (90 * 90)
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
               }
             protocol
