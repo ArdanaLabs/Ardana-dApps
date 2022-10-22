@@ -1,28 +1,49 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="X-XSS-Protection" content="1;mode=block" />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta
-      http-equiv="Referrer-Policy"
-      content="strict-origin-when-cross-origin"
-    />
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=()" />
-    <title>DanaSwap</title>
+    <%- include('../../components/head.ejs'); %>
     <script type="module" src="./assets/scripts/home/bundle.js" defer></script>
   </head>
   <body>
-    <noscript>
-      <p lang="en">
-        The DanaSwap website requires JavaScript. Here are the
-        <a href="https://www.enable-javascript.com/en/"
-          >instructions how to enable JavaScript in your web browser</a
-        >. Or perhaps you need to make an exception in your script blocker.
-      </p>
-    </noscript>
+    <%- include('../../components/noscript.ejs'); %>
 
-    <div id="home"></div>
+    <main class="px-6">
+      <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
+      <div class="columns my-6 is-vcentered">
+        <div class="column">
+          <div class="field">
+            <p class="control has-icons-left">
+              <input
+                class="input is-rounded is-medium"
+                placeholder="Search pool by name, network or type"
+              />
+              <span class="icon is-small is-left">
+                <i class="fas fa-search"></i>
+              </span>
+            </p>
+          </div>
+        </div>
+        <div class="column">
+          <div class="field">
+            <p class="control has-icons-right">
+              <input class="input is-rounded is-medium" placeholder="Sort by" />
+              <span class="icon is-small is-right">
+                <i class="fas fa-sort"></i>
+              </span>
+            </p>
+          </div>
+        </div>
+        <div class="column">
+          <button class="button">
+            <span class="icon is-large">
+              <i class="fas fa-toggle-on"></i>
+            </span>
+            <span>Favorites</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="home"></div>
+    </main>
   </body>
 </html>

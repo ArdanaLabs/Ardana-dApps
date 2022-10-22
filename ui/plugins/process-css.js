@@ -8,8 +8,8 @@ const flexbugsFixes = require("postcss-flexbugs-fixes");
 module.exports = (options = {}) => ({
   name: "process-css",
   setup(build) {
-    const src = options.src || "assets/css";
-    const dest = options.dest || "build/assets/css";
+    const src = options.src || "assets/styles";
+    const dest = options.dest || "build/assets/styles";
 
     const filter = () => true;
 

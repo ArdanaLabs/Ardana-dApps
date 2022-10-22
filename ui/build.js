@@ -36,8 +36,8 @@ const entryPoints = routes.map(({ dir }) => `views/${dir}`);
           dest: `${outdir}/assets`,
         }),
         processCSS({
-          src: "assets/css",
-          dest: `${outdir}/assets/css`,
+          src: "assets/styles",
+          dest: `${outdir}/assets/styles`,
         }),
       ],
       assetNames: "[dir]/[name]",

@@ -1,0 +1,54 @@
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a class="navbar-item" href="/"
+      ><figure class="image">
+        <img src="../../assets/images/logo.png" />
+      </figure>
+    </a>
+
+    <a
+      role="button"
+      class="navbar-burger"
+      aria-label="menu"
+      aria-expanded="false"
+      data-target="navbar"
+    >
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+
+  <div id="navbar" class="navbar-menu">
+    <div class="navbar-start">
+      <a
+        class="navbar-item <%= currentUrl == '/' ? 'is-active' : '' %>"
+        href="/"
+      >
+        HOME
+      </a>
+
+      <a
+        class="navbar-item <%= currentUrl == '/pools' ? 'is-active' : '' %>"
+        href="/pools"
+      >
+        POOLS
+      </a>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="buttons">
+          <button class="button is-rounded is-large">
+            <span>LIGHTMODE</span>
+            <span class="icon is-small">
+              <i class="fas fa-sun"></i>
+            </span>
+          </button>
+
+          <a class="button is-rounded is-large">CONNECT WALLET</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
