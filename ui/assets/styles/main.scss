@@ -54,7 +54,50 @@
   font-weight: 900;
 }
 
+$scheme-main: #080E42;
 
 $family-primary: "Museo Sans";
 
+$button-border-width: 0;
+
+$input-placeholder-color: $white;
+
+$navbar-item-active-color: #73D6F1;
+$navbar-item-hover-background-color: #080E42;
+$navbar-item-hover-color: #F5FCFE;
+$navbar-item-color: #F5FCFE;
+
 @import "../../node_modules/bulma/bulma";
+
+
+.navbar-item.is-active {
+  background-image: linear-gradient(90deg, #5F72FF 0%, #73D6F1 100%);
+  background-position: 0 2.4em;
+  background-repeat: repeat-x;
+  background-size: 3px 3px;
+}
+
+.danaswap-btn-has-background {
+  background: linear-gradient(89.62deg, #72D2F2 0.3%, #6077FF 99.64%);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 115%;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.danaswap-btn-has-border {
+  border: 3px solid rgba(45, 59, 160, 1);
+  box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 1);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 100%;
+  text-align: center;
+  color: #F5FCFE;
+}
+
+.footer {
+  background: #1F297B;
+}

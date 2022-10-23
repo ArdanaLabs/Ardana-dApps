@@ -1,9 +1,8 @@
-<nav class="navbar" role="navigation" aria-label="main navigation">
+<nav class="navbar is-spaced" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
-    <a class="navbar-item" href="/"
-      ><figure class="image">
-        <img src="../../assets/images/logo.png" />
-      </figure>
+    <a class="navbar-item" href="/">
+      <img src="../../assets/images/logo_white.png" alt="" />
+      <img src="../../assets/images/logo_text.png" alt="Ardana" />
     </a>
 
     <a
@@ -22,14 +21,14 @@
   <div id="navbar" class="navbar-menu">
     <div class="navbar-start">
       <a
-        class="navbar-item <%= currentUrl == '/' ? 'is-active' : '' %>"
+        class="navbar-item has-text-weight-bold mx-6 mt-1 is-size-6 <%= currentUrl == '/' ? 'is-active' : '' %>"
         href="/"
       >
         HOME
       </a>
 
       <a
-        class="navbar-item <%= currentUrl == '/pools' ? 'is-active' : '' %>"
+        class="navbar-item has-text-weight-bold mx-6 mt-1 is-size-6 pools <%= currentUrl == '/pools' ? 'is-active' : '' %>"
         href="/pools"
       >
         POOLS
@@ -39,14 +38,18 @@
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="buttons">
-          <button class="button is-rounded is-large">
-            <span>LIGHTMODE</span>
-            <span class="icon is-small">
+          <button
+            class="button is-rounded is-medium danaswap-btn-has-background"
+          >
+            LIGHTMODE
+            <span class="icon is-medium has-text-white">
               <i class="fas fa-sun"></i>
             </span>
           </button>
 
-          <a class="button is-rounded is-large">CONNECT WALLET</a>
+          <button class="button is-rounded is-medium danaswap-btn-has-border">
+            CONNECT WALLET
+          </button>
         </div>
       </div>
     </div>

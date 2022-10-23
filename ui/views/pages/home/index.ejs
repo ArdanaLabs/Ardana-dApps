@@ -7,7 +7,7 @@
   <body>
     <%- include('../../components/noscript.ejs'); %>
 
-    <main class="px-6">
+    <main class="px-6 mb-6">
       <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
       <div class="columns my-6 is-vcentered">
         <div class="column">
@@ -17,7 +17,7 @@
                 class="input is-rounded is-medium"
                 placeholder="Search pool by name, network or type"
               />
-              <span class="icon is-small is-left">
+              <span class="icon is-small is-left has-text-white">
                 <i class="fas fa-search"></i>
               </span>
             </p>
@@ -27,7 +27,7 @@
           <div class="field">
             <p class="control has-icons-right">
               <input class="input is-rounded is-medium" placeholder="Sort by" />
-              <span class="icon is-small is-right">
+              <span class="icon is-small is-right has-text-white">
                 <i class="fas fa-sort"></i>
               </span>
             </p>
@@ -35,15 +35,17 @@
         </div>
         <div class="column">
           <button class="button">
-            <span class="icon is-large">
+            <span class="icon is-large has-text-white">
               <i class="fas fa-toggle-on"></i>
             </span>
-            <span>Favorites</span>
+            <span class="has-text-white">Favorites</span>
           </button>
         </div>
       </div>
 
       <div id="home"></div>
     </main>
+
+    <%- include('../../components/footer.ejs'); %>
   </body>
 </html>
