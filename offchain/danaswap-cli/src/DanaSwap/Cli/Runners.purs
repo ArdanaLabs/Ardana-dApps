@@ -20,7 +20,7 @@ import Effect.Exception (throw)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (readTextFile, writeTextFile, unlink)
 import Node.FS.Sync (exists)
-import Node.Path (FilePath, dirname, normalize)
+import Node.Path (FilePath, dirname, isAbsolute, normalize)
 
 runCli :: Options -> Aff Unit
 runCli (Options { command, stateFilePath, walletConfigFilePath, networkId, ctlPort, ogmiosPort, odcPort }) = do
@@ -43,8 +43,12 @@ parseWalletFromConfigFile walletConfigFilePath = do
   let walletConfigDir = dirname walletConfigFilePath
   case walletConfigJson of
     KeyWalletFiles { walletPath, stakingPath } -> do
-      key <- privatePaymentKeyFromFile $ normalize (walletConfigDir <> walletPath)
-      mstake <- traverse privateStakeKeyFromFile $ (\path -> normalize (walletConfigDir <> path)) <$> stakingPath
+      let
+        getAbsolutePath path = normalize $
+          if isAbsolute path then path
+          else walletConfigDir <> "/" <> path
+      key <- privatePaymentKeyFromFile $ getAbsolutePath walletPath
+      mstake <- traverse privateStakeKeyFromFile $ getAbsolutePath <$> stakingPath
       pure $ privateKeysToKeyWallet key mstake
     YubiHSM _ -> makeHsmWallet
 
