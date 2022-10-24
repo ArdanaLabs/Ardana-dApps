@@ -84,5 +84,5 @@ command' = hsubparser $
     <> initializeProtocol
 
 initializeProtocol :: Mod CommandFields Command
-initializeProtocol = command "increment" (info (pure InitializeProtocol) (progDesc "Initialize the DanaSwap protocol"))
+initializeProtocol = command "init" (info (pure InitializeProtocol) (progDesc "Initialize the DanaSwap protocol"))
 
