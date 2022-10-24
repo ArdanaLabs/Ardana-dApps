@@ -67,32 +67,84 @@ component =
     SetCurrentPool pool -> H.modify_ _ { currentPool = Just pool }
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { pools, currentPool } =
-    HH.table [ mkClass "table is-fullwidth", HP.id "pools-table" ]
-      [ HH.thead_
-          [ HH.tr_
-              [ mkTableHeader "POOL"
-              , mkTableHeader "TVL(ADA)"
-              , mkTableHeader "TRADING FEES APR"
-              , mkTableHeader "LP FEE"
-              , mkTableHeader "TOTAL LPs"
-              ]
-          ]
-      , HH.tbody_ $ concat
-          ( renderPool currentPool
-              <$> pools
-          )
-      , HH.tfoot_
-          [ HH.tr_
-              [ HH.th
-                  [ HP.colSpan 5 ]
-                  [ HH.button
-                      [ mkClass "button is-rounded is-medium is-pulled-right danaswap-btn-has-background" ]
-                      [ HH.text "SEE ALL POOLS" ]
-                  ]
-              ]
-          ]
-      ]
+  render { pools, currentPool } = HH.div
+    [ mkClass "table-container" ]
+    [ HH.table
+        [ mkClass "table is-fullwidth", HP.id "pools-table" ]
+        [ HH.thead_
+            [ HH.tr_
+                [ HH.th_
+                    [ HH.div [ mkClass $ "columns is-vcentered" ]
+                        [ HH.div [ mkClass "column is-narrow" ] [ HH.text "POOL" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.span
+                                [ mkClass "icon is-small" ]
+                                [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+                            ]
+                        ]
+                    ]
+                , HH.th_
+                    [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
+                        [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TVL(ADA)" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.span
+                                [ mkClass "icon is-small" ]
+                                [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+                            ]
+                        ]
+                    ]
+                , HH.th [ mkClass "is-hidden-touch" ]
+                    [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
+                        [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TRADING FEES APR" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.span
+                                [ mkClass "icon is-small" ]
+                                [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+                            ]
+                        ]
+                    ]
+                , HH.th [ mkClass "is-hidden-touch" ]
+                    [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
+                        [ HH.div [ mkClass "column is-narrow" ] [ HH.text "LP FEE" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.span
+                                [ mkClass "icon is-small" ]
+                                [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+                            ]
+                        ]
+                    ]
+                , HH.th [ mkClass "is-hidden-touch" ]
+                    [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
+                        [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TOTAL LPs" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.span
+                                [ mkClass "icon is-small" ]
+                                [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+                            ]
+                        ]
+                    ]
+                , HH.th_ [ HH.text "" ]
+                ]
+            ]
+        , HH.tbody_ $ concat
+            ( renderPool currentPool
+                <$> pools
+            )
+        , HH.tfoot_
+            [ HH.tr_
+                [ HH.th [ mkClass "is-hidden-touch" ] []
+                , HH.th [ mkClass "is-hidden-touch" ] []
+                , HH.th [ mkClass "is-hidden-touch" ] []
+                , HH.th
+                    [ HP.colSpan 3 ]
+                    [ HH.button
+                        [ mkClass "button is-rounded is-medium is-fullwidth is-responsive danaswap-btn-has-background" ]
+                        [ HH.text "SEE ALL POOLS" ]
+                    ]
+                ]
+            ]
+        ]
+    ]
 
   renderPool :: forall slots. Maybe Pool -> Pool -> Array (H.ComponentHTML Action slots m)
   renderPool currentPool pool@(Pool p) =
@@ -122,58 +174,71 @@ component =
                 ]
             ]
         , HH.td [ mkClass "is-vcentered" ]
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.tvl) <> "M" ]
+            [ HH.p [ mkClass "title is-5 has-text-white is-pulled-right" ] [ HH.text $ "$" <> (toString p.tvl) <> "M" ]
+            ]
+        , HH.td [ mkClass "is-vcentered is-hidden-touch" ]
+            [ HH.p [ mkClass "title is-5 has-text-white is-pulled-right" ] [ HH.text $ (toString p.tradingFeesApr) <> "%" ]
+            ]
+        , HH.td [ mkClass "is-vcentered is-hidden-touch" ]
+            [ HH.p [ mkClass "title is-5 has-text-white is-pulled-right" ] [ HH.text $ (toString p.lpFee) <> "%" ]
+            ]
+        , HH.td [ mkClass "is-vcentered is-hidden-touch" ]
+            [ HH.p [ mkClass "title is-5 has-text-white is-pulled-right" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
+
             ]
         , HH.td [ mkClass "is-vcentered" ]
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.tradingFeesApr) <> "M" ]
-            ]
-        , HH.td [ mkClass "is-vcentered" ]
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.lpFee) <> "M" ]
-            ]
-        , HH.td [ mkClass "is-vcentered" ]
-            [ HH.div [ mkClass "columns is-vcentered" ]
-                [ HH.div [ mkClass "column is-narrow" ]
-                    [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
-                    ]
-                , HH.div [ mkClass "column" ]
-                    [ if currentPool == Just pool then
-                        mkIcon "angle-up"
-                      else
-                        mkIcon "angle-down"
-                    ]
-                ]
+            [ if currentPool == Just pool then
+                mkIcon "angle-up"
+              else
+                mkIcon "angle-down"
             ]
         ]
 
     ] <>
       if currentPool == Just pool then
         [ HH.tr_
-            [ HH.td [ HP.colSpan 5 ]
+            [ HH.td [ mkClass "px-0", HH.attr (H.AttrName "colspan") "100%" ]
                 [ HH.div [ mkClass "box my-3" ]
                     [ HH.div
                         [ mkClass "columns is-vcentered" ]
-                        [ HH.div [ mkClass "column is-three-fifths" ]
-                            [ HH.div [ mkClass "columns" ]
+                        [ HH.div [ mkClass "column" ]
+                            [ HH.div [ mkClass "columns is-mobile" ]
                                 [ HH.div [ mkClass "column" ]
-                                    [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "ADA Price" ]
-                                    , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "1 ADA = 0.00 DUSD" ]
+                                    [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch has-text-white" ] [ HH.text "ADA Price" ]
+                                    , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch has-text-white" ] [ HH.text "1 ADA = 0.00 DUSD" ]
                                     ]
                                 , HH.div [ mkClass "column" ]
-                                    [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "MIN Price" ]
-                                    , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "1 DUSD = 27.3231 ADA" ]
+                                    [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch has-text-white" ] [ HH.text "MIN Price" ]
+                                    , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch has-text-white" ] [ HH.text "1 DUSD = 27.3231 ADA" ]
+                                    ]
+                                ]
+                            , HH.div [ mkClass "columns is-mobile is-hidden-desktop" ]
+                                [ HH.div [ mkClass "column" ]
+                                    [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch has-text-white" ] [ HH.text "Trading Fees APR" ]
+                                    , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch has-text-white" ] [ HH.text $ (toString p.tradingFeesApr) <> "%" ]
+                                    ]
+                                , HH.div [ mkClass "column" ]
+                                    [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch has-text-white" ] [ HH.text "LP Fee" ]
+                                    , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch has-text-white" ] [ HH.text $ (toString p.lpFee) <> "%" ]
+                                    ]
+                                ]
+                            , HH.div [ mkClass "columns is-mobile is-hidden-desktop" ]
+                                [ HH.div [ mkClass "column" ]
+                                    [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch has-text-white" ] [ HH.text "Total LPs" ]
+                                    , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch has-text-white" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
                                     ]
                                 ]
                             ]
-                        , HH.div [ mkClass "column is-two-fifths" ]
-                            [ HH.div [ mkClass "columns is-centered" ]
+                        , HH.div [ mkClass "column" ]
+                            [ HH.div [ mkClass "columns is-centered is-mobile" ]
                                 [ HH.div [ mkClass "column is-narrow" ]
-                                    [ HH.button [ mkClass "button is-rounded is-medium danaswap-btn-has-border" ] [ HH.text "SWAP" ]
+                                    [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "SWAP" ]
                                     ]
                                 , HH.div [ mkClass "column is-narrow" ]
-                                    [ HH.button [ mkClass "button is-rounded is-medium danaswap-btn-has-background" ] [ HH.text "ADD LIQUIDITY" ]
+                                    [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-background" ] [ HH.text "ADD LIQUIDITY" ]
                                     ]
                                 , HH.div [ mkClass "column is-narrow" ]
-                                    [ HH.button [ mkClass "button is-rounded is-medium danaswap-btn-has-border" ] [ HH.text "WITHDRAW" ]
+                                    [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "WITHDRAW" ]
                                     ]
                                 ]
                             ]
@@ -191,15 +256,3 @@ mkIcon :: forall slots m. String -> H.ComponentHTML Action slots m
 mkIcon icon = HH.span
   [ mkClass "icon is-small has-text-white" ]
   [ HH.i [ mkClass $ "fas fa-" <> icon ] [] ]
-
-mkTableHeader :: forall slots m. String -> H.ComponentHTML Action slots m
-mkTableHeader title = HH.th_
-  [ HH.div [ mkClass "columns is-vcentered" ]
-      [ HH.div [ mkClass "column is-narrow" ] [ HH.text title ]
-      , HH.div [ mkClass "column" ]
-          [ HH.span
-              [ mkClass "icon is-small" ]
-              [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-          ]
-      ]
-  ]

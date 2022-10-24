@@ -75,10 +75,7 @@ $navbar-item-color: #F5FCFE;
 
 
 .navbar-item.is-active {
-  background-image: linear-gradient(90deg, #5F72FF 0%, #73D6F1 100%);
-  background-position: 0 2.4em;
-  background-repeat: repeat-x;
-  background-size: 3px 3px;
+  border-bottom: 3px solid #73d6f1;
 }
 
 .danaswap-btn-has-background {
