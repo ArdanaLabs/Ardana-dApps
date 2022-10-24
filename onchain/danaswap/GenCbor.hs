@@ -1,10 +1,7 @@
 module Main (main) where
 
-import Hello
-import HelloDiscovery
-
 import Control.Monad (unless)
-import DanaSwap (liqudityTokenCBor)
+import DanaSwap (liqudityTokenCbor,poolIdTokenMPCbor, trivialCbor,nftCbor,configScriptCbor)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
@@ -33,8 +30,8 @@ main = do
 cbors :: [Cbor]
 cbors =
   [ Cbor "trivial" trivialCbor
-  , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
-  , Cbor "liqudityTokenMP" liqudityTokenCBor
+  , Cbor "liqudityTokenMP" liqudityTokenCbor
+  , Cbor "poolIdTokenMP" poolIdTokenMPCbor
   ]

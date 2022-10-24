@@ -5,21 +5,39 @@ module DanaSwap (
   trivialFailCbor,
   configScriptCbor,
   nftCbor,
-  liqudityTokenCBor,
+  liqudityTokenCbor,
+  poolIdTokenMPCbor,
 ) where
 
 import Plutarch.Prelude
 
 import Utils (closedTermToHexString, globalConfig, validatorToHexString)
 
-import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator, mkValidator)
-import Plutarch.Extensions.Api (passert, passert_)
-
-import Plutarch.Api.V1 (PTokenName, PValue (PValue))
+import Plutarch.Api.V2
+    ( PMintingPolicy,
+      PScriptPurpose(PMinting),
+      PValidator,
+      mkValidator,
+      PTxOut(PTxOut),
+      PTxOutRef,
+      PTxInInfo(PTxInInfo),
+      POutputDatum(POutputDatum),
+      PDatum(..),
+      PAddress )
+import GHC.Records (HasField)
+import Plutarch.Api.V1 ( PTokenName(PTokenName), PValue(PValue), AmountGuarantees(..), KeyGuarantees(..) )
+import Plutarch.Api.V1.AssocMap (PMap)
 import Plutarch.Api.V1.AssocMap qualified as PMap
-import Plutarch.Api.V2.Tx (PTxOutRef)
+import Plutarch.Api.V1.Value (PCurrencySymbol)
+import Plutarch.Builtin (pserialiseData, pforgetData)
+import Plutarch.Crypto (pblake2b_256)
+import Plutarch.Extensions.Api (passert, passert_)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
+import Plutarch.Extensions.List (unsingleton)
 import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
+import Plutarch.Maybe (pfromJust)
+import qualified Plutarch.Api.V1.AssocMap as AssocMap
+import qualified Plutarch.Api.V1.Value as Value
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))
@@ -48,6 +66,46 @@ instance DerivePlutusType LiquidityRedeemer where type DPTStrat _ = PlutusTypeNe
 instance PTryFrom PData (PAsData LiquidityRedeemer)
 instance PShow LiquidityRedeemer
 
+newtype ConfigData (s :: S)
+  = ConfigData
+  ( Term
+    s
+    ( PDataRecord
+      '[ "poolAdr" ':= PAddress
+       , "liquidityCS" ':= PCurrencySymbol
+       ]
+    )
+  )
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PIsData, PEq)
+
+instance DerivePlutusType ConfigData where type DPTStrat _ = PlutusTypeNewtype
+instance PTryFrom PData (PAsData ConfigData)
+
+type PAssetClass = PBuiltinPair (PAsData PCurrencySymbol) (PAsData PTokenName)
+
+newtype PoolData (s :: S)
+  = PoolData
+  ( Term
+    s
+    ( PDataRecord
+      '[ "ac1" ':= PAssetClass
+       , "ac2" ':= PAssetClass
+       , "bal1" ':= PInteger
+       , "bal2" ':= PInteger
+       , "adminBal1" ':= PInteger
+       , "adminBal2" ':= PInteger
+       , "issuedLiquidity" ':= PInteger
+       , "isLive" ':= PInteger
+       ]
+    )
+  )
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PIsData, PEq)
+
+instance DerivePlutusType PoolData where type DPTStrat _ = PlutusTypeNewtype
+instance PTryFrom PData (PAsData PoolData)
+
 trivialCbor :: Maybe String
 trivialCbor = closedTermToHexString trivial
 
@@ -66,8 +124,11 @@ configScriptCbor = validatorToHexString $ mkValidator globalConfig configScript
 configScript :: ClosedTerm PValidator
 configScript = perror
 
-liqudityTokenCBor :: Maybe String
-liqudityTokenCBor = closedTermToHexString liqudityTokenMP
+poolIdTokenMPCbor :: Maybe String
+poolIdTokenMPCbor = closedTermToHexString poolIdTokenMP
+
+liqudityTokenCbor :: Maybe String
+liqudityTokenCbor = closedTermToHexString liqudityTokenMP
 
 liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
 liqudityTokenMP = phoistAcyclic $
@@ -120,3 +181,122 @@ standardNft = phoistAcyclic $
             #$ pfield @"inputs"
             #$ pfield @"txInfo" # sc
     passert "didn't spend out ref" $ pelem # outRef # inputs
+
+poolIdTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
+poolIdTokenMP = phoistAcyclic $ plam $
+  \configUtxoNftCs poolIdRedData sc -> unTermCont $ do
+    seedInput :: Term _ PTxOutRef <- pletC $ pfromData $ ptryFromData poolIdRedData
+    poolId  <- pletC $ pcon $ PTokenName
+      $ pblake2b_256 #$ pserialiseData #$ pforgetData (pdata seedInput)
+    scRec <- pletFieldsC @'[ "txInfo" , "purpose" ] sc
+    let txInfo = getField @"txInfo" scRec
+    let purpouse = getField @"purpose" scRec
+    PMinting cs' <- pmatchC purpouse
+    cs :: Term _ PCurrencySymbol <- pletC $ pfield @"_0" # cs'
+    infoRec <- pletFieldsC @'[ "mint" , "referenceInputs" , "outputs" ] txInfo
+    let minting = getField @"mint" infoRec
+    let referenceInputs = pfromData $ getField @"referenceInputs" infoRec
+    let outputs = getField @"outputs" infoRec
+    poolIds <- pletC $ atCS # minting # cs
+    passert_ "Only mints one correct pool id"
+      $ isJustTn # poolIds # poolId
+    configUtxo <- pletC $
+        unsingleton $
+          pfilter
+          # (isConfigUtxo #$ pfromData $ ptryFromData configUtxoNftCs)
+          # referenceInputs
+    POutputDatum configDatum' <- pmatchC $ pfield @"datum" #$ pfield @"resolved" # configUtxo
+    PDatum configDatum <- pmatchC $ pfield @"outputDatum" # configDatum'
+    ConfigData configData <- pmatchC $ pfromData $ ptryFromData configDatum
+    configRec <- pletFieldsC @'[ "poolAdr" , "liquidityCS" ] configData
+    let poolAdr = getField @"poolAdr" configRec
+    let liquidityCS = getField @"liquidityCS" configRec
+    outPool <- pletC $
+      unsingleton $
+        pfilter
+        # (isAtAdrWithVal # poolAdr #$ Value.psingleton # cs # poolId # 1)
+        # outputs
+    PTxOut outPoolRec' <- pmatchC outPool
+    outPoolRec <- pletFieldsC @'[ "datum" , "value" ] outPoolRec'
+    POutputDatum outPoolDatum' <- pmatchC $ getField @"datum" outPoolRec
+    PDatum outPoolDatumrec <- pmatchC $ pfield @"outputDatum" # outPoolDatum'
+    PoolData poolDataRec' <- pmatchC $ pfromData $ ptryFromData outPoolDatumrec
+    poolDataRec <- pletFieldsC
+      @'[ "issuedLiquidity"
+        , "ac1"
+        , "ac2"
+        , "bal1"
+        , "bal2"
+        , "adminBal1"
+        , "adminBal2"
+        ]
+      poolDataRec'
+    let issuedLiquidity = pfromData $ getField @"issuedLiquidity" poolDataRec
+    liquidity <- pletC $ atCS # minting # liquidityCS
+    passert_ "actaully minted same amount reported in datum"
+      $ isJustTn' # liquidity # poolId # issuedLiquidity
+    valueMatchesDatum poolDataRec (getField @"value" outPoolRec)
+    passert "liquidity is correct" $
+      validOpenAmts
+        # getField @"bal1" poolDataRec
+        # getField @"bal2" poolDataRec
+        # issuedLiquidity
+
+-- This part of the logic is seperated mainly for ease of testing
+validOpenAmts :: ClosedTerm (PInteger :--> PInteger :--> PInteger :--> PBool)
+validOpenAmts = phoistAcyclic $ plam $
+  \bal1 bal2 liq -> unTermCont $ do
+    k2 <- pletC $ bal1 * bal2
+    liq1 <- pletC $ liq + 1
+    pure $ liq * liq #<= k2
+      #&& k2 #< liq1 * liq1
+
+valueMatchesDatum ::
+  (HasField "ac1"  a (Term s PAssetClass)
+  ,HasField "bal1"  a (Term s PInteger)
+  ,HasField "adminBal1"  a (Term s PInteger)
+  ,HasField "ac2"  a (Term s PAssetClass)
+  ,HasField "bal2"  a (Term s PInteger)
+  ,HasField "adminBal2"  a (Term s PInteger)
+  )=>
+  a -> Term s (PValue 'Sorted 'Positive) -> TermCont s ()
+valueMatchesDatum rec val = do
+  PValue valMap <- pmatchC val
+  --PBuiltinPair ac1cs ac1tn <- pmatchC $ getField @"ac1" rec
+  let ac1cs = pfromData $ pfstBuiltin # getField @"ac1" rec
+  let ac1tn = pfromData $ psndBuiltin # getField @"ac1" rec
+  bal1Val <- pletC $ pfromJust #$ PMap.plookup # ac1tn #$ pfromJust #$ PMap.plookup # ac1cs # valMap
+  passert_ "bal1 is wrong" $ bal1Val #== getField @"bal1" rec + getField @"adminBal1" rec
+  let ac2cs = pfromData $ pfstBuiltin # getField @"ac2" rec
+  let ac2tn = pfromData $ psndBuiltin # getField @"ac2" rec
+  bal2Val <- pletC $ pfromJust #$ PMap.plookup # ac2tn #$ pfromJust #$ PMap.plookup # ac2cs # valMap
+  passert_ "bal2 is wrong" $ bal2Val #== getField @"bal2" rec + getField @"adminBal2" rec
+
+isAtAdrWithVal :: ClosedTerm (PAddress :--> PValue 'Sorted 'NonZero :--> PTxOut :--> PBool)
+isAtAdrWithVal = phoistAcyclic $ plam $
+  \adr val txOut -> unTermCont $ do
+    PTxOut rec' <- pmatchC txOut
+    rec <- pletFieldsC @'[ "address" , "value" ] rec'
+    pure $ getField @"address" rec #== adr
+      #&& val #<= Value.pforgetPositive (getField @"value" rec)
+
+isConfigUtxo :: ClosedTerm (PCurrencySymbol :--> PTxInInfo :--> PBool)
+isConfigUtxo = phoistAcyclic $ plam $ \cs ->
+    plet (Value.psingleton # cs # pconstant "" # 1)
+    $ \shouldBe -> plam $ \txInInfo -> unTermCont $ do
+      PTxInInfo rec <- pmatchC txInInfo
+      PTxOut res <- pmatchC $ pfield @"resolved" # rec
+      pure $ Value.pforgetPositive (pfield @"value" # res) #== shouldBe
+
+isJustTn :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PBool)
+isJustTn = phoistAcyclic $ plam $ \m tn -> isJustTn' # m # tn # 1
+
+isJustTn' :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PInteger :--> PBool)
+isJustTn' = phoistAcyclic $ plam $ \m tn n -> m #== AssocMap.psingleton # tn # n
+
+atCS :: ClosedTerm (PValue s a :--> PCurrencySymbol :--> PMap s PTokenName PInteger)
+atCS = phoistAcyclic $
+  plam $ \val cs -> unTermCont $ do
+    PValue valMap <- pmatchC val
+    PJust subMap <- pmatchC $ AssocMap.plookup # cs # valMap
+    pure subMap

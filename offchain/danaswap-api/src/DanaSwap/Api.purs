@@ -131,24 +131,24 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  seed <- seedTx
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
         <> Lookups.unspentOutputs configAdrUtxos
     )
-    ( Constraints.mustMintCurrencyWithRedeemer -- Pool id token
-
+    ( Constraints.mustMintCurrencyWithRedeemer
         poolIdMph
-        (Redeemer $ toData unit)
+        (Redeemer $ toData seed)
         poolID
         one
-        <> Constraints.mustMintCurrencyWithRedeemer -- Liquidity tokens
-
+        <> Constraints.mustMintCurrencyWithRedeemer
           (mintingPolicyHash liquidityMP)
           (Redeemer $ List [ toData poolID, Constr zero [] ])
           poolID
           (amt1 * amt2)
         <> Constraints.mustReferenceOutput configUtxo
+        <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
           ( Datum $ toData $

@@ -72,14 +72,12 @@ openPoolSneaky
         <> Lookups.mintingPolicy liquidityMP
         <> Lookups.unspentOutputs configAdrUtxos
     )
-    ( Constraints.mustMintCurrencyWithRedeemer -- Pool id token
-
+    ( Constraints.mustMintCurrencyWithRedeemer
         poolIdMph
         (Redeemer $ toData unit)
         poolID
         one
-        <> Constraints.mustMintValueWithRedeemer -- Liquidity tokens
-
+        <> Constraints.mustMintValueWithRedeemer
           ( fromMaybe
               (Redeemer $ List [ toData poolID, Constr zero [] ])
               (sneaky.redeemer <#> (_ $ poolID))
