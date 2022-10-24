@@ -68,7 +68,7 @@ component =
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
   render { pools, currentPool } =
-    HH.table [ mkClass "table is-fullwidth" ]
+    HH.table [ mkClass "table is-fullwidth", HP.id "pools-table" ]
       [ HH.thead_
           [ HH.tr_
               [ mkTableHeader "POOL"
@@ -84,13 +84,10 @@ component =
           )
       , HH.tfoot_
           [ HH.tr_
-              [ HH.th_ []
-              , HH.th_ []
-              , HH.th_ []
-              , HH.th
-                  [ HP.colSpan 2 ]
+              [ HH.th
+                  [ HP.colSpan 5 ]
                   [ HH.button
-                      [ mkClass "button is-rounded is-medium is-fullwidth danaswap-btn-has-background" ]
+                      [ mkClass "button is-rounded is-medium is-pulled-right danaswap-btn-has-background" ]
                       [ HH.text "SEE ALL POOLS" ]
                   ]
               ]
@@ -198,7 +195,11 @@ mkIcon icon = HH.span
 mkTableHeader :: forall slots m. String -> H.ComponentHTML Action slots m
 mkTableHeader title = HH.th_
   [ HH.div [ mkClass "columns is-vcentered" ]
-      [ HH.div [ mkClass "column is-narrow has-text-white" ] [ HH.text title ]
-      , HH.div [ mkClass "column mt-1" ] [ mkIcon "sort" ]
+      [ HH.div [ mkClass "column is-narrow" ] [ HH.text title ]
+      , HH.div [ mkClass "column" ]
+          [ HH.span
+              [ mkClass "icon is-small" ]
+              [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
+          ]
       ]
   ]
