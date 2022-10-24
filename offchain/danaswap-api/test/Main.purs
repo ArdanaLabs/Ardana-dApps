@@ -21,7 +21,8 @@ import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import Ctl.Utils.Test (Mode(..), runWithMode, useRunnerSimple)
+import Ctl.Utils.Test (runWithMode, useRunnerSimple)
+import Ctl.Utils.Test.Types (Mode(..))
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 main :: Effect Unit

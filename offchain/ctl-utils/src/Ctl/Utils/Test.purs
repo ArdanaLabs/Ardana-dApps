@@ -1,7 +1,7 @@
 module Ctl.Utils.Test
-  ( Mode(..)
-  , runWithMode
+  ( runWithMode
   , useRunnerSimple
+  , getPlutipConfig
   -- Types
   , EnvSpec
   , EnvRunner
@@ -29,10 +29,7 @@ import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, parallel, sequential)
 import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
-
-data Mode = Local | Testnet
-
-derive instance Eq Mode
+import Ctl.Utils.Test.Types (Mode(..))
 
 type EnvRunner = (ContractEnv () -> KeyWallet -> Aff Unit) -> Aff Unit
 type EnvSpec = SpecT Aff EnvRunner Identity Unit
