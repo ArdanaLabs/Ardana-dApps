@@ -2,17 +2,17 @@ module DanaSwapBrowser.Types where
 
 import Contract.Prelude
 
+import Data.BigInt (BigInt)
 import Data.Newtype (class Newtype)
 
 newtype Pool = Pool
   { id :: Int
   , title :: String
   , subTitle :: String
-  , baseApy :: Number
   , tvl :: Number
-  , vol24H :: Number
-  , vol7D :: Number
-  , queueing :: Number
+  , tradingFeesApr :: Number
+  , lpFee :: Number
+  , totalLps :: Maybe BigInt
   }
 
 derive instance newtypePool :: Newtype Pool _

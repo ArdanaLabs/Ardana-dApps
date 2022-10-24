@@ -4,6 +4,8 @@ import Contract.Prelude
 
 import DanaSwapBrowser.Types (Pool(..))
 import Data.Array (concat)
+import Data.BigInt (fromInt, fromString)
+import Data.BigInt as BigInt
 import Data.Number.Format (toString)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
@@ -41,15 +43,15 @@ component =
   H.mkComponent
     { initialState: const
         { pools:
-            [ Pool { id: 1, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 2, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 3, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 4, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 5, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 6, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 7, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 8, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
-            , Pool { id: 9, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", baseApy: 2.99, tvl: 3.44, vol24H: 9.25, vol7D: 2.55, queueing: 29.0 }
+            [ Pool { id: 1, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 2, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 3, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 4, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 5, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 6, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 7, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 8, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            , Pool { id: 9, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
             ]
         , currentPool: Nothing
         }
@@ -66,20 +68,14 @@ component =
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
   render { pools, currentPool } =
-    HH.table
-      [ mkClass "table is-fullwidth"
-      ]
+    HH.table [ mkClass "table is-fullwidth" ]
       [ HH.thead_
           [ HH.tr_
               [ mkTableHeader "POOL"
-              , mkTableHeader "BASE APY"
               , mkTableHeader "TVL(ADA)"
-              , mkTableHeader "VOLUME 24H(ADA)"
-              , mkTableHeader "VOLUME 7D(ADA)"
-              , mkTableHeader "QUEUEING"
-              , HH.th_
-                  [ HH.div [ mkClass "column" ] [ HH.text "" ]
-                  ]
+              , mkTableHeader "TRADING FEES APR"
+              , mkTableHeader "LP FEE"
+              , mkTableHeader "TOTAL LPs"
               ]
           ]
       , HH.tbody_ $ concat
@@ -89,8 +85,6 @@ component =
       , HH.tfoot_
           [ HH.tr_
               [ HH.th_ []
-              , HH.th_ []
-              , HH.th_ []
               , HH.th_ []
               , HH.th_ []
               , HH.th
@@ -112,6 +106,7 @@ component =
             else
               SetCurrentPool pool
         ]
+
         [ HH.td_
             [ HH.div [ mkClass "columns is-vcentered" ]
                 [ HH.div [ mkClass "column is-one-fifth" ]
@@ -129,58 +124,46 @@ component =
                     ]
                 ]
             ]
-        , HH.td_
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ (toString p.baseApy) <> "%" ]
-            ]
-        , HH.td_
+        , HH.td [ mkClass "is-vcentered" ]
             [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.tvl) <> "M" ]
             ]
-        , HH.td_
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.vol24H) <> "M" ]
+        , HH.td [ mkClass "is-vcentered" ]
+            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.tradingFeesApr) <> "M" ]
             ]
-        , HH.td_
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.vol7D) <> "M" ]
+        , HH.td [ mkClass "is-vcentered" ]
+            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ "$" <> (toString p.lpFee) <> "M" ]
             ]
-        , HH.td_
-            [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ (toString p.queueing) <> "%" ]
-            ]
-        , HH.td_
-            [ if currentPool == Just pool then
-                mkIcon "angle-up"
-              else
-                mkIcon "angle-down"
+        , HH.td [ mkClass "is-vcentered" ]
+            [ HH.div [ mkClass "columns is-vcentered" ]
+                [ HH.div [ mkClass "column is-narrow" ]
+                    [ HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
+                    ]
+                , HH.div [ mkClass "column" ]
+                    [ if currentPool == Just pool then
+                        mkIcon "angle-up"
+                      else
+                        mkIcon "angle-down"
+                    ]
+                ]
             ]
         ]
+
     ] <>
       if currentPool == Just pool then
         [ HH.tr_
-            [ HH.td [ HP.colSpan 7 ]
+            [ HH.td [ HP.colSpan 5 ]
                 [ HH.div [ mkClass "box my-3" ]
                     [ HH.div
                         [ mkClass "columns is-vcentered" ]
                         [ HH.div [ mkClass "column is-three-fifths" ]
                             [ HH.div [ mkClass "columns" ]
-                                [ HH.div [ mkClass "column is-one-third" ]
+                                [ HH.div [ mkClass "column" ]
                                     [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "ADA Price" ]
                                     , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "1 ADA = 0.00 DUSD" ]
                                     ]
-                                , HH.div [ mkClass "column is-one-third" ]
+                                , HH.div [ mkClass "column" ]
                                     [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "MIN Price" ]
                                     , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "1 DUSD = 27.3231 ADA" ]
-                                    ]
-                                , HH.div [ mkClass "column is-one-third" ]
-                                    [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "Total LPs" ]
-                                    , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "75,478,639,987,839" ]
-                                    ]
-                                ]
-                            , HH.div [ mkClass "columns" ]
-                                [ HH.div [ mkClass "column is-one-third" ]
-                                    [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "Trading Fees APR" ]
-                                    , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "0.29%" ]
-                                    ]
-                                , HH.div [ mkClass "column is-one-third" ]
-                                    [ HH.p [ mkClass "subtitle is-6 has-text-white" ] [ HH.text "LP Fee" ]
-                                    , HH.p [ mkClass "title is-5 has-text-white" ] [ HH.text "0.29%" ]
                                     ]
                                 ]
                             ]
@@ -213,9 +196,9 @@ mkIcon icon = HH.span
   [ HH.i [ mkClass $ "fas fa-" <> icon ] [] ]
 
 mkTableHeader :: forall slots m. String -> H.ComponentHTML Action slots m
-mkTableHeader header = HH.th_
+mkTableHeader title = HH.th_
   [ HH.div [ mkClass "columns is-vcentered" ]
-      [ HH.div [ mkClass "column is-narrow has-text-white" ] [ HH.text header ]
+      [ HH.div [ mkClass "column is-narrow has-text-white" ] [ HH.text title ]
       , HH.div [ mkClass "column mt-1" ] [ mkIcon "sort" ]
       ]
   ]

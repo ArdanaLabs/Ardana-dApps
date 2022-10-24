@@ -54,16 +54,20 @@
   font-weight: 900;
 }
 
-$scheme-main: #080E42;
+$input-color: $white;
 
-$family-primary: "Museo Sans";
+$scheme-main: #080E42;
 
 $button-border-width: 0;
 
+$family-primary: "Museo Sans";
+
 $input-placeholder-color: $white;
 
-$navbar-item-active-color: #73D6F1;
+$table-cell-padding: 1.5em;
+
 $navbar-item-hover-background-color: #080E42;
+$navbar-item-active-color: #73D6F1;
 $navbar-item-hover-color: #F5FCFE;
 $navbar-item-color: #F5FCFE;
 
