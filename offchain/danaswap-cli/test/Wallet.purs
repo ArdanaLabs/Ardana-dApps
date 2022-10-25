@@ -98,14 +98,14 @@ getPortArgs env =
 
 withPlutipWalletFile :: forall a. PlutipConfig -> Array BigInt -> (String -> String -> Aff a) -> Aff a
 withPlutipWalletFile config vals f = withPlutipContractEnv config vals \env wallet -> do
-  withTmpDir $ \walletDir -> do
-    w <- makeWallet walletDir "plutip" wallet
+  withTmpDir $ \tmpDir -> do
+    w <- makeWalletConfig tmpDir "plutip" wallet
     let portArgs = getPortArgs env
     f portArgs (" " <> w <> " ")
 
 -- | Creates a wallet config file in the given directory and name for a KeyWallet
-makeWallet :: FilePath -> String -> KeyWallet -> Aff FilePath
-makeWallet dir name wallet = do
+makeWalletConfig :: FilePath -> String -> KeyWallet -> Aff FilePath
+makeWalletConfig dir name wallet = do
   let cfgName = normalize $ dir <> "/" <> name <> "-cfg.json"
   let walletSkey = normalize $ dir <> "/" <> name <> "-wallet.skey"
   let stakeSkey = normalize $ dir <> "/" <> name <> "-staking.skey"
