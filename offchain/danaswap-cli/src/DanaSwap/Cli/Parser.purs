@@ -7,12 +7,10 @@ import Prelude
 import Contract.Address (NetworkId(..))
 import Control.Alt ((<|>))
 import DanaSwap.Cli.Types (Options(..), Command(..))
-import Data.Either (Either(..))
-import Data.String.Common (toLower)
 import Data.UInt (UInt, fromInt)
 import Node.Path (FilePath)
-import Options.Applicative (CommandFields, Mod, Parser, ParserInfo, command, commandGroup, fullDesc, header, help, helper, hsubparser, info, int, long, metavar, option, progDesc, short, strOption, eitherReader, flag')
-import Options.Applicative.Types (ReadM, optional)
+import Options.Applicative (CommandFields, Mod, Parser, ParserInfo, command, commandGroup, fullDesc, header, help, helper, hsubparser, info, int, long, metavar, option, progDesc, short, strOption, flag')
+import Options.Applicative.Types (optional)
 
 parser :: ParserInfo Options
 parser = info rawParser
