@@ -46,7 +46,7 @@
     ps-tools.follows = "purs-nix/ps-tools";
     # ps-0.14 is the branch for Purescript 0.14
     # which we use because ctl uses it
-    purs-nix.url = "github:ursi/purs-nix/ps-0.14";
+    purs-nix.url = "github:ursi/purs-nix/760ed36cf6c7e90e8f2d4774d5a23c2973abef38";
     lighthouse-src = {
       url = "github:GoogleChrome/lighthouse/v9.5.0";
       flake = false;
