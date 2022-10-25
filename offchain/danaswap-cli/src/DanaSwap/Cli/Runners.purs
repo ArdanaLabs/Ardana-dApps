@@ -32,9 +32,9 @@ runCli (Options { command, stateFilePath, walletConfigFilePath, networkId, ctlPo
       stateExists <- liftEffect $ exists stateFilePath
       when stateExists $ do
         void $ liftEffect $ throw "Can't use lock when state file already exists"
-        protocolParameters <- runContract configParams $ withKeyWallet wallet initProtocol
-        writeState stateFilePath $ State { lastOutput: (protocolParameters.configUtxo) }
-  log "finished"
+      protocolParameters <- runContract configParams $ withKeyWallet wallet initProtocol
+      writeState stateFilePath $ State { lastOutput: (protocolParameters.configUtxo) }
+      log "initialized protocol"
 
 parseWalletFromConfigFile :: FilePath -> Aff KeyWallet
 parseWalletFromConfigFile walletConfigFilePath = do
