@@ -54,31 +54,28 @@
   font-weight: 900;
 }
 
-$input-color: $white;
-
 $scheme-main: #080E42;
-
-$text: $white;
-$text-strong: $white;
-$title-color: $white;
-$subtitle-color: $white;
-$link-hover: $white;
-
-$button-border-width: 0;
 
 $family-primary: "Museo Sans";
 
-$input-placeholder-color: $white;
+$button-border-width: 0;
 
 $table-cell-padding: 1.5em;
 
+$text: #F5FCFE;
+$link-focus: #F5FCFE;
+$link-hover: #F5FCFE;
+$text-strong: #F5FCFE;
+$input-color: #F5FCFE;
+$title-color: #F5FCFE;
+$subtitle-color: #F5FCFE;
+$input-placeholder-color: #F5FCFE;
 $navbar-item-hover-background-color: #080E42;
 $navbar-item-active-color: #73D6F1;
 $navbar-item-hover-color: #F5FCFE;
 $navbar-item-color: #F5FCFE;
 
 @import "../../node_modules/bulma/bulma";
-
 
 .navbar-item.is-active {
   border-bottom: 3px solid #73d6f1;
@@ -88,10 +85,9 @@ $navbar-item-color: #F5FCFE;
   background: linear-gradient(89.62deg, #72D2F2 0.3%, #6077FF 99.64%);
   font-style: normal;
   font-weight: 700;
-  font-size: 13px;
   line-height: 115%;
   text-align: center;
-  color: #FFFFFF;
+  color: #F5FCFE;
 }
 
 .danaswap-btn-has-border {
@@ -99,7 +95,6 @@ $navbar-item-color: #F5FCFE;
   box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 1);
   font-style: normal;
   font-weight: 700;
-  font-size: 13px;
   line-height: 100%;
   text-align: center;
   color: #F5FCFE;
@@ -113,8 +108,14 @@ $navbar-item-color: #F5FCFE;
   font-family: "Brandon Grotesque";
   font-style: normal;
   font-weight: 500;
-  font-size: 16px;
   line-height: 100%;
 
   color: #72d2f3;
+}
+
+.navbar-brand a.navbar-item {
+  background: url(../images/logo_header_night.png) no-repeat center center;
+  background-size: cover;
+  width: 117px;
+  height: 40px;
 }

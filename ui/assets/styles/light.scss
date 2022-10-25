@@ -1,0 +1,123 @@
+@charset "utf-8";
+
+@import "../../node_modules/bulma/sass/utilities/initial-variables";
+
+@font-face {
+  font-family: "Museo Sans";
+  src: local("Museo Sans 300"), local("Museo-Sans-300"),
+    url(../fonts/Museo-Sans/MuseoSans_300.woff2) format("woff2");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Museo Sans";
+  src: local("Museo Sans 500"), local("Museo-Sans-500"),
+    url(../fonts/Museo-Sans/MuseoSans_500.woff2) format("woff2");
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Museo Sans";
+  src: local("Museo Sans 700"), local("Museo-Sans-700"),
+    url(../fonts/Museo-Sans/MuseoSans_700.woff2) format("woff2");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Museo Sans";
+  src: local("Museo Sans 900"), local("Museo-Sans-900"),
+    url(../fonts/Museo-Sans/MuseoSans_900.woff2) format("woff2");
+  font-weight: 900;
+}
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Light"), local("Brandon-Grotesque-Light"),
+    url(../fonts/Brandon-Grotesque-Font-Family/brandon-grotesque-light.woff2)
+      format("woff2");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Bold"), local("Brandon-Grotesque-Bold"),
+    url(../fonts/brandon-Grotesque-Font-Family/brandon-grotesque-bold-regular.woff2)
+      format("woff2");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Black"), local("Brandon-Grotesque-Black"),
+    url(../fonts/brandon-Grotesque-Font-Family/brandon-grotesque-black.woff2)
+      format("woff2");
+  font-weight: 900;
+}
+
+$scheme-main: #FBFFFF;
+
+$family-primary: "Museo Sans";
+
+$button-border-width: 0;
+
+$table-cell-padding: 1.5em;
+
+$text: #080E42;
+$link-focus:#080E42;
+$link-hover: #080E42;
+$text-strong: #080E42;
+$input-color: #080E42;
+$title-color: #080E42;
+$subtitle-color: #080E42;
+$input-placeholder-color: #080E42;
+$navbar-item-hover-background-color: #FBFFFF;
+$navbar-item-active-color: #2E49C5;
+$navbar-item-hover-color: #080E42;
+$navbar-item-color: #080E42;
+
+@import "../../node_modules/bulma/bulma";
+
+.navbar-item.is-active {
+  border-bottom: 3px solid #2E49C5;
+}
+
+.danaswap-btn-has-background {
+  background: linear-gradient(89.62deg, #030D53 0.3%, #3B4BC2 99.64%);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 115%;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.danaswap-btn-has-border {
+  border: 3px solid rgba(30, 39, 105, 1);
+  box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 0.4);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 100%;
+  text-align: center;
+  color: #1E2769;
+}
+
+.footer {
+  background: #1F297B;
+}
+
+#pools-table thead tr th {
+  font-family: "Brandon Grotesque";
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+
+  color: #314BC7;
+}
+
+.navbar-brand a.navbar-item {
+  background: url(../images/logo_header_light.png) no-repeat center center;
+  background-size: cover;
+  width: 117px;
+  height: 40px;
+}

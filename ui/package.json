@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build-css": "node-sass --omit-source-map-url assets/styles/main.scss assets/styles/main.css",
-    "build": "npm run build-css && node build.js"
+    "build-night-css": "node-sass --omit-source-map-url assets/styles/night.scss assets/styles/night.css",
+    "build-light-css": "node-sass --omit-source-map-url assets/styles/light.scss assets/styles/light.css",
+    "build": "npm run build-night-css && npm run build-light-css && node build.js"
   },
   "keywords": [],
   "author": "",
