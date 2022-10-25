@@ -73,7 +73,7 @@ component =
       $
         [ HH.div
             [ mkClass "columns is-mobile" ]
-            [ HH.div [ mkClass "pools-table-header column" ]
+            [ HH.div [ mkClass "pools-table-header column is-narrow" ]
                 [ HH.div [ mkClass $ "columns is-vcentered is-mobile" ]
                     [ HH.div [ mkClass "column is-narrow" ] [ HH.text "POOL" ]
                     , HH.div [ mkClass "column" ]
