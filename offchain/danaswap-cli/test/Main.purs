@@ -38,7 +38,7 @@ executeTests (Options { mode, testResources }) = do
       if mode == Local then withPlutipWalletFile config [ BigInt.fromInt 35_000_000 ] f
       else f "" (normalize $ jsonDir <> "/testWalletCfg.json ")
 
-    cli = "danaswap-cli --testnet "
+    cli = "danaswap-cli --mainnet "
     badWalletConf = jsonDir <> "badWalletCfg.json "
     state = " script.clistate "
   -- remove state file if it exists
@@ -96,6 +96,7 @@ executeTests (Options { mode, testResources }) = do
       it "should initialize the protocol successfully and create a state file"
         $ withEnv
         $ \ports wallet -> do
+            unlink (trim state)
             (cli <> ports <> "-w" <> wallet <> "-s" <> state <> "init")
               `passesSaying` "initialized protocol"
             exists (trim state) `shouldReturn` true
