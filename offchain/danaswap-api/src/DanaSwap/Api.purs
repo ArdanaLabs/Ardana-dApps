@@ -54,7 +54,7 @@ getAllPools protocol@{ poolVal } =
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
 getPoolById protocol@{ poolIdMP } token = do
   pools <- getAllPools protocol
-  cs <- liftContractM "invalid protocol" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
   case Map.toUnfoldable valid of
     [] -> liftEffect $ throw "no pools with that ID"
