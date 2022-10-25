@@ -26,7 +26,7 @@ import Data.Map as Map
 
 -- TODO rework this when the real open pool gets updated
 openPoolWrongTokenWrongRedeemer :: Protocol -> Contract () PoolId
-openPoolWrongTokenWrongRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolWrongTokenWrongRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -53,16 +53,16 @@ openPoolWrongTokenWrongRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } =
           one
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData unit) -- TODO real pool datum
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 openPoolWrongTokenRightRedeemer :: Protocol -> Contract () PoolId
-openPoolWrongTokenRightRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolWrongTokenRightRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -90,17 +90,17 @@ openPoolWrongTokenRightRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } =
           one
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData unit) -- TODO real pool datum
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 -- TODO rework this when the real open pool gets updated
 openPoolMultipleTokens :: Protocol -> Contract () PoolId
-openPoolMultipleTokens { poolVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolMultipleTokens { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -134,26 +134,26 @@ openPoolMultipleTokens { poolVal, liquidityMP, poolIdMP, configUtxo } = do
           one
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData unit) -- TODO real pool datum
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 -- TODO rework with real depositLiquidity
 depositLiquidityWrongTokenRightRedeemer :: Protocol -> PoolId -> Contract () Unit
-depositLiquidityWrongTokenRightRedeemer protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityWrongTokenRightRedeemer protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolVal
+          <> Lookups.validator poolAdrVal
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
@@ -164,23 +164,23 @@ depositLiquidityWrongTokenRightRedeemer protocol@{ poolVal, liquidityMP, poolIdM
             wrongID
             (BigInt.fromInt 10)
           <> Constraints.mustPayToScript
-            (validatorHash poolVal)
+            (validatorHash poolAdrVal)
             (Datum $ toData unit)
             DatumInline
             idNft
       )
 
 depositLiquidityWrongTokenWrongRedeemer :: Protocol -> PoolId -> Contract () Unit
-depositLiquidityWrongTokenWrongRedeemer protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityWrongTokenWrongRedeemer protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolVal
+          <> Lookups.validator poolAdrVal
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
@@ -191,7 +191,7 @@ depositLiquidityWrongTokenWrongRedeemer protocol@{ poolVal, liquidityMP, poolIdM
             wrongID
             (BigInt.fromInt 10)
           <> Constraints.mustPayToScript
-            (validatorHash poolVal)
+            (validatorHash poolAdrVal)
             (Datum $ toData unit)
             DatumInline
             idNft

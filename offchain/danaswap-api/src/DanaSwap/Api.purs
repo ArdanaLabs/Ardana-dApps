@@ -38,17 +38,16 @@ import Effect.Exception (throw)
 
 type Protocol =
   { configUtxo :: TransactionInput
-  , poolVal :: Validator
+  , poolAdrVal :: Validator
   , liquidityMP :: MintingPolicy
   , poolIdMP :: MintingPolicy
   }
 
--- TODO should this be a newtype?
 type PoolId = TokenName
 
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
-getAllPools protocol@{ poolVal } =
-  getUtxos (scriptHashAddress $ validatorHash poolVal)
+getAllPools protocol@{ poolAdrVal } =
+  getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
     <#> Map.filter (hasNft protocol)
 
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
@@ -68,15 +67,15 @@ hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
 
 -- TODO this is a placeholder implementation
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
-depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolVal
+          <> Lookups.validator poolAdrVal
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
@@ -87,7 +86,7 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
             poolID
             (BigInt.fromInt 10)
           <> Constraints.mustPayToScript
-            (validatorHash poolVal)
+            (validatorHash poolAdrVal)
             (Datum $ toData unit)
             DatumInline
             idNft
@@ -97,7 +96,7 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
 openPool :: Protocol -> Contract () PoolId
-openPool { poolVal, liquidityMP, poolIdMP, configUtxo } = do
+openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
@@ -123,12 +122,12 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } = do
           one
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData unit) -- TODO real pool datum
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 initProtocol :: Contract () Protocol
@@ -145,8 +144,8 @@ initProtocol = do
   liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
     $ mintingPolicyHash liquidityMP
-  poolVal <- poolAddressValidator poolIdCS liquidityCS
-  let poolVH = validatorHash poolVal
+  poolAdrVal <- poolAddressValidator poolIdCS liquidityCS
+  let poolVH = validatorHash poolAdrVal
   let poolAdr = scriptHashAddress poolVH
   configAdrVal <- configAddressValidator
   logDebug' "about to submit config utxo"
@@ -165,7 +164,7 @@ initProtocol = do
   logDebug' "protocol init complete"
   pure
     { configUtxo
-    , poolVal
+    , poolAdrVal
     , liquidityMP
     , poolIdMP
     }
