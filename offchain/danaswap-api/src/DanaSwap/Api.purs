@@ -56,7 +56,7 @@ getPoolById protocol@{ poolIdMP } token = do
   pools <- getAllPools protocol
   cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
-  case Map.toUnfoldable valid of
+  case Map.toUnfoldableUnordered valid of
     [] -> liftEffect $ throw "no pools with that ID"
     [ vault ] -> pure vault
     _ -> liftEffect $ throw "more than one pool with the same ID, this is really bad"
