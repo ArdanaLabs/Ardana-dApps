@@ -51,7 +51,7 @@ passesSaying cmd msg = do
     Nothing ->
       unless (contains (Pattern msg) output)
         $ fail
-        $ "output did not match running:"
+        $ "output did not match running: "
         <> cmd
         <> "\nexpected to contain: "
         <> msg
@@ -83,11 +83,11 @@ failsSaying cmd errMsg = do
     Just _ ->
       unless (contains (Pattern errMsg) output)
         $ fail
-        $ "errMsg did not match running:"
+        $ "The execution of: "
         <> cmd
-        <> "\nexpected to contain: "
+        <> " did not return the execpected error message: "
         <> errMsg
-        <> "\noutput was:\n"
+        <> " output was: "
         <> output
 
 spawnAff :: String -> Aff (Maybe Error /\ String)
