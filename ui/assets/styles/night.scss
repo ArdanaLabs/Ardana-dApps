@@ -104,7 +104,14 @@ $navbar-item-color: #F5FCFE;
   background: #1F297B;
 }
 
-#pools-table thead tr th {
+.navbar-brand a.navbar-item {
+  background: url(../images/logo_header_night.png) no-repeat center center;
+  background-size: cover;
+  width: 117px;
+  height: 40px;
+}
+
+.pools-table-header {
   font-family: "Brandon Grotesque";
   font-style: normal;
   font-weight: 500;
@@ -113,9 +120,13 @@ $navbar-item-color: #F5FCFE;
   color: #72d2f3;
 }
 
-.navbar-brand a.navbar-item {
-  background: url(../images/logo_header_night.png) no-repeat center center;
-  background-size: cover;
-  width: 117px;
-  height: 40px;
+.pools-table-row {
+  box-sizing: border-box;
+  border: 1px solid #0A5884;
+  border-radius: 38px;
+}
+
+.pools-table-row-dropdown {
+  background: #0A1045;
+  border-radius: 5px;
 }
