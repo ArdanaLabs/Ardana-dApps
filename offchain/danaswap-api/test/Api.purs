@@ -31,7 +31,6 @@ openPoolWrongTokenWrongRedeemer { poolVal, liquidityMP, poolIdMP, configUtxo } =
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
