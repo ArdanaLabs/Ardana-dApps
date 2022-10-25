@@ -17,10 +17,10 @@ module DanaSwap.Api
 import Contract.Prelude
 
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
+import Contract.Hashing (datumHash)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData, toData)
-import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
 import Contract.Transaction (TransactionInput, TransactionOutputWithRefScript)
@@ -63,7 +63,7 @@ newtype PoolDatum =
     }
 
 instance ToData PoolDatum where
-  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, liquidity }) = List
+  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, liquidity, live }) = List
     [ toData ac1
     , toData ac2
     , toData bal1
@@ -71,6 +71,7 @@ instance ToData PoolDatum where
     , toData adminBal1
     , toData adminBal2
     , toData liquidity
+    , toData live
     ]
 
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
@@ -125,17 +126,31 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
 -- it should generate a usable pool for some tests
 openPool :: Protocol -> AssetClass -> AssetClass -> BigInt -> BigInt -> Contract () PoolId
 openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
-  poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
+  seed <- seedTx
+  poolID <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
-  seed <- seedTx
+  adr <- getWalletAddress >>= liftContractM "no wallet"
+  utxos <- getUtxos adr
+  let
+    pool = PoolDatum
+      { ac1
+      , ac2
+      , bal1: amt1
+      , bal2: amt1
+      , adminBal1: zero
+      , adminBal2: zero
+      , liquidity: amt1 * amt2
+      , live: true
+      }
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
         <> Lookups.unspentOutputs configAdrUtxos
+        <> Lookups.unspentOutputs utxos
     )
     ( Constraints.mustMintCurrencyWithRedeemer
         poolIdMph
@@ -151,18 +166,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
-          ( Datum $ toData $
-              PoolDatum
-                { ac1
-                , ac2
-                , bal1: amt1
-                , bal2: amt1
-                , adminBal1: zero
-                , adminBal2: zero
-                , liquidity: amt1 * amt2
-                , live: true
-                }
-          )
+          (Datum $ toData $ pool)
           DatumInline
           ( idNft
               <> Value.singleton (fst ac1) (snd ac1) amt1
@@ -195,7 +199,7 @@ initProtocol = do
     (mempty)
     ( Constraints.mustPayToScript
         (validatorHash configAdrVal)
-        (Datum $ Constr zero [ toData poolAdr, toData liquidityCS ])
+        (Datum $ List [ toData poolAdr, toData liquidityCS ])
         -- This could have a data type with a ToData instance
         -- but it only gets used once so it seems unnesecary
         DatumInline

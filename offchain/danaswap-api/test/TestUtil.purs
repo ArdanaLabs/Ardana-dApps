@@ -88,6 +88,7 @@ okayErrs :: Array String
 okayErrs =
   [ "Process ogmios-datum-cache exited. Output:" -- todo is this right?
   , "(ClientHttpError There was a problem making the request: request failed)"
+  , "Process ogmios-datum-cache exited. Output:\n"
   ]
 
 -- returns a contiunation that gets the EnvRunner

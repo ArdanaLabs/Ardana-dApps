@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Control.Monad (unless)
-import DanaSwap (liqudityTokenCbor,poolIdTokenMPCbor, trivialCbor,nftCbor,configScriptCbor)
+import DanaSwap (configScriptCbor, liqudityTokenCbor, nftCbor, poolIdTokenMPCbor, trivialCbor)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
