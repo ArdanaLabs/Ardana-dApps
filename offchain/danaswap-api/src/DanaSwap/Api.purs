@@ -1,37 +1,82 @@
 module DanaSwap.Api
-  ( initProtocol
+  ( Protocol(..)
+  , initProtocol
   , mintNft
   , seedTx
   ) where
 
 import Contract.Prelude
 
+import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
-import Contract.Transaction (TransactionInput)
+import Contract.Transaction (TransactionInput(..), TransactionHash(..))
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
 import Contract.Value (CurrencySymbol, adaToken, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
+import Ctl.Internal.Types.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt as BigInt
+import Data.UInt as U
 import Data.List (head)
 import Data.Map (keys)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
 
-type Protocol =
+newtype Protocol = Protocol
   { configUtxo :: TransactionInput
   , poolVal :: Validator
   , liquidityMP :: MintingPolicy
   , poolIdMP :: MintingPolicy
   }
+
+-- We need this type since TransactionInput does not have a decode/encode instance for Aeson
+type TransactionInputSerializable = { index :: Int, transactionId :: String }
+
+logTxId :: TransactionInput -> TransactionInputSerializable
+logTxId (TransactionInput { index, transactionId: TransactionHash bytes }) = { index: U.toInt index, transactionId: byteArrayToHex bytes }
+
+parseTxId :: TransactionInputSerializable -> TransactionInput
+parseTxId { index, transactionId } = TransactionInput
+  { index: U.fromInt index, transactionId: TransactionHash $ hexToByteArrayUnsafe transactionId }
+
+derive instance Generic Protocol _
+instance Show Protocol where
+  show = genericShow
+
+instance DecodeAeson Protocol where
+  decodeAeson a = do
+    ( { configUtxo, poolVal, liquidityMP, poolIdMP }
+        :: { configUtxo :: TransactionInputSerializable
+           , poolVal :: Validator
+           , liquidityMP :: MintingPolicy
+           , poolIdMP :: MintingPolicy
+           }
+    ) <- decodeAeson a
+    pure $
+      ( Protocol $
+          { configUtxo: parseTxId configUtxo
+          , poolVal
+          , liquidityMP
+          , poolIdMP
+          }
+      )
+
+instance EncodeAeson Protocol where
+  encodeAeson' (Protocol { configUtxo, poolVal, liquidityMP, poolIdMP }) =
+    encodeAeson'
+      { configUtxo: logTxId configUtxo
+      , poolVal
+      , liquidityMP
+      , poolIdMP
+      }
 
 initProtocol :: Contract () Protocol
 initProtocol = do
@@ -65,7 +110,7 @@ initProtocol = do
   logDebug' "config utxo submitted, waiting for confirmation"
   configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
   logDebug' "protocol init complete"
-  pure
+  pure $ Protocol
     { configUtxo
     , poolVal
     , liquidityMP
