@@ -1,15 +1,16 @@
 module Test.Wallet
   ( withPlutipWalletFile
   , withFundedHsmWalletFile
+  , withTmpDir
   ) where
 
 import Contract.Prelude
 
-import Aeson (decodeAeson, parseJsonStringToAeson, encodeAeson)
-import Contract.Address (NetworkId(..), PaymentPubKeyHash(..), StakePubKeyHash(..))
+import Aeson (encodeAeson)
+import Contract.Address (PaymentPubKeyHash(..), StakePubKeyHash(..))
 import Contract.Credential (Credential(..), StakingCredential(..))
 import Contract.Log (logInfo')
-import Contract.Monad (liftContractM, runContractInEnv)
+import Contract.Monad (liftContractM, runContractInEnv, ContractEnv)
 import Contract.PlutusData (PlutusData)
 import Contract.ScriptLookups as Lookups
 import Contract.Test.Plutip (PlutipConfig, withPlutipContractEnv)
@@ -19,20 +20,30 @@ import Contract.Value (lovelaceValueOf)
 import Contract.Wallet (KeyWallet, getWalletAddress, withKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyToFile, privateStakeKeyToFile)
 import Ctl.Internal.Wallet.Key (keyWalletPrivatePaymentKey, keyWalletPrivateStakeKey)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, waitForTx)
+import Ctl.Utils.HsmWallet (makeHsmWallet)
 import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
-import Data.String (take, lastIndexOf, Pattern(Pattern))
+import Data.String (trim)
 import Data.UInt as UInt
+import Effect.Aff (bracket)
 import Effect.Exception (throw)
-import HelloWorld.Cli.Types (ParsedConf, WalletConf(..))
-import HsmWallet (makeHsmWallet)
+import Node.Buffer (toString)
+import Node.ChildProcess (execFileSync, defaultExecSyncOptions)
 import Node.Encoding (Encoding(UTF8))
-import Node.FS.Aff (readTextFile, writeTextFile, unlink)
-import Util (buildBalanceSignAndSubmitTx, maxWait, waitForTx)
+import Node.FS.Aff (rmdir, writeTextFile)
+import Node.Path (FilePath, normalize)
+
+-- | Utilizes "mktemp" to create a temporary directory, executes the action and deletes the temporary directory afterwards
+withTmpDir :: forall a. (FilePath -> Aff a) -> Aff a
+withTmpDir =
+  bracket
+    (trim <$> (liftEffect $ toString UTF8 =<< execFileSync "mktemp" [ "-d" ] defaultExecSyncOptions))
+    rmdir
 
 -- TODO: The Ctl.Internal.Wallet.Key seems unavoidable
 
-withFundedHsmWalletFile :: forall a. PlutipConfig -> Array BigInt -> String -> (String -> String -> Aff a) -> Aff a
+withFundedHsmWalletFile :: forall a. PlutipConfig -> Array BigInt -> FilePath -> (String -> String -> Aff a) -> Aff a
 withFundedHsmWalletFile config vals walletDir f = withPlutipContractEnv config vals \env wallet -> do
   runContractInEnv env $ do
     logInfo' "starting wallet funding phas"
@@ -61,7 +72,7 @@ withFundedHsmWalletFile config vals walletDir f = withPlutipContractEnv config v
           (lovelaceValueOf $ BigInt.fromInt 30_000_000)
     txid <- withKeyWallet wallet $ buildBalanceSignAndSubmitTx lookups constraints
     logInfo' "wallet funding finished"
-    res <- waitForTx maxWait adr txid >>= liftContractM "time out"
+    res <- waitForTx adr txid
     logInfo' $ "res: " <> show res
     logInfo' $ "hsm wallet adr: " <> show adr
     bal <- withKeyWallet hsmWallet $ getWalletBalance >>= liftContractM "no wallet"
@@ -69,72 +80,40 @@ withFundedHsmWalletFile config vals walletDir f = withPlutipContractEnv config v
     txs <- withKeyWallet hsmWallet $ getWalletUtxos >>= liftContractM "no wallet"
     logInfo' $ "hsm wallet txs: " <> show txs
   let
-    portArgs =
-      fromMaybe "" ((" --ctl-port " <> _) <<< show <<< UInt.toInt <$> ((unwrap env).config.ctlServerConfig <#> _.port))
-        <> " --ogmios-port "
-        <> show (UInt.toInt (unwrap env).config.ogmiosConfig.port)
-        <> " --odc-port "
-        <> show (UInt.toInt (unwrap env).config.datumCacheConfig.port)
-        <> " "
-  let walletPath = walletDir <> "/hsmWalletCfg.json"
+    portArgs = getPortArgs env
+    walletPath = normalize $ walletDir <> "/hsmWalletCfg.json"
   writeTextFile UTF8 walletPath $ encodeAeson >>> show $
-    { wallet: { useYubiHSM: true }
-    , network: case (unwrap env).config.networkId of
-        MainnetId -> "Mainnet"
-        TestnetId -> "Testnet"
-    }
-  f portArgs (" " <> walletPath <> " ") <* rmWallet walletPath
+    { useYubiHSM: true }
+  f portArgs (" " <> walletPath <> " ")
 
--- TODO if it becomes usefull this could be made to work with optionally many wallets
--- but that's non-trivial and we don't need it yet
-withPlutipWalletFile :: forall a. PlutipConfig -> Array BigInt -> String -> (String -> String -> Aff a) -> Aff a
-withPlutipWalletFile config vals walletDir f = withPlutipContractEnv config vals \env wallet -> do
-  w <- makeWallet (unwrap env).config.networkId walletDir "plutip" wallet
-  let
-    portArgs =
-      fromMaybe "" ((" --ctl-port " <> _) <<< show <<< UInt.toInt <$> ((unwrap env).config.ctlServerConfig <#> _.port))
-        <> " --ogmios-port "
-        <> show (UInt.toInt (unwrap env).config.ogmiosConfig.port)
-        <> " --odc-port "
-        <> show (UInt.toInt (unwrap env).config.datumCacheConfig.port)
-        <> " "
-  f portArgs (" " <> w <> " ") <* rmWallet w
+-- | Extracts the configured CTL runtime ports and greates an argstring
+getPortArgs :: ContractEnv () -> String
+getPortArgs env =
+  fromMaybe "" ((" --ctl-port " <> _) <<< show <<< UInt.toInt <$> ((unwrap env).config.ctlServerConfig <#> _.port))
+    <> " --ogmios-port "
+    <> show (UInt.toInt (unwrap env).config.ogmiosConfig.port)
+    <> " --odc-port "
+    <> show (UInt.toInt (unwrap env).config.datumCacheConfig.port)
+    <> " "
 
--- spaces are convenient for passing it as an argument
+withPlutipWalletFile :: forall a. PlutipConfig -> Array BigInt -> (String -> String -> Aff a) -> Aff a
+withPlutipWalletFile config vals f = withPlutipContractEnv config vals \env wallet -> do
+  withTmpDir $ \walletDir -> do
+    w <- makeWallet walletDir "plutip" wallet
+    let portArgs = getPortArgs env
+    f portArgs (" " <> w <> " ")
 
-makeWallet :: NetworkId -> String -> String -> KeyWallet -> Aff String
-makeWallet network dir name wallet = do
-  let cfgName = dir <> name <> "-cfg.json"
-  let walletName = name <> "-wallet.skey"
-  let stakeName = name <> "-staking.skey"
+-- | Creates a wallet config file in the given directory and name for a KeyWallet
+makeWallet :: FilePath -> String -> KeyWallet -> Aff FilePath
+makeWallet dir name wallet = do
+  let cfgName = normalize $ dir <> "/" <> name <> "-cfg.json"
+  let walletSkey = normalize $ dir <> "/" <> name <> "-wallet.skey"
+  let stakeSkey = normalize $ dir <> "/" <> name <> "-staking.skey"
   writeTextFile UTF8 cfgName $ encodeAeson >>> show $
-    { wallet:
-        { walletPath: walletName
-        , stakingPath: stakeName <$ keyWalletPrivateStakeKey wallet
-        }
-    , network: case network of
-        MainnetId -> "Mainnet"
-        TestnetId -> "Testnet"
+    { walletPath: walletSkey
+    , stakingPath: walletSkey <$ keyWalletPrivateStakeKey wallet
     }
-  privatePaymentKeyToFile walletName $ keyWalletPrivatePaymentKey wallet
-  void $ traverse (privateStakeKeyToFile stakeName) $ keyWalletPrivateStakeKey wallet
+  privatePaymentKeyToFile walletSkey $ keyWalletPrivatePaymentKey wallet
+  void $ traverse (privateStakeKeyToFile stakeSkey) $ keyWalletPrivateStakeKey wallet
   pure cfgName
 
-rmWallet :: String -> Aff Unit
-rmWallet path = do
-  confTxt <- readTextFile UTF8 path
-  let
-    dir = case lastIndexOf (Pattern "/") path of
-      Just n -> take (n + 1) path
-      Nothing -> ""
-  (conf :: ParsedConf) <- throwE =<< decodeAeson <$> throwE (parseJsonStringToAeson confTxt)
-  unlink path
-  case conf.wallet of
-    KeyWalletFiles { walletPath, stakingPath } -> do
-      unlink $ dir <> walletPath
-      void $ traverse unlink ((dir <> _) <$> stakingPath)
-    _ -> pure unit
-
-throwE :: forall a b. Show a => Either a b -> Aff b
-throwE (Left a) = liftEffect $ throw $ show a
-throwE (Right b) = pure b

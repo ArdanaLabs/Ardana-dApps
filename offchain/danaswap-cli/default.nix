@@ -59,10 +59,8 @@
               self.inputs.ogmios-datum-cache.defaultPackage.${pkgs.system}
             ];
             text = ''
-              export MODE=${mode}
               export NODE_PATH=${config.ctl.nodeModules}/node_modules
-              export TEST_RESOURCES=${./fixtures}
-              ${testExe}
+              ${testExe} run --${mode} --test-resources ${./fixtures}
             '';
           };
     in
