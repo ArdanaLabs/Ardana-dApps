@@ -86,7 +86,7 @@ main = launchAff_ $ do
         it "pay both set zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          openPoolSneaky
+          expectError $ openPoolSneaky
             regularOpen
               { reportIssued = Just zero
               , actuallyMint = Just $ \_ _ -> mempty

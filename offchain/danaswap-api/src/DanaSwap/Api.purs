@@ -31,13 +31,15 @@ import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymb
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
-import Data.BigInt (BigInt)
+import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
+import Data.Int (floor)
 import Data.List (head)
 import Data.Map (Map, keys)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
 import Effect.Exception (throw)
+import Math (sqrt)
 
 type Protocol =
   { configUtxo :: TransactionInput
@@ -136,6 +138,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
   adr <- getWalletAddress >>= liftContractM "no wallet"
   utxos <- getUtxos adr
   let
+    liq = BigInt.fromInt $ floor $ sqrt $ toNumber $ amt1 * amt2
     pool = PoolDatum
       { ac1
       , ac2
@@ -143,7 +146,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
       , bal2: amt1
       , adminBal1: zero
       , adminBal2: zero
-      , liquidity: amt1 * amt2
+      , liquidity: liq
       , live: true
       }
   txid <- buildBalanceSignAndSubmitTx
@@ -161,7 +164,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
           (mintingPolicyHash liquidityMP)
           (Redeemer $ List [ toData poolID, Constr zero [] ])
           poolID
-          (amt1 * amt2)
+          liq
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript

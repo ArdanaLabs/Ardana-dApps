@@ -7,10 +7,10 @@ module Test.Api
 
 import Contract.Prelude
 
-import Contract.Address (scriptHashAddress)
+import Contract.Address (getWalletAddress, scriptHashAddress)
+import Contract.Hashing (datumHash)
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
-import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash, validatorHash)
 import Contract.TxConstraints (DatumPresence(..))
@@ -18,11 +18,13 @@ import Contract.TxConstraints as Constraints
 import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol, getPoolById)
+import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol, getPoolById, seedTx)
 import DanaSwap.CborTyped (configAddressValidator)
-import Data.BigInt (BigInt)
-import Data.Map as Map
+import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
+import Data.Int (floor)
+import Data.Map as Map
+import Math (sqrt)
 
 -- This module provides alternative implementations
 -- for several normal API functions which take
@@ -59,18 +61,33 @@ openPoolSneaky
   ac2
   amt1
   amt2 = do
-  poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
+  seed <- seedTx
+  poolID <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
-  let liquidity = amt1 * amt2
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
+  adr <- getWalletAddress >>= liftContractM "no wallet"
+  utxos <- getUtxos adr
+  let
+    liq = BigInt.fromInt $ floor $ sqrt $ toNumber $ amt1 * amt2
+    pool = PoolDatum
+      { ac1
+      , ac2
+      , bal1: amt1
+      , bal2: amt1
+      , adminBal1: zero
+      , adminBal2: zero
+      , liquidity: fromMaybe liq sneaky.reportIssued
+      , live: true
+      }
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
         <> Lookups.unspentOutputs configAdrUtxos
+        <> Lookups.unspentOutputs utxos
     )
     ( Constraints.mustMintCurrencyWithRedeemer
         poolIdMph
@@ -86,25 +103,14 @@ openPoolSneaky
               ( Value.singleton
                   liquidityCs
                   poolID
-                  liquidity
+                  liq
               )
               (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
           )
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
-          ( Datum $ toData $
-              PoolDatum
-                { ac1
-                , ac2
-                , bal1: amt1
-                , bal2: amt1
-                , adminBal1: zero
-                , adminBal2: zero
-                , liquidity: fromMaybe liquidity sneaky.reportIssued
-                , live: true
-                }
-          )
+          (Datum $ toData pool)
           DatumInline
           ( idNft
               <> Value.singleton (fst ac1) (snd ac1) amt1

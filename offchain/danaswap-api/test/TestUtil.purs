@@ -72,6 +72,7 @@ retryOkayErrs aff =
           log $ "failed with an error not makred as retryable"
           log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"
           log $ "exact error was:" <> show err
+          log $ "\nfull error:\n" <> show err' <> "\n"
           pure $ show err `elem` okayErrs
     ]
     \_ -> aff
@@ -89,6 +90,7 @@ okayErrs =
   [ "Process ogmios-datum-cache exited. Output:" -- todo is this right?
   , "(ClientHttpError There was a problem making the request: request failed)"
   , "Process ogmios-datum-cache exited. Output:\n"
+  , "Process ctl-server exited. Output:\n"
   ]
 
 -- returns a contiunation that gets the EnvRunner

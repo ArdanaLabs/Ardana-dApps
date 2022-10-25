@@ -8,6 +8,8 @@ module DanaSwap (
   nftCbor,
   liqudityTokenCbor,
   poolIdTokenMPCbor,
+  -- testing
+  validOpenAmts,
 ) where
 
 import Plutarch.Prelude
