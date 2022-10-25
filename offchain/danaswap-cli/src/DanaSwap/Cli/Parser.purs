@@ -22,8 +22,8 @@ parser = info rawParser
 rawParser :: Parser Options
 rawParser = (helper <*> _)
   $ map Options
-  $ { stateFilePath: _, walletConfigFilePath: _, networkId: _, command: _, ctlPort: _, ogmiosPort: _, odcPort: _ }
-      <$> stateFilePath
+  $ { protocolFilePath: _, walletConfigFilePath: _, networkId: _, command: _, ctlPort: _, ogmiosPort: _, odcPort: _ }
+      <$> protocolFilePath
       <*> walletConfigFilePath
       <*> networkId
       <*> command'
@@ -51,12 +51,12 @@ testnet = flag' TestnetId $
   long "testnet"
     <> help "Run on tesnet."
 
-stateFilePath :: Parser FilePath
-stateFilePath = strOption $
-  long "state-file"
-    <> short 's'
+protocolFilePath :: Parser FilePath
+protocolFilePath = strOption $
+  long "protocol-config"
+    <> short 'p'
     <> metavar "FILE_PATH"
-    <> help "the path to the state file to be used"
+    <> help "The path to the protocol configuration file to be used (JSON). In the case of initialize this options specifies the output filepath of the initialized protocol. In every other case this option specifies the location of the protocol that should be used."
 
 ctlPort :: Parser UInt
 ctlPort = option (fromInt <$> int) $

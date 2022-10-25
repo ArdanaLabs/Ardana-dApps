@@ -1,8 +1,6 @@
 module DanaSwap.Cli.Types
   ( Command(..)
   , Options(..)
-  , CliState(..)
-  , FileState
   , WalletConf(..)
   ) where
 
@@ -10,7 +8,6 @@ import Prelude
 
 import Aeson (class DecodeAeson, decodeAeson)
 import Contract.Address (NetworkId)
-import Contract.Transaction (TransactionInput)
 import Control.Alt ((<|>))
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
@@ -20,17 +17,6 @@ import Node.Path (FilePath)
 
 data Command = InitializeProtocol
 
-type FileState =
-  { lastOutput ::
-      { index :: Int
-      , transactionId :: String
-      }
-  }
-
-data CliState = State
-  { lastOutput :: TransactionInput
-  }
-
 data WalletConf
   = KeyWalletFiles { walletPath :: String, stakingPath :: Maybe String }
   | YubiHSM { useYubiHSM :: Boolean }
@@ -38,7 +24,7 @@ data WalletConf
 -- | The available Danaswap CLI options
 data Options = Options
   { command :: Command
-  , stateFilePath :: FilePath
+  , protocolFilePath :: FilePath
   , walletConfigFilePath :: FilePath
   , networkId :: NetworkId
   , ctlPort :: Maybe UInt

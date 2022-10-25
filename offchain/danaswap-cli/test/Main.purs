@@ -40,10 +40,10 @@ executeTests (Options { mode, testResources }) = do
 
     cli = "danaswap-cli --mainnet "
     badWalletConf = jsonDir <> "badWalletCfg.json "
-    state = " script.clistate "
-  -- remove state file if it exists
-  hasOldState <- exists (trim state)
-  when hasOldState $ unlink (trim state)
+    protocolFile = " protocol.json "
+  -- remove the protocol config file if it exists
+  hasOldProtocol <- exists (trim protocolFile)
+  when hasOldProtocol $ unlink (trim protocolFile)
 
   runSpec' defaultConfig { timeout = Nothing } [ consoleReporter ] $ do
     describe "shell sanity checks" do
@@ -61,43 +61,43 @@ executeTests (Options { mode, testResources }) = do
       it "should fail if the testnet or mainnet flag is missing"
         $ withEnv
         $ \ports wallet ->
-            ("danaswap-cli " <> ports <> "-w" <> wallet <> "-s" <> state <> "init") `failsSaying` "Missing: (--mainnet | --testnet)"
+            ("danaswap-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `failsSaying` "Missing: (--mainnet | --testnet)"
 
-      it "should fail if the state-file option was not set"
+      it "should fail if the protocol-file option was not set"
         $ withEnv
         $ \ports wallet ->
-            (cli <> ports <> "-w" <> wallet <> "init") `failsSaying` "Missing: (-s|--state-file FILE_PATH)"
+            (cli <> ports <> "-w" <> wallet <> "init") `failsSaying` "Missing: (-p|--protocol-config FILE_PATH)"
 
       it "should fail if the wallet-config option was not set" $
-        (cli <> "-s" <> state <> "init") `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
+        (cli <> "-p" <> protocolFile <> "init") `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
 
       it "should fail if the wallet-config option path doesn't exist" $
-        (cli <> "-w bad_path -s" <> state <> "init") `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
+        (cli <> "-w bad_path -p" <> protocolFile <> "init") `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
 
       it "should fail if the path passed to wallet-config has the wrong contents"
         $ fails
         $ cli
         <> "-w"
         <> badWalletConf
-        <> "-s"
-        <> state
+        <> "-p"
+        <> protocolFile
         <> "init"
 
     describe (cli <> "init") do
       when (mode == Local) $
-        it "should succeed using the HSM wallet and create a state file" do
+        it "should succeed using the HSM wallet and create a protocol configuration file" do
           config <- getPlutipConfig
           withTmpDir $ \tmpDir ->
             withFundedHsmWalletFile config [ BigInt.fromInt 35_000_000 ] tmpDir $
               \ports wallet -> do
-                (cli <> ports <> "-w" <> wallet <> "-s" <> state <> "init") `passesSaying` "initialized protocol"
-                exists (trim state) `shouldReturn` true
+                (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `passesSaying` "initialized protocol"
+                exists (trim protocolFile) `shouldReturn` true
 
-      it "should initialize the protocol successfully and create a state file"
+      it "should initialize the protocol successfully and create a protocol config file"
         $ withEnv
         $ \ports wallet -> do
-            unlink (trim state)
-            (cli <> ports <> "-w" <> wallet <> "-s" <> state <> "init")
+            unlink (trim protocolFile)
+            (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init")
               `passesSaying` "initialized protocol"
-            exists (trim state) `shouldReturn` true
+            exists (trim protocolFile) `shouldReturn` true
 
