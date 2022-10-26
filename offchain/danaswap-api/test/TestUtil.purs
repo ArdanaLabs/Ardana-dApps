@@ -74,11 +74,13 @@ retryOkayErrs aff =
         let err = trim $ message err'
         if err `elem` badErrors then pure false
         else do
-          log $ "failed with an error not makred as retryable"
-          log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"
-          log $ "exact error was:" <> show err
-          log $ "\nfull error:\n" <> show err' <> "\n"
-          pure $ show err `elem` okayErrs
+          if err `elem` (trim <$> okayErrs) then pure true
+          else do
+            log $ "failed with an error not makred as retryable"
+            log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"
+            log $ "exact error was:" <> show err
+            log $ "\nfull error:\n" <> show err' <> "\n"
+            pure $ false
     ]
     \_ -> aff
 
@@ -188,9 +190,8 @@ expectErrorPred
   => (Error -> Boolean)
   -> m t
   -> m Unit
-expectErrorPred pred a = do
-  e <- try a
-  case e of
+expectErrorPred pred a =
+  try a >>= case _ of
     Left err -> when (not $ pred err) $ do
       liftEffect $ log $ "Threw an error but it didn't match predicate"
       throwError err
