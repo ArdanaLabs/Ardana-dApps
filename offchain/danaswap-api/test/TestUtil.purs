@@ -23,11 +23,15 @@ import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (Pattern(Pattern), contains, trim)
+import Data.String (trim)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, error, message, throw)
+import Effect.Exception (throw)
+import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile, exists, unlink)
@@ -61,8 +65,8 @@ runWithMode mode spec = do
 -- the function `it` transforms this type into an EnvSpec
 useRunnerSimple :: forall a. Contract () a -> EnvRunner -> Aff Unit
 useRunnerSimple contract runner = do
-  retryOkayErrs $ runner \env alice ->
-    runContractInEnv env
+  runner \env alice ->
+    retryOkayErrs $ runContractInEnv env
       $ withKeyWallet alice
       $ void contract
 
