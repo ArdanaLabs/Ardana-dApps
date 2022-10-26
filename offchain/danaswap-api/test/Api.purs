@@ -108,6 +108,7 @@ openPoolSneaky
               (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
           )
         <> Constraints.mustReferenceOutput configUtxo
+        <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
           (validatorHash poolVal)
           (Datum $ toData pool)

@@ -2,6 +2,7 @@ module TestUtil
   ( Mode(..)
   , runWithMode
   , useRunnerSimple
+  , expectScriptError
   -- Types
   , EnvSpec
   , EnvRunner
@@ -14,18 +15,22 @@ import Contract.Monad (Contract, ContractEnv, withContractEnv)
 import Contract.Test.Plutip (PlutipConfig, runContractInEnv, withKeyWallet, withPlutipContractEnv)
 import Contract.Wallet (KeyWallet, privateKeysToKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFile)
+import Control.Monad.Error.Class (throwError, try)
+import Control.Monad.Except (class MonadError)
 import Ctl.Internal.Plutip.PortCheck (isPortAvailable)
 import Data.BigInt as BigInt
 import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
+import Data.String (contains, Pattern(Pattern))
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
-import Effect.Exception (message, throw)
+import Effect.Class (class MonadEffect)
+import Effect.Exception (Error, error, message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (appendTextFile)
+import Node.FS.Aff (appendTextFile, unlink)
 import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, parallel, sequential)
 import Test.Spec.Reporter (specReporter)
@@ -97,9 +102,11 @@ okayErrs =
 -- This is nesecary to allow control over which parts
 -- run once vs each time
 getEnvRunner :: Mode -> Aff (Aff EnvRunner)
-getEnvRunner Local = pure $ do
-  newCfg <- getPlutipConfig
-  pure $ withPlutipContractEnv newCfg $ defaultWallet
+getEnvRunner Local = do
+  unlink "apiTest.log"
+  pure $ do
+    newCfg <- getPlutipConfig
+    pure $ withPlutipContractEnv newCfg $ defaultWallet
 getEnvRunner Testnet = do
   testResourcesDir <- liftEffect $ fromMaybe "./fixtures/" <$> lookupEnv "TEST_RESOURCES"
   key <- privatePaymentKeyFromFile $ testResourcesDir <> "/wallet.skey"
@@ -121,11 +128,12 @@ getFreePort = do
 -- Finds 5 free ports and returns a plutip config using those ports
 getPlutipConfig :: Aff PlutipConfig
 getPlutipConfig = do
+  let level = Info
   replicateA 5 getFreePort >>= case _ of
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: Warn
+      , logLevel: level
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2
@@ -152,14 +160,38 @@ getPlutipConfig = do
           , password: "ctxlib"
           , dbname: "ctxlib"
           }
-      , customLogger: Just (ourLogger "apiTest.log")
+      , customLogger: Just (ourLogger level "apiTest.log")
       , suppressLogs: false
       }
     _ -> liftEffect $ throw "replicateM returned list of the wrong length in plutipConfig"
 
-ourLogger :: String -> Message -> Aff Unit
-ourLogger path msg = do
+ourLogger :: LogLevel -> String -> Message -> Aff Unit
+ourLogger level path msg = do
   pretty <- prettyFormatter msg
-  when (msg.level >= Warn) $ log pretty
+  when (msg.level >= level) $ log pretty
   appendTextFile UTF8 path ("\n" <> pretty)
 
+expectScriptError
+  :: forall m t
+   . MonadError Error m
+  => MonadEffect m
+  => m t
+  -> m Unit
+expectScriptError =
+  expectErrorPred (\err -> contains (Pattern "Script failure") (message err))
+  -- TODO this is probably wrong
+
+expectErrorPred
+  :: forall m t
+   . MonadError Error m
+  => MonadEffect m
+  => (Error -> Boolean)
+  -> m t
+  -> m Unit
+expectErrorPred pred a = do
+  e <- try a
+  case e of
+    Left err -> when (not $ pred err) $ do
+      liftEffect $ log $ "Threw an error but it didn't match predicate"
+      throwError err
+    Right _ -> throwError $ error "Expected error"

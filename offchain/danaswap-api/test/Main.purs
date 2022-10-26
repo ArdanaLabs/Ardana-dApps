@@ -25,7 +25,7 @@ import Setup (prepTestTokens)
 import Test.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), runWithMode, useRunnerSimple)
+import TestUtil (Mode(..), expectScriptError, runWithMode, useRunnerSimple)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -56,7 +56,7 @@ main = launchAff_ $ do
         it "Both zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPool
+          expectScriptError $ openPool
             protocol
             ac1
             ac2
@@ -66,7 +66,7 @@ main = launchAff_ $ do
         it "first zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPool
+          expectScriptError $ openPool
             protocol
             ac1
             ac2
@@ -76,7 +76,7 @@ main = launchAff_ $ do
         it "second zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPool
+          expectScriptError $ openPool
             protocol
             ac1
             ac2
@@ -86,7 +86,7 @@ main = launchAff_ $ do
         it "pay both set zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPoolSneaky
+          expectScriptError $ openPoolSneaky
             regularOpen
               { reportIssued = Just zero
               , actuallyMint = Just $ \_ _ -> mempty
@@ -101,10 +101,10 @@ main = launchAff_ $ do
         it "report correctly" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPoolSneaky
+          expectScriptError $ openPoolSneaky
             regularOpen
-              { reportIssued = Just $ BigInt.fromInt (90 * 90)
-              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
+              { reportIssued = Just $ BigInt.fromInt 90
+              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 100)
               }
             protocol
             ac1
@@ -115,10 +115,10 @@ main = launchAff_ $ do
         it "report paying in full" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $ openPoolSneaky
+          expectScriptError $ openPoolSneaky
             regularOpen
-              { reportIssued = Just $ BigInt.fromInt 10_000
-              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 10_000)
+              { reportIssued = Just $ BigInt.fromInt 100
+              , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 100)
               }
             protocol
             ac1
@@ -147,10 +147,10 @@ main = launchAff_ $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $
+          expectScriptError $
             openPoolSneaky
               ( regularOpen
-                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
+                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 100)
                   , redeemer = Just $ \_poolId -> Redeemer $ List [ toData wrongId, Constr zero [] ]
                   }
               )
@@ -164,10 +164,10 @@ main = launchAff_ $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
-          expectError $
+          expectScriptError $
             openPoolSneaky
               ( regularOpen
-                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 10_000)
+                  { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 100)
                   }
               )
               protocol
@@ -180,12 +180,12 @@ main = launchAff_ $ do
         protocol <- initProtocol
         wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
         (ac1 /\ ac2) <- prepTestTokens
-        expectError $
+        expectScriptError $
           openPoolSneaky
             ( regularOpen
                 { actuallyMint = Just \lcs poolId ->
-                    Value.singleton lcs wrongId (BigInt.fromInt 10_000)
-                      <> Value.singleton lcs poolId (BigInt.fromInt 10_000)
+                    Value.singleton lcs wrongId (BigInt.fromInt 100)
+                      <> Value.singleton lcs poolId (BigInt.fromInt 100)
                 }
             )
             protocol
@@ -220,7 +220,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectError $
+          expectScriptError $
             depositLiquiditySneaky
               regularDeposit
                 { actuallyMint = Just \liquidityCs ->
@@ -240,7 +240,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectError $
+          expectScriptError $
             depositLiquiditySneaky
               regularDeposit
                 { actuallyMint = Just \liquidityCs ->
@@ -259,7 +259,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectError $
+          expectScriptError $
             depositLiquiditySneaky
               regularDeposit
                 { redeemer = Just $ Redeemer $ List [ toData wrongId, Constr zero [] ]
@@ -292,7 +292,7 @@ main = launchAff_ $ do
           constraints :: TxConstraints Unit Unit
           constraints = Constraints.mustMintValue (Value.singleton cs adaToken (BigInt.fromInt 1))
             <> Constraints.mustReferenceOutput txOut
-        expectError $ buildBalanceSignAndSubmitTx lookups constraints
+        expectScriptError $ buildBalanceSignAndSubmitTx lookups constraints
 
       it "double minting fails on second mint" $ useRunnerSimple do
         txOut <- seedTx
@@ -310,6 +310,7 @@ main = launchAff_ $ do
             <> Constraints.mustSpendPubKeyOutput txOut
         txId <- buildBalanceSignAndSubmitTx lookups constraints
         _ <- waitForTx adr txId
+        -- It's fine and expected that this is not a script error
         expectError $ buildBalanceSignAndSubmitTx lookups constraints
 
       it "spends the seed UTxO after minting" $ useRunnerSimple do
@@ -358,13 +359,11 @@ main = launchAff_ $ do
         let
           burnLookups :: Lookups.ScriptLookups PlutusData
           burnLookups = Lookups.mintingPolicy nftPolicy
-            <> Lookups.unspentOutputs utxos
 
           burnConstraints :: TxConstraints Unit Unit
           burnConstraints =
             Constraints.mustSpendPubKeyOutput txOut
               <> Constraints.mustMintValue (Value.singleton cs adaToken (BigInt.fromInt $ -1))
         expectError
-          $ void
           $ buildBalanceSignAndSubmitTx burnLookups burnConstraints
 
