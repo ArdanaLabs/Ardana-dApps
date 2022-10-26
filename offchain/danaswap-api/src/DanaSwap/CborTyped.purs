@@ -38,7 +38,8 @@ poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' $ "nft cs:" <> show configUtxoNftCS
   decodeCborMp CBOR.trivial
 
--- | Placeholder
+-- | MintingPolicy for the pool liquidity tokens parametized by the
+-- currency symbol of the poolId tokens
 liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"

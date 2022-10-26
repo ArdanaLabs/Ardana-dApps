@@ -45,11 +45,13 @@ type Protocol =
 
 type PoolId = TokenName
 
+-- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
 getAllPools protocol@{ poolAdrVal } =
   getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
     <#> Map.filter (hasNft protocol)
 
+-- | Given a protocol object and a pool id returns the transaction input and output of that pool
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
 getPoolById protocol@{ poolIdMP } token = do
   pools <- getAllPools protocol
@@ -60,6 +62,7 @@ getPoolById protocol@{ poolIdMP } token = do
     [ vault ] -> pure vault
     _ -> liftEffect $ throw "more than one pool with the same ID, this is really bad"
 
+-- helper function to check that a pool has an NFT and is therefore valid
 hasNft :: Protocol -> TransactionOutputWithRefScript -> Boolean
 hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
   Nothing -> false -- protocol was invalid
@@ -69,8 +72,8 @@ hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
 depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
-  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
-  let idNft = Value.singleton poolIdCs poolID one
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let idNft = Value.singleton poolIdCS poolID one
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
@@ -98,9 +101,9 @@ depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
 openPool :: Protocol -> Contract () PoolId
 openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
-  let poolIdMph = mintingPolicyHash poolIdMP
-  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  let idNft = Value.singleton poolIdCs poolID one
+  let poolIdMPH = mintingPolicyHash poolIdMP
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMPH
+  let idNft = Value.singleton poolIdCS poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
   txid <- buildBalanceSignAndSubmitTx
@@ -110,7 +113,7 @@ openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
     )
     ( Constraints.mustMintCurrencyWithRedeemer -- Pool id token
 
-        poolIdMph
+        poolIdMPH
         (Redeemer $ toData unit)
         poolID
         one
@@ -130,6 +133,10 @@ openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
+-- | Initializes the protocol returns a protocol
+-- object which includes various values
+-- which depend on the config utxo's NFT
+-- and therefore differ per instantiation
 initProtocol :: Contract () Protocol
 initProtocol = do
   logDebug' "starting protocol init"
