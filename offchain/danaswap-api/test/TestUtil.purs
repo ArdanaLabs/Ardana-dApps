@@ -30,7 +30,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, error, message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (appendTextFile, unlink)
+import Node.FS.Aff (appendTextFile, exists, unlink)
 import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, parallel, sequential)
 import Test.Spec.Reporter (specReporter)
@@ -103,7 +103,8 @@ okayErrs =
 -- run once vs each time
 getEnvRunner :: Mode -> Aff (Aff EnvRunner)
 getEnvRunner Local = do
-  unlink "apiTest.log"
+  oldLogsExist <- exists "apiTest.log"
+  when oldLogsExist $ unlink "apiTest.log"
   pure $ do
     newCfg <- getPlutipConfig
     pure $ withPlutipContractEnv newCfg $ defaultWallet
@@ -179,7 +180,6 @@ expectScriptError
   -> m Unit
 expectScriptError =
   expectErrorPred (\err -> contains (Pattern "Script failure") (message err))
-  -- TODO this is probably wrong
 
 expectErrorPred
   :: forall m t
