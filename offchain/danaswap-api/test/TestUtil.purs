@@ -57,8 +57,8 @@ runWithMode mode spec = do
 -- the function `it` transforms this type into an EnvSpec
 useRunnerSimple :: forall a. Contract () a -> EnvRunner -> Aff Unit
 useRunnerSimple contract runner = do
-  runner \env alice ->
-    retryOkayErrs $ runContractInEnv env
+  retryOkayErrs $ runner \env alice ->
+    runContractInEnv env
       $ withKeyWallet alice
       $ void contract
 
