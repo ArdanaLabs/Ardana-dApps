@@ -19,9 +19,11 @@ import Data.BigInt as BigInt
 import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
+import Data.String (trim)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
-import Effect.Exception (throw)
+import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile)
@@ -52,10 +54,44 @@ runWithMode mode spec = do
 -- the function `it` transforms this type into an EnvSpec
 useRunnerSimple :: forall a. Contract () a -> EnvRunner -> Aff Unit
 useRunnerSimple contract runner = do
-  runner \env alice ->
+  retryOkayErrs $ runner \env alice ->
     runContractInEnv env
       $ withKeyWallet alice
       $ void contract
+
+retryOkayErrs :: Aff Unit -> Aff Unit
+retryOkayErrs aff =
+  recovering
+    (limitRetries 5)
+    [ \_ err' -> do
+        let err = trim $ message err'
+        if err `elem` badErrors then pure false
+        else do
+          if err `elem` (trim <$> okayErrs) then pure true
+          else do
+            log $ "failed with an error not makred as retryable"
+            log $ "if this error is okay add it to the okayErrs list in ./test/TestUtil.purs"
+            log $ "exact error was:" <> show err
+            log $ "\nfull error:\n" <> show err' <> "\n"
+            pure $ false
+    ]
+    \_ -> aff
+
+-- Errors where we don't
+-- want to suggest adding
+-- them to okayErrs
+badErrors :: Array String
+badErrors =
+  [ "Expected Error"
+  ]
+
+okayErrs :: Array String
+okayErrs =
+  [ "(ClientHttpError There was a problem making the request: request failed)"
+  , "Process ogmios-datum-cache exited. Output:"
+  , "Process ctl-server exited. Output:"
+  , "timed out waiting for tx"
+  ]
 
 -- | returns a contiunation that gets the EnvRunner
 -- This is nesecary to allow control over which parts
