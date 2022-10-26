@@ -94,7 +94,9 @@ openPoolSneaky
         (Redeemer $ toData unit)
         poolID
         one
-        <> Constraints.mustMintValueWithRedeemer
+        <> (if liq >= one
+          then
+          Constraints.mustMintValueWithRedeemer
           ( fromMaybe
               (Redeemer $ List [ toData poolID, Constr zero [] ])
               (sneaky.redeemer <#> (_ $ poolID))
@@ -107,6 +109,8 @@ openPoolSneaky
               )
               (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
           )
+          else mempty
+            )
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
