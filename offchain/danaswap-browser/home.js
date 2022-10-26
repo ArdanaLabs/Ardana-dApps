@@ -1,5 +1,5 @@
 "use strict";
 
-import("./homeOutput/DanaSwapBrowser.Home/index.js").then((m) => {
+import("./homeOutput/DanaSwap.Browser.Home/index.js").then((m) => {
   m.main();
 });

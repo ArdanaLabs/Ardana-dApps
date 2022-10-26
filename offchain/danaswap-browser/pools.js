@@ -1,5 +1,5 @@
 "use strict";
 
-import("./poolsOutput/DanaSwapBrowser.Pools/index.js").then((m) => {
+import("./poolsOutput/DanaSwap.Browser.Pools/index.js").then((m) => {
   m.main();
 });
