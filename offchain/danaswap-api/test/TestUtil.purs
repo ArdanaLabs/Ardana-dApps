@@ -22,7 +22,7 @@ import Data.BigInt as BigInt
 import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
-import Data.String (contains, Pattern(Pattern))
+import Data.String (Pattern(Pattern), contains, trim)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
@@ -71,7 +71,7 @@ retryOkayErrs aff =
   recovering
     (limitRetries 5)
     [ \_ err' -> do
-        let err = message err'
+        let err = trim $ message err'
         if err `elem` badErrors then pure false
         else do
           log $ "failed with an error not makred as retryable"
@@ -94,8 +94,8 @@ okayErrs :: Array String
 okayErrs =
   [ "Process ogmios-datum-cache exited. Output:" -- todo is this right?
   , "(ClientHttpError There was a problem making the request: request failed)"
-  , "Process ogmios-datum-cache exited. Output:\n"
-  , "Process ctl-server exited. Output:\n"
+  , "Process ogmios-datum-cache exited. Output:"
+  , "Process ctl-server exited. Output:"
   ]
 
 -- returns a contiunation that gets the EnvRunner
