@@ -20,9 +20,10 @@ import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (trim)
+import Data.Time.Duration (Minutes(..))
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
-import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
 import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
@@ -65,8 +66,9 @@ useRunnerSimple contract runner = do
 retryOkayErrs :: Aff Unit -> Aff Unit
 retryOkayErrs aff =
   recovering
-    (limitRetries 5)
-    [ \_ err' -> do
+    (limitRetriesByCumulativeDelay (Minutes 10.0) $ limitRetries 5)
+    [ \status err' -> do
+        log $ "retrying with" <> show status
         let err = trim $ message err'
         if err `elem` badErrors then pure false
         else do
@@ -163,6 +165,6 @@ getPlutipConfig = do
 ourLogger :: String -> Message -> Aff Unit
 ourLogger path msg = do
   pretty <- prettyFormatter msg
-  when (msg.level >= Warn) $ log pretty
+  when (msg.level >= Info) $ log pretty
   appendTextFile UTF8 path ("\n" <> pretty)
 
