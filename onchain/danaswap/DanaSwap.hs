@@ -77,7 +77,7 @@ liqudityTokenMP = phoistAcyclic $
       redeemerRec <- pletFieldsC @'["poolId", "action"] redeemerRec'
       scriptContextRec <- pletFieldsC @'["txInfo", "purpose"] scriptContextData
       poolIdCS <- pletC $ pfromData (ptryFromData poolIdCSData)
-      poolIdTN <- pletC $ getField @"poolId" redeemerRec
+      poolIdTokenName <- pletC $ getField @"poolId" redeemerRec
       PMinting liquidityCSRec <- pmatchC $ getField @"purpose" scriptContextRec
       infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scriptContextRec)
       let minting = getField @"mint" infoRec
@@ -87,7 +87,7 @@ liqudityTokenMP = phoistAcyclic $
       passert_ "minted exactly one token name of liquidity tokens" $
         plength # liquidityAsList #== 1
       passert_ "token name matched redeemer" $
-        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTN
+        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
       pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
         Open _ -> do
           PJust idTokens <- pmatchC $ PMap.plookup # poolIdCS # mintingMap
@@ -104,7 +104,7 @@ liqudityTokenMP = phoistAcyclic $
               pmatchC (PMap.plookup # poolIdCS # val) >>= \case
                 PNothing -> pure $ pcon PFalse
                 PJust poolIdToken ->
-                  pmatchC (PMap.plookup # poolIdTN # poolIdToken) >>= \case
+                  pmatchC (PMap.plookup # poolIdTokenName # poolIdToken) >>= \case
                     PNothing -> pure $ pcon PFalse
                     PJust _ -> pure $ pcon PTrue
 

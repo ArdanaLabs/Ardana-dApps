@@ -36,5 +36,5 @@ cbors =
   , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
-  , Cbor "liqudityTokenMP" liqudityTokenCBor
+  , Cbor "liqudityTokenMintingPolicy" liqudityTokenCBor
   ]
