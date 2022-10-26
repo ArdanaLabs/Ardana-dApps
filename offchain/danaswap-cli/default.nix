@@ -15,16 +15,18 @@
                 with ps-pkgs;
                 [
                   prelude
-                  optparse
                   node-fs-aff
                   node-fs
-                  dotenv
-                  stringutils
-                  bigints
                   self'.packages."offchain:danaswap-api"
                   self'.packages."offchain:ctl-utils"
                 ];
               dir = ./.;
+              test-dependencies =
+                with ps-pkgs;
+                [
+                  stringutils
+                  self'.packages."offchain:ctl-utils-test"
+                ];
             };
         package =
           let js = "${danaswap-cli.ps.modules.Main.output {}}/Main/index.js"; in
