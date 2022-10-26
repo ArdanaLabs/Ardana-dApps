@@ -56,7 +56,7 @@ openPoolSneaky
   -> Contract () PoolId
 openPoolSneaky
   sneaky
-  { poolVal, liquidityMP, poolIdMP, configUtxo }
+  { poolAdrVal, liquidityMP, poolIdMP, configUtxo }
   ac1
   ac2
   amt1
@@ -110,7 +110,7 @@ openPoolSneaky
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData pool)
           DatumInline
           ( idNft
@@ -118,7 +118,7 @@ openPoolSneaky
               <> Value.singleton (fst ac2) (snd ac2) amt2
           )
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 type SneakyOptionsDeposit =
@@ -137,16 +137,16 @@ regularDeposit =
 -- TODO ignores report issued for now
 -- this won't matter till we have an actuall pool address validator script
 depositLiquiditySneaky :: SneakyOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
-depositLiquiditySneaky sneaky protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
+depositLiquiditySneaky sneaky protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolVal
+          <> Lookups.validator poolAdrVal
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
@@ -162,7 +162,7 @@ depositLiquiditySneaky sneaky protocol@{ poolVal, liquidityMP, poolIdMP } poolID
             )
 
           <> Constraints.mustPayToScript
-            (validatorHash poolVal)
+            (validatorHash poolAdrVal)
             (Datum $ toData unit)
             DatumInline
             idNft

@@ -43,12 +43,11 @@ import Math (sqrt)
 
 type Protocol =
   { configUtxo :: TransactionInput
-  , poolVal :: Validator
+  , poolAdrVal :: Validator
   , liquidityMP :: MintingPolicy
   , poolIdMP :: MintingPolicy
   }
 
--- TODO should this be a newtype?
 type PoolId = TokenName
 type AssetClass = CurrencySymbol /\ TokenName
 
@@ -77,16 +76,16 @@ instance ToData PoolDatum where
     ]
 
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
-getAllPools protocol@{ poolVal } =
-  getUtxos (scriptHashAddress $ validatorHash poolVal)
+getAllPools protocol@{ poolAdrVal } =
+  getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
     <#> Map.filter (hasNft protocol)
 
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
 getPoolById protocol@{ poolIdMP } token = do
   pools <- getAllPools protocol
-  cs <- liftContractM "invalid protocol" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
-  case Map.toUnfoldable valid of
+  case Map.toUnfoldableUnordered valid of
     [] -> liftEffect $ throw "no pools with that ID"
     [ vault ] -> pure vault
     _ -> liftEffect $ throw "more than one pool with the same ID, this is really bad"
@@ -98,15 +97,15 @@ hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
 
 -- TODO this is a placeholder implementation
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
-depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) =<<
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolVal
+          <> Lookups.validator poolAdrVal
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
@@ -117,7 +116,7 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
             poolID
             (BigInt.fromInt 10)
           <> Constraints.mustPayToScript
-            (validatorHash poolVal)
+            (validatorHash poolAdrVal)
             (Datum $ toData unit)
             DatumInline
             idNft
@@ -127,7 +126,7 @@ depositLiquidity protocol@{ poolVal, liquidityMP, poolIdMP } poolID = do
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
 openPool :: Protocol -> AssetClass -> AssetClass -> BigInt -> BigInt -> Contract () PoolId
-openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
+openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
   seed <- seedTx
   poolID <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -168,7 +167,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
-          (validatorHash poolVal)
+          (validatorHash poolAdrVal)
           (Datum $ toData $ pool)
           DatumInline
           ( idNft
@@ -176,7 +175,7 @@ openPool { poolVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
               <> Value.singleton (fst ac2) (snd ac2) amt2
           )
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolVal) txid
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
 initProtocol :: Contract () Protocol
@@ -193,8 +192,8 @@ initProtocol = do
   liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
     $ mintingPolicyHash liquidityMP
-  poolVal <- poolAddressValidator poolIdCS liquidityCS
-  let poolVH = validatorHash poolVal
+  poolAdrVal <- poolAddressValidator poolIdCS liquidityCS
+  let poolVH = validatorHash poolAdrVal
   let poolAdr = scriptHashAddress poolVH
   configAdrVal <- configAddressValidator
   logDebug' "about to submit config utxo"
@@ -213,7 +212,7 @@ initProtocol = do
   logDebug' "protocol init complete"
   pure
     { configUtxo
-    , poolVal
+    , poolAdrVal
     , liquidityMP
     , poolIdMP
     }
