@@ -159,13 +159,15 @@ openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = d
         (Redeemer $ toData seed)
         poolID
         one
-        <> (if liq >= one then
-            Constraints.mustMintCurrencyWithRedeemer
-            (mintingPolicyHash liquidityMP)
-            (Redeemer $ List [ toData poolID, Constr zero [] ])
-            poolID
-            liq
-            else mempty)
+        <>
+          ( if liq >= one then
+              Constraints.mustMintCurrencyWithRedeemer
+                (mintingPolicyHash liquidityMP)
+                (Redeemer $ List [ toData poolID, Constr zero [] ])
+                poolID
+                liq
+            else mempty
+          )
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript

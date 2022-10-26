@@ -94,23 +94,23 @@ openPoolSneaky
         (Redeemer $ toData unit)
         poolID
         one
-        <> (if liq >= one
-          then
-          Constraints.mustMintValueWithRedeemer
-          ( fromMaybe
-              (Redeemer $ List [ toData poolID, Constr zero [] ])
-              (sneaky.redeemer <#> (_ $ poolID))
+        <>
+          ( if liq >= one then
+              Constraints.mustMintValueWithRedeemer
+                ( fromMaybe
+                    (Redeemer $ List [ toData poolID, Constr zero [] ])
+                    (sneaky.redeemer <#> (_ $ poolID))
+                )
+                ( fromMaybe
+                    ( Value.singleton
+                        liquidityCs
+                        poolID
+                        liq
+                    )
+                    (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
+                )
+            else mempty
           )
-          ( fromMaybe
-              ( Value.singleton
-                  liquidityCs
-                  poolID
-                  liq
-              )
-              (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
-          )
-          else mempty
-            )
         <> Constraints.mustReferenceOutput configUtxo
         <> Constraints.mustSpendPubKeyOutput seed
         <> Constraints.mustPayToScript
