@@ -76,11 +76,6 @@ module.exports = {
     new webpack.LoaderOptionsPlugin({
       debug: true,
     }),
-    new HtmlWebpackPlugin({
-      title: "hello-world-api",
-      template: "./index.html",
-      inject: false, // See stackoverflow.com/a/38292765/3067181
-    }),
     new webpack.ProvidePlugin({
       Buffer: ["buffer", "Buffer"],
     }),
