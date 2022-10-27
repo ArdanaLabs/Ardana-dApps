@@ -513,20 +513,63 @@ The tests for the NFT minting policy which creates the Config UTXO ID.
 
 \subsection*{Pool id Token Minting Policy tests}
 
+For this section a "valid pool open" refers to a Tx where
+
 \begin{itemize}
-	\item Non admin can initialize a pool
-	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
+	\item A pool is opened with 100 each of two dummy tokens.
+	\item The admin fees are set to 0
+	\item the issued liquidity is $\sqrt{A_0 B_0}$ (in this case 100)
+	\item the pool liveness is set to true
+	\item The transaction should reference the valid config utxo
+	\item A seed utxo should be chosen
+	\item The seed utxo is spent
+	\item The seed utxo is passed to the pool id minting policy via the redeemer
+	\item the pool id is the hash of the seed utxo
+	\item The same number as the issued liquidity of liquidity tokens of the same id as the pool are minted
+	\item The pool id NFT is sent to the pool
+\end{itemize}
+
+Any Tx mentioned in these tests should be the same as the valid open
+except for any contradicting details stated in that test.
+
+\begin{itemize}
+	\item Non admin can initialize a pool.
+		\\ To test this we should validate a valid pool opn
 	\item Can't under pay for liquidity on open
+		\\ To test this we should fail to validate a 2 txs
+			\begin{itemize}
+				\item One where:
+					We only provide 90 of each token.
+					but report minting 100
+					and mint 100
+				\item One where:
+					we only provide 90 of each token
+					and in the datum report minting 90
+					but actually mint 100
+			\end{itemize}
 	\item Can't open pool with 0 liquidity
+		\\ To test this we should fail to validate a tx where
+			both amounts and the liquidity are zero
 	\item Can't open pool with 0 of either exchange token
-		%% This is sorta redundant cause the liquidity needs to be
-		%% wrong or 0
+		\\ To test this we should fail to validate two Txs
+		one where each currency amount is zero
 	\item A utxo without the config NFT can't be used to open a pool
+		\\ To test this we should
+		produce an identical config utxo without the NFT
+		and then fail to validate a tx
+		where the invalid config utxo is referenced instead
 	\item Can't mint more than 1 token
+		\\ To test this we should fail to validate a tx where
+		two pool id tokens are minted
 	\item Can't send identifier token to non-pool address
+		\\ To test this we should fail to validate a tx where
+		the pool id NFT is kept by the user
+	\item Can't mint pool with wrong pool id
+		\\ To test this we should fail to validate a tx where
+		the token name of the minted id is ``aaaa"
 	\item Can't mint without spending seed Tx
-	\item Can't issue more liquidity than datum reflects
-	\item Can't mint with liquidity not equal to the initial invariant
+		\\ To test this we should fail to validate a tx where
+		the seed utxo is not spent
 \end{itemize}
 
 \subsection*{Pool Address Validator tests}
