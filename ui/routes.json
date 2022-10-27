@@ -2,9 +2,5 @@
   {
     "path": "/",
     "dir": "pages/home/index.ejs"
-  },
-  {
-    "path": "/pools",
-    "dir": "pages/pools/index.ejs"
   }
 ]

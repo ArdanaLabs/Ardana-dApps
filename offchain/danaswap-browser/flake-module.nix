@@ -37,15 +37,12 @@
             ''
               export BROWSER_RUNTIME=1
               cp -r ${danaswap-browser.ps.modules."DanaSwap.Browser.Home".output { }} homeOutput
-              cp -r ${danaswap-browser.ps.modules."DanaSwap.Browser.Pools".output { }} poolsOutput
               cp ${./home.js} home.js
-              cp ${./pools.js} pools.js
               cp -r ${nodeModules}/* .
               export NODE_PATH="node_modules"
               export PATH="bin:$PATH"
               mkdir -p $out/dist
               webpack --mode=production -c ${../webpack.config.js} -o $out/dist/home --entry ./home.js
-              webpack --mode=production -c ${../webpack.config.js} -o $out/dist/pools --entry ./pools.js
             '';
       };
     in

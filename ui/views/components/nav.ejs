@@ -1,56 +1,24 @@
-<nav class="navbar is-spaced" role="navigation" aria-label="main navigation">
+<nav class="navbar m-6" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
-    <a class="navbar-item mt-3" href="/"> </a>
-
-    <a
-      role="button"
-      class="navbar-burger"
-      aria-label="menu"
-      aria-expanded="false"
-      data-target="navbar"
-    >
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </a>
+    <a class="navbar-item"> </a>
   </div>
 
-  <div id="navbar" class="navbar-menu">
-    <div class="navbar-start has-text-centered">
-      <a
-        class="navbar-item has-text-weight-bold mx-6 mt-1 is-size-6 <%= currentUrl == '/' ? 'is-active' : '' %>"
-        href="/"
-      >
-        HOME
-      </a>
+  <div class="navbar-end">
+    <div class="navbar-item">
+      <div class="buttons is-centered">
+        <button
+          id="theme-toggle-btn"
+          class="button is-rounded is-responsive danaswap-btn-has-background"
+        >
+          <span>LIGHTMODE</span>
+          <span class="icon">
+            <i class="fas fa-sun"></i>
+          </span>
+        </button>
 
-      <a
-        class="navbar-item has-text-weight-bold mx-6 mt-1 is-size-6 pools <%= currentUrl == '/pools' ? 'is-active' : '' %>"
-        href="/pools"
-      >
-        POOLS
-      </a>
-    </div>
-
-    <div class="navbar-end">
-      <div class="navbar-item">
-        <div class="buttons is-centered">
-          <button
-            id="theme-toggle-btn"
-            class="button is-rounded is-medium is-responsive danaswap-btn-has-background"
-          >
-            <span>LIGHTMODE</span>
-            <span class="icon is-medium">
-              <i class="fas fa-sun"></i>
-            </span>
-          </button>
-
-          <button
-            class="button is-rounded is-medium is-responsive danaswap-btn-has-border"
-          >
-            CONNECT WALLET
-          </button>
-        </div>
+        <button class="button is-rounded is-responsive danaswap-btn-has-border">
+          CONNECT WALLET
+        </button>
       </div>
     </div>
   </div>

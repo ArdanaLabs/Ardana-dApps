@@ -2,11 +2,9 @@ module DanaSwap.Browser.Home where
 
 import Contract.Prelude
 
-import DanaSwapBrowser.Types (Pool(..))
+import DanaSwapBrowser.Types (Asset(..), Pool(..))
 import Data.Array (concat)
 import Data.BigInt (fromInt, fromString)
-import Data.BigInt as BigInt
-import Data.Number.Format (toString)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
 import Effect.Aff.Class (class MonadAff)
@@ -29,11 +27,20 @@ main = HA.runHalogenAff do
 type State =
   { pools :: Array Pool
   , currentPool :: Maybe Pool
+  , activity :: Activity
   }
 
 data Action
   = SetCurrentPool Pool
   | ResetCurrentPool
+  | SetActivity Activity
+
+data Activity
+  = Swap
+  | AddLiquidity
+  | WithdrawLiquidity
+
+derive instance eqActivity :: Eq Activity
 
 component
   :: forall q i o m
@@ -43,17 +50,13 @@ component =
   H.mkComponent
     { initialState: const
         { pools:
-            [ Pool { id: 1, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 2, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 3, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 4, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 5, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 6, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 7, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 8, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
-            , Pool { id: 9, title: "sBTC", subTitle: "DAI + USDC + USDIT + sUSD", tvl: 3.44, tradingFeesApr: 3.44, lpFee: 2.55, totalLps: fromString "75,478,639,987,839" }
+            [ Pool { assetA: Asset { name: "ADA", value: fromInt 1200 }, assetB: Asset { name: "DANA", value: fromInt 1000 }, fee: 4 }
+            , Pool { assetA: Asset { name: "ADA", value: fromInt 10000 }, assetB: Asset { name: "USDC", value: fromInt 4000 }, fee: 4 }
+            , Pool { assetA: Asset { name: "ADA", value: fromInt 120 }, assetB: Asset { name: "HOSKY", value: fromMaybe (fromInt 0) (fromString "3000000100") }, fee: 4 }
+            , Pool { assetA: Asset { name: "DADA", value: fromInt 3000 }, assetB: Asset { name: "USDC", value: fromInt 1000 }, fee: 4 }
             ]
         , currentPool: Nothing
+        , activity: Swap
         }
     , render
     , eval: H.mkEval $ H.defaultEval
@@ -65,180 +68,190 @@ component =
   handleAction = case _ of
     ResetCurrentPool -> H.modify_ _ { currentPool = Nothing }
     SetCurrentPool pool -> H.modify_ _ { currentPool = Just pool }
+    SetActivity activity -> H.modify_ _ { activity = activity }
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { pools, currentPool } =
+  render { pools, currentPool, activity } =
     HH.section
-      [ mkClass "pb-6" ]
+      [ mkClass "section my-6 pb-6" ]
       $
         [ HH.div
             [ mkClass "columns is-mobile" ]
-            [ HH.div [ mkClass "pools-table-header column is-narrow" ]
-                [ HH.div [ mkClass $ "columns is-vcentered is-mobile" ]
-                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "POOL" ]
-                    , HH.div [ mkClass "column" ]
-                        [ HH.span
-                            [ mkClass "icon is-small" ]
-                            [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-                        ]
+            [ HH.div [ mkClass "pools-table-header column" ]
+                [ HH.div [ mkClass $ "columns" ]
+                    [ HH.div [ mkClass "column has-text-left" ] [ HH.text "Pool" ]
                     ]
                 ]
             , HH.div [ mkClass "pools-table-header column" ]
-                [ HH.div [ mkClass $ "columns is-vcentered is-mobile is-pulled-right" ]
-                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TVL(ADA)" ]
-                    , HH.div [ mkClass "column" ]
-                        [ HH.span
-                            [ mkClass "icon is-small" ]
-                            [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-                        ]
+                [ HH.div [ mkClass $ "columns" ]
+                    [ HH.div [ mkClass "column has-text-centered" ] [ HH.text "Value" ]
                     ]
                 ]
-            , HH.div [ mkClass "pools-table-header column is-hidden-touch" ]
-                [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
-                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TRADING FEES APR" ]
-                    , HH.div [ mkClass "column" ]
-                        [ HH.span
-                            [ mkClass "icon is-small" ]
-                            [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-                        ]
+            , HH.div [ mkClass "pools-table-header column" ]
+                [ HH.div [ mkClass $ "columns" ]
+                    [ HH.div [ mkClass "column has-text-centered" ] [ HH.text "Fee" ]
                     ]
                 ]
-            , HH.div [ mkClass "pools-table-header column is-hidden-touch" ]
-                [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
-                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "LP FEE" ]
-                    , HH.div [ mkClass "column" ]
-                        [ HH.span
-                            [ mkClass "icon is-small" ]
-                            [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-                        ]
-                    ]
-                ]
-            , HH.div [ mkClass "pools-table-header column is-hidden-touch" ]
-                [ HH.div [ mkClass $ "columns is-vcentered is-pulled-right" ]
-                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "TOTAL LPs" ]
-                    , HH.div [ mkClass "column" ]
-                        [ HH.span
-                            [ mkClass "icon is-small" ]
-                            [ HH.i [ mkClass $ "fas fa-sort" ] [] ]
-                        ]
-                    ]
-                ]
-            , HH.div [ mkClass "column is-narrow" ] [ HH.text "" ]
+            , HH.div [ mkClass "column" ] [ HH.text " " ]
             ]
 
         ]
       <> concat
-        ( renderPool currentPool
+        ( renderPool
             <$> pools
         )
-      <>
-        [ HH.button
-            [ mkClass "button is-rounded is-medium is-pulled-right is-responsive danaswap-btn-has-background" ]
-            [ HH.text "SEE ALL POOLS" ]
-        ]
+    where
+    renderPool pool@(Pool p) =
+      [ HH.div
+          [ mkClass "pools-table-row columns is-mobile is-vcentered p-3 my-3"
+          , HE.onClick $ \_ ->
+              if currentPool == Just pool then
+                ResetCurrentPool
+              else
+                SetCurrentPool pool
+          ]
 
-  renderPool :: forall slots. Maybe Pool -> Pool -> Array (H.ComponentHTML Action slots m)
-  renderPool currentPool pool@(Pool p) =
-    [ HH.div
-        [ mkClass "pools-table-row columns is-mobile is-vcentered my-3"
-        , HE.onClick $ \_ ->
-            if currentPool == Just pool then
-              ResetCurrentPool
-            else
-              SetCurrentPool pool
-        ]
+          [ HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-left" ] [ HH.text $ show pool ]
+              ]
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show p.assetA <> " / " <> show p.assetB ]
+              ]
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show p.fee <> "ADA" ]
+              ]
+          , HH.div [ mkClass "column has-text-centered" ]
+              [ if currentPool == Just pool then mkIcon "angle-up" else mkIcon "angle-down"
+              ]
+          ]
+      ] <> renderPoolDropdown pool
 
-        [ HH.div [ mkClass "column" ]
-            [ HH.div [ mkClass "columns is-vcentered is-mobile" ]
-                [ HH.div [ mkClass "column is-one-fifth" ]
-                    [ HH.figure
-                        [ mkClass "image is-48x48" ]
-                        [ HH.img
-                            [ mkClass "is-rounded"
-                            , HP.src "../../assets/images/bitcoin.png"
-                            ]
-                        ]
+    renderPoolDropdown pool =
+      if currentPool == Just pool then
+        [ HH.div [ mkClass "pools-table-row-dropdown box my-6" ]
+            [ HH.div [ mkClass "columns is-mobile" ]
+                [ HH.div [ mkClass "column is-narrow" ]
+                    [ HH.button [ HE.onClick $ const (SetActivity Swap), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == Swap) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "SWAP" ]
                     ]
-                , HH.div [ mkClass "column is-four-fifths" ]
-                    [ HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text p.title ]
-                    , HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text p.subTitle ]
+                , HH.div [ mkClass "column is-narrow" ]
+                    [ HH.button [ HE.onClick $ const (SetActivity AddLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == AddLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "ADD LIQUIDITY" ]
+                    ]
+                , HH.div [ mkClass "column is-narrow" ]
+                    [ HH.button [ HE.onClick $ const (SetActivity WithdrawLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == WithdrawLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "WITHDRAW" ]
                     ]
                 ]
-            ]
-        , HH.div [ mkClass "column is-narrow" ]
-            [ HH.p [ mkClass "title is-size-5-desktop is-size-7-touch is-pulled-right" ] [ HH.text $ "$" <> (toString p.tvl) <> "M" ]
-            ]
-        , HH.div [ mkClass "column is-hidden-touch" ]
-            [ HH.p [ mkClass "title is-size-5-desktop is-size-7-touch is-pulled-right" ] [ HH.text $ (toString p.tradingFeesApr) <> "%" ]
-            ]
-        , HH.div [ mkClass "column is-hidden-touch" ]
-            [ HH.p [ mkClass "title is-size-5-desktop is-size-7-touch is-pulled-right" ] [ HH.text $ (toString p.lpFee) <> "%" ]
-            ]
-        , HH.div [ mkClass "column is-hidden-touch" ]
-            [ HH.p [ mkClass "title is-size-5-desktop is-size-7-touch is-pulled-right" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
-
-            ]
-        , HH.div [ mkClass "column is-narrow" ]
-            [ if currentPool == Just pool then
-                mkIcon "angle-up"
-              else
-                mkIcon "angle-down"
+            , case activity of
+                Swap -> renderSwapForm pool
+                AddLiquidity -> renderAddLiquidityForm pool
+                WithdrawLiquidity -> renderWithdrawLiquidityForm
             ]
         ]
+      else []
 
-    ] <> renderPoolDropdown currentPool pool
-
-  renderPoolDropdown :: forall slots. Maybe Pool -> Pool -> Array (H.ComponentHTML Action slots m)
-  renderPoolDropdown currentPool pool@(Pool p) =
-    if currentPool == Just pool then
-      [ HH.div [ mkClass "pools-table-row-dropdown box" ]
-          [ HH.div
-              [ mkClass "columns is-vcentered" ]
-              [ HH.div [ mkClass "column" ]
-                  [ HH.div [ mkClass "columns is-mobile" ]
-                      [ HH.div [ mkClass "column" ]
-                          [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text "ADA Price" ]
-                          , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text "1 ADA = 0.00 DUSD" ]
-                          ]
-                      , HH.div [ mkClass "column" ]
-                          [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text "MIN Price" ]
-                          , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text "1 DUSD = 27.3231 ADA" ]
-                          ]
-                      ]
-                  , HH.div [ mkClass "columns is-mobile is-hidden-desktop" ]
-                      [ HH.div [ mkClass "column" ]
-                          [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text "Trading Fees APR" ]
-                          , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text $ (toString p.tradingFeesApr) <> "%" ]
-                          ]
-                      , HH.div [ mkClass "column" ]
-                          [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text "LP Fee" ]
-                          , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text $ (toString p.lpFee) <> "%" ]
-                          ]
-                      ]
-                  , HH.div [ mkClass "columns is-mobile is-hidden-desktop" ]
-                      [ HH.div [ mkClass "column" ]
-                          [ HH.p [ mkClass "subtitle is-size-6-desktop is-size-7-touch" ] [ HH.text "Total LPs" ]
-                          , HH.p [ mkClass "title is-size-5-desktop is-size-6-touch" ] [ HH.text $ BigInt.toString (fromMaybe (fromInt 0) p.totalLps) ]
-                          ]
-                      ]
+    renderSwapForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.div [ mkClass "mt-6" ]
+      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-3" ]
+              [ HH.div [ mkClass "field" ]
+                  [ HH.div [ mkClass "control" ] [ HH.input [ mkClass "input is-rounded" ] ]
                   ]
-              , HH.div [ mkClass "column" ]
-                  [ HH.div [ mkClass "columns is-centered is-mobile" ]
-                      [ HH.div [ mkClass "column is-narrow" ]
-                          [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "SWAP" ]
-                          ]
-                      , HH.div [ mkClass "column is-narrow" ]
-                          [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-background" ] [ HH.text "ADD LIQUIDITY" ]
-                          ]
-                      , HH.div [ mkClass "column is-narrow" ]
-                          [ HH.button [ mkClass "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "WITHDRAW" ]
-                          ]
-                      ]
+              ]
+          , HH.div [ mkClass "column is-1" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch" ] [ HH.text a.name ]
+              ]
+          ]
+      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-offset-1 is-1 has-text-centered" ]
+              [ HH.span
+                  [ mkClass "icon is-medium" ]
+                  [ HH.i [ mkClass $ "fas fa-exchange-alt" ] [] ]
+              ]
+          ]
+      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-3" ]
+              [ HH.div [ mkClass "field" ]
+                  [ HH.div [ mkClass "control" ] [ HH.input [ mkClass "input is-rounded" ] ]
                   ]
+              ]
+          , HH.div [ mkClass "column is-1" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch" ] [ HH.text b.name ]
+              ]
+          ]
+      , HH.p [ mkClass "subtitle is-6 my-0" ]
+          [ HH.text "Slippage: 4%"
+          ]
+      , HH.p [ mkClass "subtitle is-6" ]
+          [ HH.text "Fee: 2.3 ADA"
+          ]
+      , HH.div [ mkClass "columns" ]
+          [ HH.div [ mkClass "column is-narrow" ]
+              [ HH.button [ mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "SUBMIT" ]
               ]
           ]
       ]
-    else []
+
+    renderAddLiquidityForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.div [ mkClass "mt-6" ]
+      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-3" ]
+              [ HH.div [ mkClass "field" ]
+                  [ HH.div [ mkClass "control" ] [ HH.input [ mkClass "input is-rounded" ] ]
+                  ]
+              ]
+          , HH.div [ mkClass "column is-1" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch" ] [ HH.text a.name ]
+              ]
+          ]
+      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-3" ]
+              [ HH.div [ mkClass "field" ]
+                  [ HH.div [ mkClass "control" ] [ HH.input [ mkClass "input is-rounded" ] ]
+                  ]
+              ]
+          , HH.div [ mkClass "column is-1" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch" ] [ HH.text b.name ]
+              ]
+          ]
+      , HH.p [ mkClass "subtitle is-6 my-0" ]
+          [ HH.text "Liquidity Tokens: 0"
+          ]
+      , HH.p [ mkClass "subtitle is-6" ]
+          [ HH.text "Fee: 2.3 ADA"
+          ]
+      , HH.div [ mkClass "columns" ]
+          [ HH.div [ mkClass "column is-narrow" ]
+              [ HH.button [ mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "SUBMIT" ]
+              ]
+          ]
+      ]
+
+    renderWithdrawLiquidityForm = HH.div [ mkClass "mt-6" ]
+      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
+          [ HH.div [ mkClass "column is-3" ]
+              [ HH.div [ mkClass "field" ]
+                  [ HH.div [ mkClass "control" ] [ HH.input [ mkClass "input is-rounded" ] ]
+                  ]
+              ]
+          , HH.div [ mkClass "column is-2" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch" ] [ HH.text "Liquidity Tokens" ]
+              ]
+          ]
+      , HH.p [ mkClass "subtitle is-6 my-0" ]
+          [ HH.text "ADA Payout: 0"
+          ]
+      , HH.p [ mkClass "subtitle is-6 my-0" ]
+          [ HH.text "DANA Payout: 0"
+          ]
+      , HH.p [ mkClass "subtitle is-6 my-0" ]
+          [ HH.text "Slippage: 4%"
+          ]
+      , HH.p [ mkClass "subtitle is-6" ]
+          [ HH.text "Fee: 2.3 ADA"
+          ]
+      , HH.div [ mkClass "columns" ]
+          [ HH.div [ mkClass "column is-narrow" ]
+              [ HH.button [ mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "SUBMIT" ]
+              ]
+          ]
+      ]
 
 mkClass :: forall (r :: Row Type) (i :: Type). String -> HP.IProp (class :: String | r) i
 mkClass = HP.class_ <<< HH.ClassName

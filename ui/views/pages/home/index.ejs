@@ -5,52 +5,9 @@
   </head>
   <body>
     <%- include('../../components/noscript.ejs'); %>
+    <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
 
-    <section class="main px-6 mb-6">
-      <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
-      <div class="columns my-6 is-vcentered">
-        <div class="column">
-          <div class="field">
-            <p class="control has-icons-left">
-              <input
-                class="input is-rounded is-medium"
-                placeholder="Search pool by name, network or type"
-              />
-              <span class="icon is-small is-left">
-                <i class="fas fa-search"></i>
-              </span>
-            </p>
-          </div>
-        </div>
-        <div class="column">
-          <div class="columns is-mobile is-vcentered">
-            <div class="column is-three-fifths">
-              <div class="field">
-                <p class="control has-icons-right">
-                  <input
-                    class="input is-rounded is-medium"
-                    placeholder="Sort by"
-                  />
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-sort"></i>
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div class="column is-two-fifths">
-              <button class="button is-responsive">
-                <span class="icon is-large">
-                  <i class="fas fa-toggle-on"></i>
-                </span>
-                <span>Favorites</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="home"></div>
-    </section>
+    <div id="home"></div>
 
     <%- include('../../components/footer.ejs'); %>
 
