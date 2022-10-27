@@ -5,14 +5,13 @@
       pkgs = inputs'.nixpkgs.legacyPackages;
       purs-nix = config.ps.purs-nix;
       inherit (purs-nix) ps-pkgs;
-      inherit (config.ps) ctl-pkgs;
       inherit (config) cat-lib offchain-lib;
 
       ctl-utils-test = {
         dependencies =
           with ps-pkgs;
           [
-            ctl-pkgs.cardano-transaction-lib
+            cardano-transaction-lib
             prelude
             bigints
             node-fs-aff
