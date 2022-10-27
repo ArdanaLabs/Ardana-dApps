@@ -77,10 +77,10 @@ liqudityTokenMP = phoistAcyclic $
       redeemerRec <- pletFieldsC @'["poolId", "action"] redeemerRec'
       scriptContextRec <- pletFieldsC @'["txInfo", "purpose"] scriptContextData
       poolIdCS <- pletC $ pfromData (ptryFromData poolIdCSData)
-      poolIdTokenName <- pletC $ redeemerRec.poolId
-      PMinting liquidityCSRec <- pmatchC $ scriptContextRec.purpose
-      infoRec <- pletFieldsC @'["mint", "inputs"] scriptContextRec.txInfo
-      let minting = infoRec.mint
+      poolIdTokenName <- pletC $ getField @"poolId" redeemerRec
+      PMinting liquidityCSRec <- pmatchC $ getField @"purpose" scriptContextRec
+      infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scriptContextRec)
+      let minting = getField @"mint" infoRec
       PValue mintingMap <- pmatchC minting
       PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
       PMap.PMap liquidityAsList <- pmatchC liquidity
@@ -88,14 +88,14 @@ liqudityTokenMP = phoistAcyclic $
         plength # liquidityAsList #== 1
       passert_ "token name matched redeemer" $
         pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
-      pmatchC (pfromData $ redeemerRec.action) >>= \case
+      pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
         Open _ -> do
           PJust idTokens <- pmatchC $ PMap.plookup # poolIdCS # mintingMap
-          PJust _shouldBe1 <- pmatchC $ PMap.plookup # redeemerRec.poolId # idTokens
+          PJust _shouldBe1 <- pmatchC $ PMap.plookup # getField @"poolId" redeemerRec # idTokens
           -- TODO should we check that it is just 1? It should be redundant so for now I'm not checking
           pure $ popaque $ pcon PUnit
         Spend _ -> do
-          let inputs = pfromData $ infoRec.inputs
+          let inputs = pfromData $ getField @"inputs" infoRec
           passert "token name matched redeemer" $
             pany # isRightPool # inputs
           where
