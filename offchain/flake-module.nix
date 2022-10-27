@@ -3,9 +3,8 @@
   perSystem = { config, self', inputs', system, ... }:
     let
       pkgs = inputs'.nixpkgs.legacyPackages;
-      purs-nix = config.ps.purs-nix;
-      all-ps-pkgs = config.ps.pkgs;
       inherit (config) cat-lib offchain-lib;
+      inherit (config.ps) purs-nix;
 
       # Ideally we would just append the CTL overlay to the haskell-nix pkgs
       # we already have at `config.haskell-nix.pkgs`, but our haskell-nix
