@@ -56,7 +56,7 @@
 
 $scheme-main: #080E42;
 
-$family-primary: "Museo Sans";
+$family-primary: Museo Sans, serif, sans-serif, monospace, fantasy;
 
 $button-border-width: 0;
 
@@ -112,7 +112,7 @@ $navbar-item-color: #F5FCFE;
 }
 
 .pools-table-header {
-  font-family: "Brandon Grotesque";
+  font-family: Brandon Grotesque, sans-serif;
   font-style: normal;
   font-weight: 500;
   line-height: 100%;
