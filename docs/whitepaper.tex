@@ -362,7 +362,7 @@ The script hardcodes the following:
   \item The Config UTXO's ID NFT
 \end{itemize}
 
-To do this it enforces the following: 
+To do this it enforces the following:
 \begin{itemize}
   \item The admin and non-admin balances in the pool sum up to the balance in
     the pool's value, before and after the pool
@@ -504,12 +504,52 @@ The tests for the NFT minting policy which creates the Config UTXO ID.
 \subsection*{Liquidity Token Minting Policy tests}
 
 \begin{itemize}
-	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
 	\item When minting a different pool's liquidity token on pool open, validation fails.
 	\item When minting multiple liquidity token types on pool open, validation fails.
 	\item When minting liquidity tokens for a different pool than the pool being spent, validation fails.
 	\item When burning liquidity tokens from a different pool than the pool being spent, validation fails.
 	\item When minting liquidity tokens for a pool at an address that is not the Pool Address Validator, validation fails.
+\end{itemize}
+
+\subsection*{Pool id Token Minting Policy tests}
+
+\begin{itemize}
+	\item Non admin can initialize a pool
+	\item When minting $\sqrt{A_0B_0}$ liquidity tokens on pool open, validation passes.
+	\item Can't under pay for liquidity on open
+	\item Can't open pool with 0 liquidity
+	\item Can't open pool with 0 of either exchange token
+		%% This is sorta redundant cause the liquidity needs to be
+		%% wrong or 0
+	\item A utxo without the config NFT can't be used to open a pool
+	\item Can't mint more than 1 token
+	\item Can't send identifier token to non-pool address
+	\item Can't mint without spending seed Tx
+	\item Can't issue more liquidity than datum reflects
+	\item Can't mint with liquidity not equal to the initial invariant
+\end{itemize}
+
+\subsection*{Pool Address Validator tests}
+
+\begin{itemize}
+	\item Can't remove pool id from address during any type of transaction
+	\item Can't kill a pool with a swap
+	\item Can't kill a pool with a liquidity change
+	\item can perform valid swaps
+	\item can't underpay for swaps
+	\item can perform valid liquidity changes
+	\item can't perform underpaid liquidity changes
+	\item admin can kill a pool
+	\item non-admin can't kill a pool
+	\item admin can't over extract fees
+	\item liquidity can be extracted from a dead pool
+	\item Can't steal pool ID tokens (this should consist of tests at each endpoint)
+	\item Pool ids can't be swapped between two pools
+  \item It shouldn't be possible to add liquidity and then withdraw it in order to essentially swap with
+	\item Can't swap on a dead pool
+	\item Can't add liquidity to a dead pool
+	\item Can't make unbalanced withdrawals from a dead pool
+    reduced fees
 	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
 	      pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
   	      and mints a quantity of liquidity tokens less than or equal to
@@ -530,46 +570,6 @@ The tests for the NFT minting policy which creates the Config UTXO ID.
 	      their liquidity token quantity $\Delta t$ and receives a quantity of $A$ greater than
 	      $ a \cdot \Delta t/t $ or (||) quantity of token $B$ greater than or equal to $ a \cdot \delta t/t $
 	      , validation fails.
-\end{itemize}
-
-\subsection*{Pool id Token Minting Policy tests}
-
-\begin{itemize}
-	\item Non admin can initialize a pool
-	\item Can't under pay for liquidity on open
-	\item Can't open pool with 0 liquidity
-	\item Can't open pool with 0 of either exchange token
-		%% This is sorta redundant cause the liquidity needs to be
-		%% wrong or 0
-	\item A utxo without the config NFT can't be used to open a pool
-	\item Can't mint more than 1 token
-	\item Can't send identifier token to non-pool address
-	\item Can't mint without spending seed Tx
-	\item Can't issue more liquidity than datum reflects
-	\item Can't mint with liquidity not equal to the initial invariant
-	\item Can't remove pool id from address during any type of transaction
-	\item Can't kill a pool with a swap
-	\item Can't kill a pool with a liquidity change
-	\item Can't swap on a dead pool
-	\item Can't add liquidity to a dead pool
-	\item Can't make unbalanced withdrawals from a dead pool
-\end{itemize}
-
-\subsection*{Pool Address Validator tests}
-
-\begin{itemize}
-	\item can perform valid swaps
-	\item can't underpay for swaps
-	\item can perform valid liquidity changes
-	\item can't perform underpaid liquidity changes
-	\item admin can kill a pool
-	\item non-admin can't kill a pool
-	\item admin can't over extract fees
-	\item liquidity can be extracted from a dead pool
-	\item Can't steal pool ID tokens (this should consist of tests at each endpoint)
-	\item Pool ids can't be swapped between two pools
-  \item It shouldn't be possible to add liquidity and then withdraw it in order to essentially swap with
-    reduced fees
 \end{itemize}
 
 \subsection*{Query tests}
