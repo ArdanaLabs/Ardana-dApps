@@ -65,7 +65,8 @@ simpleNft ref = do
 decodeCbor :: String -> Array PlutusData -> Contract () PlutusScript
 decodeCbor cborHex args = do
   rawScript <- liftContractM "failed to decode cbor"
-    $ plutusV2Script <$> hexToByteArray cborHex
+    $ plutusV2Script
+    <$> hexToByteArray cborHex
   applyArgs rawScript args >>= case _ of
     Left err -> do
       logError' $ "error in apply args:" <> show err
