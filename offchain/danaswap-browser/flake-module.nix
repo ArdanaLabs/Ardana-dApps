@@ -5,7 +5,6 @@
       pkgs = inputs'.nixpkgs.legacyPackages;
       purs-nix = config.ps.purs-nix;
       inherit (purs-nix) ps-pkgs;
-      inherit (config.ps) ctl-pkgs;
       inherit (config) cat-lib offchain-lib;
 
       danaswap-browser = {
@@ -17,7 +16,7 @@
                 [
                   halogen
                   halogen-store
-                  ctl-pkgs.cardano-transaction-lib
+                  cardano-transaction-lib
                   # self'.packages."offchain:danaswap-api"
                 ];
               dir = ./.;
