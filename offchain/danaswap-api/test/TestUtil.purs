@@ -9,6 +9,7 @@ module TestUtil
 
 import Contract.Prelude
 
+import Contract.AssocMap (empty)
 import Contract.Config (testnetConfig)
 import Contract.Monad (Contract, ContractEnv, withContractEnv)
 import Contract.Test.Plutip (PlutipConfig, runContractInEnv, withKeyWallet, withPlutipContractEnv)
@@ -128,7 +129,7 @@ getPlutipConfig = do
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: Warn
+      , logLevel : Warn
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2
@@ -157,12 +158,13 @@ getPlutipConfig = do
           }
       , customLogger: Just (ourLogger "apiTest.log")
       , suppressLogs: false
+      , hooks: undefined
       }
     _ -> liftEffect $ throw "replicateM returned list of the wrong length in plutipConfig"
 
-ourLogger :: String -> Message -> Aff Unit
-ourLogger path msg = do
+ourLogger :: String -> LogLevel -> Message -> Aff Unit
+ourLogger path level msg = do
   pretty <- prettyFormatter msg
-  when (msg.level >= Warn) $ log pretty
+  when (msg.level >= level) $ log pretty
   appendTextFile UTF8 path ("\n" <> pretty)
 
