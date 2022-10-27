@@ -1,4 +1,4 @@
-module DanaSwapBrowser.Pools where
+module DanaSwap.Browser.Pools where
 
 import Contract.Prelude
 

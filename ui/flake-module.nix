@@ -11,7 +11,7 @@
       packages = {
         danaswap-ui =
           pkgs.runCommand "build-danaswap-ui"
-            { buildInputs = [ self'.packages."offchain:danaswap-browser" ]; }
+            { }
             ''
               mkdir -p $out/assets/scripts
               cp -r ${ui}/lib/node_modules/danaswap-ui/build/* $out/
