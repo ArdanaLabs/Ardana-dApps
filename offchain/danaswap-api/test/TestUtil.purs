@@ -107,6 +107,7 @@ okayErrs =
   , "Process ctl-server exited. Output:"
   , "timed out waiting for tx"
   , "Error: Command failed: psql -h 127.0.0.1"
+  , "Error: Unable to run the following services, because the ports are occupied:"
   ]
 
 -- returns a contiunation that gets the EnvRunner
