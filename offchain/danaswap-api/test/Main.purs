@@ -4,25 +4,44 @@ module Test.Main
 
 import Contract.Prelude
 
+import Aeson (class DecodeAeson)
+import CBOR as CBOR
 import Contract.Address (getWalletAddress)
-import Contract.Log (logInfo')
-import Contract.Monad (launchAff_, liftContractM)
-import Contract.PlutusData (PlutusData)
+import Contract.Log (logDebug', logError', logInfo')
+import Contract.Monad (Contract, launchAff_, liftContractM)
+import Contract.PlutusData (PlutusData, toData)
+import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
+import Contract.Scripts (MintingPolicy(..), PlutusScript(..), applyArgs, applyArgsM, mintingPolicyHash)
+import Contract.Transaction (plutusV2Script)
 import Contract.TxConstraints (TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
-import Contract.Value (adaToken, scriptCurrencySymbol)
+import Contract.Value (adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (initProtocol, mintNft, seedTx)
 import DanaSwap.CborTyped (simpleNft)
+import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Spec (describe, it)
+import Test.Spec (describe, it, itOnly)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), runWithMode, useRunnerSimple)
+
+testToken :: BigInt -> Contract () MintingPolicy
+testToken n = do
+  logDebug' "Creating test token"
+  logDebug' $ "index:" <> show n
+  raw <- decodeCborMp CBOR.trivial
+  applyArgsM raw [ toData n ] >>= liftContractM "apply args failed"
+
+decodeCborMp :: String -> Contract () MintingPolicy
+decodeCborMp cborHex = liftContractM "failed to decode cbor"
+  $ MintingPolicy
+  <<< plutusV2Script
+  <$> hexToByteArray cborHex
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -36,6 +55,29 @@ main = launchAff_ $ do
     Nothing -> throw "expected MODE to be set"
   log "about to start"
   runWithMode mode $ do
+    itOnly "ctl redeemer pointer issue" $ useRunnerSimple $ do
+       testMp1 <- testToken zero
+       testMp2 <- testToken one
+       testCs1 <- mpsSymbol (mintingPolicyHash testMp1) # liftContractM "failed to hash mp"
+       testCs2 <- mpsSymbol (mintingPolicyHash testMp2) # liftContractM "failed to hash mp"
+       testTn1 <- (mkTokenName =<< hexToByteArray "aaaa") # liftContractM "bad hex string"
+       testTn2 <- (mkTokenName =<< hexToByteArray "aabb") # liftContractM "bad hex string"
+       adr <- getWalletAddress >>= liftContractM "no wallet"
+       void $ waitForTx adr =<< buildBalanceSignAndSubmitTx
+         ( Lookups.mintingPolicy testMp1
+             <> Lookups.mintingPolicy testMp2
+         )
+         ( Constraints.mustMintCurrency
+             (mintingPolicyHash testMp1)
+             testTn1
+             zero
+             <> Constraints.mustMintCurrency
+               (mintingPolicyHash testMp2)
+               testTn2
+               (BigInt.fromInt 1_000_000)
+         )
+       pure $ (testCs1 /\ testTn1) /\ (testCs2 /\ testTn2)
+
     describe "protocol init" $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "init protocol doesn't error" $ useRunnerSimple $ do
