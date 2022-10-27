@@ -142,8 +142,8 @@ main = launchAff_ $ do
           (BigInt.fromInt 100)
           (BigInt.fromInt 100)
 
-      describe "Fails to validate minting tokens for a different pool on pool open" $ do
-        it "wrong redeemer" $ useRunnerSimple $ do
+      describe "Minting tokens for a different pool on pool open" $ do
+        it "fails to validate with the wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
@@ -160,7 +160,7 @@ main = launchAff_ $ do
               (BigInt.fromInt 100)
               (BigInt.fromInt 100)
 
-        it "right redeemer" $ useRunnerSimple $ do
+        it "fails to validate with the right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
@@ -205,32 +205,8 @@ main = launchAff_ $ do
           (BigInt.fromInt 100)
         depositLiquidity protocol poolId
 
-      describe
-        ( "Fails to validate minting liquidity token"
-            <> "for a pool other than the pool being spent"
-        ) $ do
-
-        it "multiple token names" $ useRunnerSimple $ do
-          protocol <- initProtocol
-          (ac1 /\ ac2) <- prepTestTokens
-          poolId <- openPool
-            protocol
-            ac1
-            ac2
-            (BigInt.fromInt 100)
-            (BigInt.fromInt 100)
-          wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
-          expectScriptError $
-            depositLiquiditySneaky
-              regularDeposit
-                { actuallyMint = Just \liquidityCs ->
-                    Value.singleton liquidityCs wrongId (BigInt.fromInt 10)
-                      <> Value.singleton liquidityCs poolId (BigInt.fromInt 10)
-                }
-              protocol
-              poolId
-
-        it "right redeemer" $ useRunnerSimple $ do
+      describe "Minting liquidity token for a pool other than the pool being spent" $ do
+        it "Fails to validate with the right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           poolId <- openPool
@@ -249,7 +225,7 @@ main = launchAff_ $ do
               protocol
               poolId
 
-        it "wrong redeemer" $ useRunnerSimple $ do
+        it "Fails to validate with the wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           poolId <- openPool

@@ -81,6 +81,9 @@ getAllPools protocol@{ poolAdrVal } =
   getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
     <#> Map.filter (hasNft protocol)
 
+-- TODO it may be nesecary to replace this with a a call to the Stats enpoint
+-- for performance in the event of a dust attack
+
 -- | Given a protocol object and a pool id returns the transaction input and output of that pool
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
 getPoolById protocol@{ poolIdMP } token = do

@@ -24,7 +24,7 @@ import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (Pattern(Pattern), contains, trim)
 import Data.String (trim)
-import Data.Time.Duration (Minutes(..))
+import Data.Time.Duration (Minutes(..), fromDuration)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
@@ -57,7 +57,7 @@ runWithMode mode spec = do
   runnerGetter <- getEnvRunner mode
   runSpec'
     defaultConfig
-      { timeout = Nothing }
+      { timeout = Just $ fromDuration $ Minutes 5.0 }
     [ specReporter ]
     $ before runnerGetter
     $ (if mode == Local then parallel else sequential)
@@ -106,6 +106,7 @@ okayErrs =
   , "Process ogmios-datum-cache exited. Output:"
   , "Process ctl-server exited. Output:"
   , "timed out waiting for tx"
+  , "Error: Command failed: psql -h 127.0.0.1"
   ]
 
 -- returns a contiunation that gets the EnvRunner
