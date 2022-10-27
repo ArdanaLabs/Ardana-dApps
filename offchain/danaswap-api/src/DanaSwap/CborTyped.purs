@@ -8,13 +8,12 @@ module DanaSwap.CborTyped
 
 import Contract.Prelude
 
-import Aeson (class DecodeAeson)
 import CBOR as CBOR
 import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs, applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 import Effect.Exception (throw)

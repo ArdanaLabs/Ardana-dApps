@@ -47,7 +47,7 @@ runWithMode mode spec = do
   runnerGetter <- getEnvRunner mode
   runSpec'
     defaultConfig
-      { timeout = Just $ fromDuration $ Minutes 5.0 }
+      { timeout = Just $ fromDuration $ Minutes 10.0 }
     [ specReporter ]
     $ before runnerGetter
     $ (if mode == Local then parallel else sequential)
@@ -97,6 +97,7 @@ okayErrs =
   , "Process ctl-server exited. Output:"
   , "timed out waiting for tx"
   , "Error: Command failed: psql -h 127.0.0.1"
+  , "Unable to run the following services, because the ports are occupied:"
   ]
 
 -- | returns a contiunation that gets the EnvRunner
