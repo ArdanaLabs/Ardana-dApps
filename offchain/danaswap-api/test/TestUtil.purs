@@ -24,6 +24,7 @@ import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (Pattern(Pattern), contains, trim)
 import Data.String (trim)
+import Data.Time.Duration (Minutes(..))
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
 import Effect.Aff.Retry (limitRetries, recovering)
@@ -31,6 +32,8 @@ import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, error, message, throw)
 import Effect.Exception (throw)
 import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
 import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
@@ -73,8 +76,9 @@ useRunnerSimple contract runner = do
 retryOkayErrs :: Aff Unit -> Aff Unit
 retryOkayErrs aff =
   recovering
-    (limitRetries 5)
-    [ \_ err' -> do
+    (limitRetriesByCumulativeDelay (Minutes 10.0) $ limitRetries 5)
+    [ \status err' -> do
+        log $ "retrying with" <> show status
         let err = trim $ message err'
         if err `elem` badErrors then pure false
         else do
@@ -135,12 +139,11 @@ getFreePort = do
 -- Finds 5 free ports and returns a plutip config using those ports
 getPlutipConfig :: Aff PlutipConfig
 getPlutipConfig = do
-  let level = Info
   replicateA 5 getFreePort >>= case _ of
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: level
+      , logLevel: Info
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2
@@ -167,13 +170,14 @@ getPlutipConfig = do
           , password: "ctxlib"
           , dbname: "ctxlib"
           }
-      , customLogger: Just (ourLogger level "apiTest.log")
+      , customLogger: Just (ourLogger "apiTest.log")
       , suppressLogs: false
+      , hooks: undefined
       }
     _ -> liftEffect $ throw "replicateM returned list of the wrong length in plutipConfig"
 
-ourLogger :: LogLevel -> String -> Message -> Aff Unit
-ourLogger level path msg = do
+ourLogger :: String -> LogLevel -> Message -> Aff Unit
+ourLogger path level msg = do
   pretty <- prettyFormatter msg
   when (msg.level >= level) $ log pretty
   appendTextFile UTF8 path ("\n" <> pretty)

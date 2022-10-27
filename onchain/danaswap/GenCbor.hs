@@ -32,6 +32,6 @@ cbors =
   [ Cbor "trivial" trivialCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
-  , Cbor "liqudityTokenMP" liqudityTokenCbor
+  , Cbor "liqudityTokenMintingPolicy" liqudityTokenCbor
   , Cbor "poolIdTokenMP" poolIdTokenMPCbor
   ]

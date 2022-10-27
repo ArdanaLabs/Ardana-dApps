@@ -141,26 +141,26 @@ liqudityTokenCbor = closedTermToHexString liqudityTokenMP
 liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
 liqudityTokenMP = phoistAcyclic $
   plam $
-    \poolIdCsData redeemerData sc -> unTermCont $ do
-      LiquidityRedeemer redemerRec' <- pmatchC $ pfromData $ ptryFromData redeemerData
-      redemerRec <- pletFieldsC @'["poolId", "action"] redemerRec'
-      scRec <- pletFieldsC @'["txInfo", "purpose"] sc
-      poolIdCs <- pletC $ pfromData (ptryFromData poolIdCsData)
-      poolIdTn <- pletC $ getField @"poolId" redemerRec
-      PMinting liquidityCsRec <- pmatchC $ getField @"purpose" scRec
-      infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scRec)
+    \poolIdCSData redeemerData scriptContextData -> unTermCont $ do
+      LiquidityRedeemer redeemerRec' <- pmatchC $ pfromData $ ptryFromData redeemerData
+      redeemerRec <- pletFieldsC @'["poolId", "action"] redeemerRec'
+      scriptContextRec <- pletFieldsC @'["txInfo", "purpose"] scriptContextData
+      poolIdCS <- pletC $ pfromData (ptryFromData poolIdCSData)
+      poolIdTokenName <- pletC $ getField @"poolId" redeemerRec
+      PMinting liquidityCSRec <- pmatchC $ getField @"purpose" scriptContextRec
+      infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scriptContextRec)
       let minting = getField @"mint" infoRec
       PValue mintingMap <- pmatchC minting
-      PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCsRec) # mintingMap
+      PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
       PMap.PMap liquidityAsList <- pmatchC liquidity
       passert_ "minted exactly one token name of liquidity tokens" $
         plength # liquidityAsList #== 1
       passert_ "token name matched redeemer" $
-        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTn
-      pmatchC (pfromData $ getField @"action" redemerRec) >>= \case
+        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
+      pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
         Open _ -> do
-          PJust idTokens <- pmatchC $ PMap.plookup # poolIdCs # mintingMap
-          PJust _shouldBe1 <- pmatchC $ PMap.plookup # getField @"poolId" redemerRec # idTokens
+          PJust idTokens <- pmatchC $ PMap.plookup # poolIdCS # mintingMap
+          PJust _shouldBe1 <- pmatchC $ PMap.plookup # getField @"poolId" redeemerRec # idTokens
           -- TODO should we check that it is just 1? It should be redundant so for now I'm not checking
           pure $ popaque $ pcon PUnit
         Spend _ -> do
@@ -170,10 +170,10 @@ liqudityTokenMP = phoistAcyclic $
           where
             isRightPool = plam $ \input -> unTermCont $ do
               PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
-              pmatchC (PMap.plookup # poolIdCs # val) >>= \case
+              pmatchC (PMap.plookup # poolIdCS # val) >>= \case
                 PNothing -> pure $ pcon PFalse
                 PJust poolIdToken ->
-                  pmatchC (PMap.plookup # poolIdTn # poolIdToken) >>= \case
+                  pmatchC (PMap.plookup # poolIdTokenName # poolIdToken) >>= \case
                     PNothing -> pure $ pcon PFalse
                     PJust _ -> pure $ pcon PTrue
 
