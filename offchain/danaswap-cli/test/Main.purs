@@ -96,7 +96,9 @@ executeTests (Options { mode, testResources }) = do
       it "should initialize the protocol successfully and create a protocol config file"
         $ withEnv
         $ \ports wallet -> do
-            unlink (trim protocolFile)
+
+            hasOldProtocol <- exists (trim protocolFile)
+            when hasOldProtocol $ unlink (trim protocolFile)
             (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init")
               `passesSaying` "initialized protocol"
             exists (trim protocolFile) `shouldReturn` true
