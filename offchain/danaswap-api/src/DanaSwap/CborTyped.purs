@@ -13,7 +13,7 @@ import Contract.Log (logDebug')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), Validator(..), applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgsM)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 
@@ -29,42 +29,36 @@ poolAddressValidator poolIdToken liquidityToken = do
   logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
   logDebug' $ "liquidity token:" <> show liquidityToken
-  decodeCbor CBOR.trivial
+  Validator <$> decodeCbor CBOR.trivial
 
 -- | Placeholder
 poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' "creating pool id token minting policy"
   logDebug' $ "nft cs:" <> show configUtxoNftCS
-  decodeCborMp CBOR.trivial
+  PlutusMintingPolicy <$> decodeCbor CBOR.trivial
 
 -- | Placeholder
 liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
-  decodeCborMp CBOR.trivial
+  PlutusMintingPolicy <$> decodeCbor CBOR.trivial
 
 configAddressValidator :: Contract () Validator
-configAddressValidator = decodeCbor CBOR.configScript
+configAddressValidator = Validator <$> decodeCbor CBOR.configScript
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
-  raw <- decodeCborMp CBOR.nft
+  raw <- decodeCbor CBOR.nft
   applyArgsM raw [ toData ref ]
     >>= liftContractM "failed to apply args"
+    <#> PlutusMintingPolicy
 
 -- These helpers should not be exported
 
-decodeCbor :: String -> Contract () Validator
+decodeCbor :: String -> Contract () PlutusScript
 decodeCbor cborHex = liftContractM "failed to decode cbor"
-  $ Validator
-  <<< plutusV2Script
-  <$> hexToByteArray cborHex
-
-decodeCborMp :: String -> Contract () MintingPolicy
-decodeCborMp cborHex = liftContractM "failed to decode cbor"
-  $ MintingPolicy
-  <<< plutusV2Script
+  $ plutusV2Script
   <$> hexToByteArray cborHex
