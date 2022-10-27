@@ -1,17 +1,19 @@
 module Ctl.Utils.Signing
-  ( getPubKey
+  ( getPubKeyBech32
   , hsmSignTx
   ) where
 
 import Contract.Prelude
 
-import Contract.Address (ByteArray)
+import Contract.Address (ByteArray, Bech32String)
+import Contract.Keys (mkEd25519Signature)
 import Contract.Prim.ByteArray (byteArrayToHex)
-import Contract.Transaction (Ed25519Signature(..), PublicKey(..), Transaction(Transaction), TransactionWitnessSet, Vkey(..), _vkeys)
+import Contract.Transaction (PublicKey, Transaction(Transaction), TransactionWitnessSet, Vkey(..), _vkeys)
 import Ctl.Internal.Serialization (toBytes)
 import Ctl.Internal.Serialization as Serialization
 import Data.Lens (set)
 import Data.String (trim)
+import Effect.Exception (throw)
 import Node.Buffer.Class (toString)
 import Node.ChildProcess (defaultExecSyncOptions, execFileSync)
 import Node.Encoding (Encoding(UTF8))
@@ -20,8 +22,8 @@ import Untagged.Union (asOneOf)
 -- | This type is intended to represent a generic foreign signing function
 type Signer = ByteArray -> Aff String
 
-getPubKey :: Aff PublicKey
-getPubKey = execAff "signer" [ "getPubKey" ] <#> trim >>> PublicKey
+getPubKeyBech32 :: Aff Bech32String
+getPubKeyBech32 = trim <$> execAff "signer" [ "getPubKey" ]
 
 hsmSignTx :: PublicKey -> Transaction -> Aff TransactionWitnessSet
 hsmSignTx = signTx cmdSigner
@@ -39,5 +41,8 @@ signTx signer pubKey (Transaction tx) = do
   txBody <- liftEffect $ Serialization.convertTxBody tx.body
   hash <- liftEffect $ Serialization.hashTransaction txBody
   sig <- signer $ toBytes $ asOneOf hash
-  let wit = Just [ wrap $ (Vkey pubKey) /\ (Ed25519Signature sig) ]
-  pure $ set _vkeys wit mempty
+  case mkEd25519Signature sig of
+    Nothing -> liftEffect $ throw $ "Unable to create signature from value: " <> sig
+    Just s -> do
+      let wit = Just [ wrap $ (Vkey pubKey) /\ (s) ]
+      pure $ set _vkeys wit mempty
