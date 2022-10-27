@@ -4,15 +4,14 @@ module Test.Main
 
 import Contract.Prelude
 
-import Aeson (class DecodeAeson)
 import CBOR as CBOR
 import Contract.Address (getWalletAddress)
-import Contract.Log (logDebug', logError', logInfo')
+import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, launchAff_, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
-import Contract.Scripts (MintingPolicy(..), PlutusScript(..), applyArgs, applyArgsM, mintingPolicyHash)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, applyArgsM, mintingPolicyHash)
 import Contract.Transaction (plutusV2Script)
 import Contract.TxConstraints (TxConstraints)
 import Contract.TxConstraints as Constraints
@@ -34,13 +33,12 @@ testToken :: BigInt -> Contract () MintingPolicy
 testToken n = do
   logDebug' "Creating test token"
   logDebug' $ "index:" <> show n
-  raw <- decodeCborMp CBOR.trivial
-  applyArgsM raw [ toData n ] >>= liftContractM "apply args failed"
+  raw <- decodeCbor CBOR.trivial
+  PlutusMintingPolicy <$> (applyArgsM raw [ toData n ] >>= liftContractM "apply args failed")
 
-decodeCborMp :: String -> Contract () MintingPolicy
-decodeCborMp cborHex = liftContractM "failed to decode cbor"
-  $ MintingPolicy
-  <<< plutusV2Script
+decodeCbor :: String -> Contract () PlutusScript
+decodeCbor cborHex = liftContractM "failed to decode cbor"
+  $ plutusV2Script
   <$> hexToByteArray cborHex
 
 main :: Effect Unit

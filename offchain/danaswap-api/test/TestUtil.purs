@@ -9,7 +9,6 @@ module TestUtil
 
 import Contract.Prelude
 
-import Contract.AssocMap (empty)
 import Contract.Config (testnetConfig)
 import Contract.Monad (Contract, ContractEnv, withContractEnv)
 import Contract.Test.Plutip (PlutipConfig, runContractInEnv, withKeyWallet, withPlutipContractEnv)
