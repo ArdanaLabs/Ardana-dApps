@@ -66,7 +66,7 @@ testToken :: BigInt -> Contract () MintingPolicy
 testToken n = do
   logDebug' "Creating test token"
   logDebug' $ "index:" <> show n
-  decodeCbor CBOR.trivial [toData n]
+  decodeCbor CBOR.trivial [ toData n ]
     <#> PlutusMintingPolicy
 
 -- | Simple NFT minting policy parametized by a transaction input
