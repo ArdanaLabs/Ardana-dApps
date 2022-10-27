@@ -16,10 +16,9 @@ import Contract.Monad (Contract, liftContractM, liftedE)
 import Contract.PlutusData (Datum, PlutusData, getDatumByHash)
 import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArray)
 import Contract.ScriptLookups as Lookups
-import Contract.Transaction (OutputDatum(..), TransactionHash(TransactionHash), TransactionInput(..), TransactionOutputWithRefScript, balanceAndSignTxE, submitE)
+import Contract.Transaction (OutputDatum(..), TransactionHash(TransactionHash), TransactionInput(..), TransactionOutputWithRefScript, balanceTx, signTransaction, submitE)
 import Contract.TxConstraints (TxConstraints)
 import Contract.Utxos (utxosAt, getUtxo)
-import Control.Monad.Error.Class (throwError)
 import Data.Array (toUnfoldable, fromFoldable, catMaybes)
 import Data.List (filterM, List)
 import Data.Map (Map)
@@ -81,17 +80,18 @@ tryBuildBalanceSignAndSubmitTx
 tryBuildBalanceSignAndSubmitTx lookups constraints (RetryStatus { iterNumber }) = do
   ubTx <- liftedE $ Lookups.mkUnbalancedTx lookups constraints
   logDebug' $ "ubTx was:" <> show ubTx
-  balanceAndSignTxE ubTx >>= case _ of
-    Right bsTx -> do
-      logDebug' $ "Tx was:" <> show bsTx
-      submitE bsTx >>= case _ of
+  balanceTx ubTx >>= case _ of
+    Right unsignedTx -> do
+      logDebug' $ "Balancing successful, Tx was:" <> show unsignedTx
+      signTransaction unsignedTx >>= submitE >>= case _ of
         Left err -> pure $ Left err
         Right txid -> do
           when (iterNumber > 0) $ logWarn' "Successfull retry"
           pure $ Right txid
     Left err -> do
-      when (iterNumber > 0) $ logError' "Balance failed on retry. This was caused by a UTxO being spent elsewhere. Retries won't work, probably because the UTxO was requested by txid."
-      throwError $ err
+      when (iterNumber > 0) $
+        logError' "Balance failed on retry. This was caused by a UTxO being spent elsewhere. Retries won't work, probably because the UTxO was requested by txid."
+      liftEffect $ throw $ show err
 
 check :: RetryStatus -> (Either (Array Aeson) TransactionHash) -> Contract () Boolean
 check _ (Right _) = pure false

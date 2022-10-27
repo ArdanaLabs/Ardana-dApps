@@ -14,7 +14,7 @@ import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs, applyArgsM)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 import Effect.Exception (throw)
@@ -31,14 +31,16 @@ poolAddressValidator poolIdToken liquidityToken = do
   logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
   logDebug' $ "liquidity token:" <> show liquidityToken
-  decodeCbor CBOR.trivial
+  decodeCbor CBOR.trivial []
+    <#> Validator
 
 -- | Placeholder
 poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' "creating pool id token minting policy"
   logDebug' $ "nft cs:" <> show configUtxoNftCS
-  decodeCborMp CBOR.trivial
+  decodeCbor CBOR.trivial []
+    <#> PlutusMintingPolicy
 
 -- | MintingPolicy for the pool liquidity tokens parametized by the
 -- currency symbol of the poolId tokens
@@ -46,36 +48,26 @@ liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
-  raw <- decodeCborMp CBOR.liqudityTokenMintingPolicy
-  applyArgsWithErr raw [ toData poolId ]
+  decodeCbor CBOR.liqudityTokenMintingPolicy [ toData poolId ]
+    <#> PlutusMintingPolicy
 
 configAddressValidator :: Contract () Validator
-configAddressValidator = decodeCbor CBOR.configScript
+configAddressValidator = decodeCbor CBOR.configScript []
+  <#> Validator
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
-  raw <- decodeCborMp CBOR.nft
-  applyArgsWithErr raw [ toData ref ]
+  decodeCbor CBOR.nft [ toData ref ]
+    <#> PlutusMintingPolicy
 
--- These helpers should not be exported
-
-decodeCbor :: String -> Contract () Validator
-decodeCbor cborHex = liftContractM "failed to decode cbor"
-  $ Validator
-  <<< plutusV2Script
-  <$> hexToByteArray cborHex
-
-decodeCborMp :: String -> Contract () MintingPolicy
-decodeCborMp cborHex = liftContractM "failed to decode cbor"
-  $ MintingPolicy
-  <<< plutusV2Script
-  <$> hexToByteArray cborHex
-
-applyArgsWithErr :: forall a. DecodeAeson a => Newtype a PlutusScript => a -> Array PlutusData -> Contract () a
-applyArgsWithErr val args = do
-  applyArgs val args >>= case _ of
+-- This helper should not be exported
+decodeCbor :: String -> Array PlutusData -> Contract () PlutusScript
+decodeCbor cborHex args = do
+  rawScript <- liftContractM "failed to decode cbor"
+    $ plutusV2Script <$> hexToByteArray cborHex
+  applyArgs rawScript args >>= case _ of
     Left err -> do
       logError' $ "error in apply args:" <> show err
       liftEffect $ throw $ show err
-    Right newVal -> pure newVal
+    Right newScript -> pure newScript

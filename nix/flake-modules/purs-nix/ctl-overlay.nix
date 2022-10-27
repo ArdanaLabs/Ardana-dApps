@@ -6,13 +6,11 @@
       src.git =
         {
           repo = "https://github.com/mlabs-haskell/purescript-aeson.git";
-          rev = "286862a975f4bafbef15540c365bbbb0480e0bf7";
-          ref = "master";
+          rev = "8e9d42980e824450c18c397295573160d1ce8424";
+          ref = "klntsky/490-forbid-unlawful-encodeaeson";
         };
       info =
         {
-          version = "1.0.0";
-
           dependencies = with self; [
             aeson
             aeson-helpers
