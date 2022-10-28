@@ -21,7 +21,7 @@ import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Attacks.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
-import Test.Spec (describe, it)
+import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), runWithMode, useRunnerSimple)
 
@@ -36,8 +36,9 @@ main = launchAff_ $ do
     Just e -> throw $ "expected local or testnet got: " <> e
     Nothing -> throw "expected MODE to be set"
   log "about to start"
+  let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
-    describe "Liquidity Token Minting Policy" $ do
+    describe "Liquidity Token Minting Policy" $ maybePar do
 
       -- TODO there are more liquidity tests but
       -- they depend partially on the pool address validator as well
@@ -80,7 +81,7 @@ main = launchAff_ $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
-    describe "NFT" do
+    describe "NFT" $ maybePar $ do
 
       it "Mints an NFT with the seed UTxO as an input" $ useRunnerSimple do
         mintNft
