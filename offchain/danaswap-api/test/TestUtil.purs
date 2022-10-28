@@ -9,7 +9,6 @@ module TestUtil
 
 import Contract.Prelude
 
-import Contract.AssocMap (empty)
 import Contract.Config (testnetConfig)
 import Contract.Monad (Contract, ContractEnv, withContractEnv)
 import Contract.Test.Plutip (PlutipConfig, runContractInEnv, withKeyWallet, withPlutipContractEnv)
@@ -21,9 +20,10 @@ import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (trim)
+import Data.Time.Duration (Minutes(..), fromDuration)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
-import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
 import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
@@ -47,7 +47,7 @@ runWithMode mode spec = do
   runnerGetter <- getEnvRunner mode
   runSpec'
     defaultConfig
-      { timeout = Nothing }
+      { timeout = Just $ fromDuration $ Minutes 10.0 }
     [ specReporter ]
     $ before runnerGetter
     $ (if mode == Local then parallel else sequential)
@@ -66,8 +66,9 @@ useRunnerSimple contract runner = do
 retryOkayErrs :: Aff Unit -> Aff Unit
 retryOkayErrs aff =
   recovering
-    (limitRetries 5)
-    [ \_ err' -> do
+    (limitRetriesByCumulativeDelay (Minutes 10.0) $ limitRetries 5)
+    [ \status err' -> do
+        log $ "retrying with" <> show status
         let err = trim $ message err'
         if err `elem` badErrors then pure false
         else do
@@ -95,6 +96,8 @@ okayErrs =
   , "Process ogmios-datum-cache exited. Output:"
   , "Process ctl-server exited. Output:"
   , "timed out waiting for tx"
+  , "Error: Command failed: psql -h 127.0.0.1"
+  , "Unable to run the following services, because the ports are occupied:"
   ]
 
 -- | returns a contiunation that gets the EnvRunner
@@ -129,7 +132,7 @@ getPlutipConfig = do
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: Warn
+      , logLevel: Info
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2
