@@ -21,7 +21,7 @@ import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Attacks.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
-import Test.Spec (describe, it,parallel,sequential)
+import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), runWithMode, useRunnerSimple)
 
