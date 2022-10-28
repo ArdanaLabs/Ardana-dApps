@@ -52,7 +52,7 @@ main = launchAff_ $ do
           protocol <- initProtocol
           expectError $ openPoolWrongTokenWrongRedeemer protocol
 
-        it "fails to validate with the right redeemer" $ useRunnerSimple $ do
+        it "Fails to validate with the right redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           expectError $ openPoolWrongTokenRightRedeemer protocol
 
