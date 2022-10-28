@@ -78,14 +78,14 @@ main = launchAff_ $ do
 
     describe "Protocol Initialization" $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
-      it "init protocol doesn't error" $ useRunnerSimple $ do
+      it "Init protocol doesn't error" $ useRunnerSimple $ do
         initProtocol
     describe "NFT" do
 
-      it "mints an NFT with the seed UTxO as an input" $ useRunnerSimple do
+      it "Mints an NFT with the seed UTxO as an input" $ useRunnerSimple do
         mintNft
 
-      it "cannot mint with the seed UTxO as a reference input" $ useRunnerSimple do
+      it "Cannot mint with the seed UTxO as a reference input" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
@@ -101,7 +101,7 @@ main = launchAff_ $ do
             <> Constraints.mustReferenceOutput txOut
         expectError $ buildBalanceSignAndSubmitTx lookups constraints
 
-      it "double minting fails on second mint" $ useRunnerSimple do
+      it "Double minting fails on second mint" $ useRunnerSimple do
         txOut <- seedTx
         adr <- liftContractM "no wallet" =<< getWalletAddress
         utxos <- getUtxos adr
@@ -119,9 +119,9 @@ main = launchAff_ $ do
         _ <- waitForTx adr txId
         expectError $ buildBalanceSignAndSubmitTx lookups constraints
 
-      it "spends the seed UTxO after minting" $ useRunnerSimple do
+      it "Spends the seed UTxO after minting" $ useRunnerSimple do
         txOut <- seedTx
-        adr <- liftContractM "no wallet" =<< getWalletAddress
+        adr <- liftContractM "No wallet" =<< getWalletAddress
         utxos <- getUtxos adr
         nftPolicy <- simpleNft txOut
         cs <- liftContractM "failed to hash MintingPolicy into CurrencySymbol" $ scriptCurrencySymbol nftPolicy
@@ -140,13 +140,13 @@ main = launchAff_ $ do
           Nothing -> pure unit
           Just _ -> liftEffect $ throw "seed tx still existed"
 
-      it "sends the NFT to the wallet after minting" $ useRunnerSimple do
+      it "Sends the NFT to the wallet after minting" $ useRunnerSimple do
         cs <- mintNft
         bal <- liftContractM "no ballance" =<< getWalletBalance
         let nfts = Value.valueOf bal cs adaToken
         nfts `shouldEqual` (BigInt.fromInt 1)
 
-      it "cannot burn an NFT" $ useRunnerSimple do
+      it "Cannot burn an NFT" $ useRunnerSimple do
         txOut <- seedTx
         nftPolicy <- simpleNft txOut
         cs <- liftContractM "hash failed" $ scriptCurrencySymbol nftPolicy
