@@ -18,6 +18,7 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
+import Control.Safely (replicateM_)
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
 import DanaSwap.CborTyped (configAddressValidator, simpleNft)
@@ -26,7 +27,7 @@ import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
 import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
-import Test.Spec (describe, it, itOnly, parallel, sequential)
+import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 
@@ -213,7 +214,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
-      when (mode == Local) $ itOnly "Fails when seed utxo is not spent" $ runTwoWallets $
+      when (mode == Local) $ it "Fails when seed utxo is not spent" $ runTwoWallets $
         \alice bob -> do
 
           -- This whole mess is trying to get bob set up with out using up his utxos
@@ -233,7 +234,8 @@ main = launchAff_ $ do
                 Just _ -> liftEffect $ throw "bad staking credential"
               pure $ Just $ key /\ skey
             _ -> liftEffect $ throw "bad wallet"
-          void $ withKeyWallet alice $ waitForTx bobAdr =<< buildBalanceSignAndSubmitTx
+          -- sent twice so they can't both be the seedTx
+          void $ replicateM_ 2 $ withKeyWallet alice $ waitForTx bobAdr =<< buildBalanceSignAndSubmitTx
             mempty
             ( singleton $
                 MustPayToPubKeyAddress
@@ -241,10 +243,12 @@ main = launchAff_ $ do
                   (StakePubKeyHash <$> skey)
                   Nothing
                   Nothing
-                  ( Value.singleton (fst ac1) (snd ac1) (BigInt.fromInt 1_000_000)
-                      <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000_000)
+                  ( Value.singleton (fst ac1) (snd ac1) (BigInt.fromInt 1_000)
+                      <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000)
                   )
             )
+
+          bal <- withKeyWallet bob $ getWalletBalance >>= liftContractM "no wallet?"
 
           -- This is the actual test
           expectScriptError $ withKeyWallet bob $ openPoolSneaky
@@ -254,8 +258,8 @@ main = launchAff_ $ do
             protocol
             ac1
             ac2
-            (BigInt.fromInt 90)
-            (BigInt.fromInt 90)
+            (BigInt.fromInt 100)
+            (BigInt.fromInt 100)
 
     describe "Liquidity Token Minting Policy" $ maybePar do
 
