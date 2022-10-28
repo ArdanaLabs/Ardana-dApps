@@ -18,14 +18,12 @@
                   node-fs-aff
                   node-fs
                   self'.packages."offchain:danaswap-api"
-                  self'.packages."offchain:ctl-utils"
                 ];
               dir = ./.;
               test-dependencies =
                 with ps-pkgs;
                 [
                   stringutils
-                  self'.packages."offchain:ctl-utils-test"
                 ];
             };
         package =
