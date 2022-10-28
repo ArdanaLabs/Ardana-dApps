@@ -35,7 +35,7 @@ import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile, exists, unlink)
 import Node.Process (lookupEnv)
-import Test.Spec (SpecT, before, parallel, sequential)
+import Test.Spec (SpecT, before, sequential)
 import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
 
@@ -56,7 +56,7 @@ runWithMode mode spec = do
       { timeout = Just $ fromDuration $ Minutes 10.0 }
     [ specReporter ]
     $ before runnerGetter
-    $ (if mode == Local then parallel else sequential)
+    $ sequential
     $ spec
 
 -- | Prepares a contract to be run as an EnvSpec
@@ -154,7 +154,7 @@ getPlutipConfig = do
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: Info
+      , logLevel: Warn
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2
