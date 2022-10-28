@@ -48,7 +48,7 @@ main = launchAff_ $ do
         openPool protocol
 
       describe "Minting tokens for a different pool on pool open" $ do
-        it "fails to validate with the wrong redeemer" $ useRunnerSimple $ do
+        it "Fails to validate with the wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
           expectError $ openPoolWrongTokenWrongRedeemer protocol
 
