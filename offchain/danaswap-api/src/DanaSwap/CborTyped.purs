@@ -15,7 +15,7 @@ import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 import Data.BigInt (BigInt)
@@ -41,7 +41,7 @@ poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' "creating pool id token minting policy"
   logDebug' $ "nft cs:" <> show configUtxoNftCS
-  decodeCbor CBOR.poolIdTokenMP [ toData configUtxoNftCS ]
+  decodeCbor CBOR.poolIdTokenMintingPolicy [ toData configUtxoNftCS ]
     <#> PlutusMintingPolicy
 
 -- | MintingPolicy for the pool liquidity tokens parametized by the

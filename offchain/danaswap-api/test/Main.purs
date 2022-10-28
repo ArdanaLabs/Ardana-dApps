@@ -22,7 +22,7 @@ import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
-import Test.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
+import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), expectScriptError, runWithMode, useRunnerSimple)

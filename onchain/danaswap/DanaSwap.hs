@@ -20,6 +20,7 @@ import GHC.Records (HasField)
 import Plutarch.Api.V1 (AmountGuarantees (..), KeyGuarantees (..), PTokenName (PTokenName), PValue (PValue))
 import Plutarch.Api.V1.AssocMap (PMap)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
+
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V1.Value (PCurrencySymbol)
 import Plutarch.Api.V1.Value qualified as Value
@@ -37,10 +38,16 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
-import Plutarch.Extensions.Api (passert, passert_)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extensions.List (unsingleton)
-import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont
+    ( pletC,
+      pletFieldsC,
+      pmatchC,
+      pguardC,
+      pletC,
+      pletFieldsC,
+      pmatchC )
 import Plutarch.Maybe (pfromJust)
 
 data LiquidityAction (s :: S)
@@ -156,9 +163,9 @@ liqudityTokenMP = phoistAcyclic $
       PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
       PMap.PMap liquidityAsList <- pmatchC liquidity
       -- Common assertions for both actions
-      passert_ "minted exactly one token name of liquidity tokens" $
+      pguardC "minted exactly one token name of liquidity tokens" $
         plength # liquidityAsList #== 1
-      passert_ "token name matched redeemer" $
+      pguardC "token name matched redeemer" $
         pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
       -- Case over the action field of the redeemer
       pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
@@ -171,8 +178,9 @@ liqudityTokenMP = phoistAcyclic $
           pure $ popaque $ pcon PUnit
         Spend _ -> do
           let inputs = pfromData $ getField @"inputs" infoRec
-          passert "token name matched redeemer" $
+          pguardC "token name matched redeemer" $
             pany # isRightPool # inputs
+          pure $ popaque $ pcon PUnit
           where
             isRightPool = plam $ \input -> unTermCont $ do
               -- Check that the value of the field contains the right poolID
@@ -196,7 +204,8 @@ standardNft = phoistAcyclic $
           pmap # pfield @"outRef"
             #$ pfield @"inputs"
             #$ pfield @"txInfo" # sc
-    passert "didn't spend out ref" $ pelem # outRef # inputs
+    pguardC "didn't spend out ref" $ pelem # outRef # inputs
+    pure $ popaque $ pcon PUnit
 
 poolIdTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
 poolIdTokenMP = phoistAcyclic $
@@ -219,7 +228,7 @@ poolIdTokenMP = phoistAcyclic $
         let referenceInputs = pfromData $ getField @"referenceInputs" infoRec
         let outputs = getField @"outputs" infoRec
         poolIds <- pletC $ atCS # minting # cs
-        passert_ "Only mints one correct pool id" $
+        pguardC "Only mints one correct pool id" $
           isJustTn # poolIds # poolId
         configUtxo <-
           pletC $
@@ -257,14 +266,15 @@ poolIdTokenMP = phoistAcyclic $
             poolDataRec'
         let issuedLiquidity = pfromData $ getField @"issuedLiquidity" poolDataRec
         liquidity <- pletC $ atCS # minting # liquidityCS
-        passert_ "actaully minted same amount reported in datum" $
+        pguardC "actaully minted same amount reported in datum" $
           isJustTn' # liquidity # poolId # issuedLiquidity
         valueMatchesDatum poolDataRec (getField @"value" outPoolRec)
-        passert "liquidity is correct" $
+        pguardC "liquidity is correct" $
           validOpenAmts
             # getField @"bal1" poolDataRec
             # getField @"bal2" poolDataRec
             # issuedLiquidity
+        pure $ popaque $ pcon PUnit
 
 -- This part of the logic is seperated mainly for ease of testing
 validOpenAmts :: ClosedTerm (PInteger :--> PInteger :--> PInteger :--> PBool)
@@ -294,11 +304,11 @@ valueMatchesDatum rec val = do
   let ac1cs = pfromData $ pfstBuiltin # getField @"ac1" rec
   let ac1tn = pfromData $ psndBuiltin # getField @"ac1" rec
   bal1Val <- pletC $ pfromJust #$ PMap.plookup # ac1tn #$ pfromJust #$ PMap.plookup # ac1cs # valMap
-  passert_ "bal1 is wrong" $ bal1Val #== getField @"bal1" rec + getField @"adminBal1" rec
+  pguardC "bal1 is wrong" $ bal1Val #== getField @"bal1" rec + getField @"adminBal1" rec
   let ac2cs = pfromData $ pfstBuiltin # getField @"ac2" rec
   let ac2tn = pfromData $ psndBuiltin # getField @"ac2" rec
   bal2Val <- pletC $ pfromJust #$ PMap.plookup # ac2tn #$ pfromJust #$ PMap.plookup # ac2cs # valMap
-  passert_ "bal2 is wrong" $ bal2Val #== getField @"bal2" rec + getField @"adminBal2" rec
+  pguardC "bal2 is wrong" $ bal2Val #== getField @"bal2" rec + getField @"adminBal2" rec
 
 isAtAdrWithVal :: ClosedTerm (PAddress :--> PValue 'Sorted 'NonZero :--> PTxOut :--> PBool)
 isAtAdrWithVal = phoistAcyclic $

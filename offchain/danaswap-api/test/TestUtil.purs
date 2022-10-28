@@ -23,18 +23,12 @@ import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
 import Data.String (Pattern(Pattern), contains, trim)
-import Data.String (trim)
 import Data.Time.Duration (Minutes(..), fromDuration)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
-import Effect.Aff.Retry (limitRetries, recovering)
+import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, error, message, throw)
-import Effect.Exception (throw)
-import Effect.Aff.Retry (limitRetries, recovering)
-import Effect.Aff.Retry (limitRetries, recovering)
-import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
-import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (appendTextFile, exists, unlink)
@@ -57,7 +51,7 @@ runWithMode mode spec = do
   runnerGetter <- getEnvRunner mode
   runSpec'
     defaultConfig
-      { timeout = Just $ fromDuration $ Minutes 5.0 }
+      { timeout = Just $ fromDuration $ Minutes 10.0 }
     [ specReporter ]
     $ before runnerGetter
     $ (if mode == Local then parallel else sequential)
