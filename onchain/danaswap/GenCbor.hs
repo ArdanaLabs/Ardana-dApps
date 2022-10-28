@@ -4,6 +4,7 @@ import Hello
 import HelloDiscovery
 
 import Control.Monad (unless)
+import DanaSwap (liqudityTokenCBor)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
@@ -35,4 +36,5 @@ cbors =
   , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
+  , Cbor "liqudityTokenMintingPolicy" liqudityTokenCBor
   ]
