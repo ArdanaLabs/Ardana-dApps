@@ -20,7 +20,7 @@
       };
 
       apps = {
-        "danaswap-ui:serve" =
+        "offchain:danaswap-ui:serve" =
           cat-lib.makeServeApp self'.packages."danaswap-ui";
       };
 
