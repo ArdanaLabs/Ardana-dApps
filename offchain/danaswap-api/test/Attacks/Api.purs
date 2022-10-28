@@ -1,4 +1,4 @@
-module Test.Api
+module Test.Attacks.Api
   ( openPoolWrongTokenRightRedeemer
   , openPoolWrongTokenWrongRedeemer
   , openPoolMultipleTokens

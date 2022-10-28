@@ -20,7 +20,7 @@ import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
+import Test.Attacks.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), runWithMode, useRunnerSimple)
