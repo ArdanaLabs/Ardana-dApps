@@ -6,7 +6,7 @@ module DanaSwap.Api
   , depositLiquidity
   -- Types
   , AssetClass
-  , Protocol
+  , Protocol(..)
   , PoolId
   -- Testing
   , PoolDatum(..)
@@ -16,6 +16,7 @@ module DanaSwap.Api
 
 import Contract.Prelude
 
+import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Hashing (datumHash)
 import Contract.Log (logDebug', logInfo')
@@ -23,17 +24,19 @@ import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData, toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
-import Contract.Transaction (TransactionInput, TransactionOutputWithRefScript)
+import Contract.Transaction (TransactionInput(..), TransactionHash(..), TransactionOutputWithRefScript)
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
 import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol, symbols, valueOf)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Internal.Types.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
 import Data.Int (floor)
+import Data.UInt as U
 import Data.List (head)
 import Data.Map (Map, keys)
 import Data.Map as Map
@@ -41,12 +44,54 @@ import Data.Set (toUnfoldable)
 import Effect.Exception (throw)
 import Math (sqrt)
 
-type Protocol =
+newtype Protocol = Protocol
   { configUtxo :: TransactionInput
   , poolAdrVal :: Validator
   , liquidityMP :: MintingPolicy
   , poolIdMP :: MintingPolicy
   }
+
+-- We need this type since TransactionInput does not have a decode/encode instance for Aeson
+type TransactionInputSerializable = { index :: Int, transactionId :: String }
+
+logTxId :: TransactionInput -> TransactionInputSerializable
+logTxId (TransactionInput { index, transactionId: TransactionHash bytes }) = { index: U.toInt index, transactionId: byteArrayToHex bytes }
+
+parseTxId :: TransactionInputSerializable -> TransactionInput
+parseTxId { index, transactionId } = TransactionInput
+  { index: U.fromInt index, transactionId: TransactionHash $ hexToByteArrayUnsafe transactionId }
+
+derive instance Newtype Protocol _
+derive instance Generic Protocol _
+instance Show Protocol where
+  show = genericShow
+
+instance DecodeAeson Protocol where
+  decodeAeson a = do
+    ( { configUtxo, poolAdrVal, liquidityMP, poolIdMP }
+        :: { configUtxo :: TransactionInputSerializable
+           , poolAdrVal :: Validator
+           , liquidityMP :: MintingPolicy
+           , poolIdMP :: MintingPolicy
+           }
+    ) <- decodeAeson a
+    pure $
+      ( Protocol $
+          { configUtxo: parseTxId configUtxo
+          , poolAdrVal
+          , liquidityMP
+          , poolIdMP
+          }
+      )
+
+instance EncodeAeson Protocol where
+  encodeAeson' (Protocol { configUtxo, poolAdrVal, liquidityMP, poolIdMP }) =
+    encodeAeson'
+      { configUtxo: logTxId configUtxo
+      , poolAdrVal
+      , liquidityMP
+      , poolIdMP
+      }
 
 type PoolId = TokenName
 type AssetClass = CurrencySymbol /\ TokenName
@@ -77,7 +122,7 @@ instance ToData PoolDatum where
 
 -- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
-getAllPools protocol@{ poolAdrVal } =
+getAllPools protocol@(Protocol { poolAdrVal }) =
   getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
     <#> Map.filter (hasNft protocol)
 
@@ -86,7 +131,7 @@ getAllPools protocol@{ poolAdrVal } =
 
 -- | Given a protocol object and a pool id returns the transaction input and output of that pool
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
-getPoolById protocol@{ poolIdMP } token = do
+getPoolById protocol@(Protocol { poolIdMP }) token = do
   pools <- getAllPools protocol
   cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
@@ -97,13 +142,13 @@ getPoolById protocol@{ poolIdMP } token = do
 
 -- helper function to check that a pool has an NFT and is therefore valid
 hasNft :: Protocol -> TransactionOutputWithRefScript -> Boolean
-hasNft { poolIdMP } out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
+hasNft (Protocol { poolIdMP }) out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
   Nothing -> false -- protocol was invalid
   Just cs -> cs `elem` (symbols $ (unwrap (unwrap out).output).amount)
 
 -- TODO this is a placeholder implementation
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
-depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCS poolID one
@@ -132,7 +177,7 @@ depositLiquidity protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
 -- The real implementation will also take more arguments
 -- it should generate a usable pool for some tests
 openPool :: Protocol -> AssetClass -> AssetClass -> BigInt -> BigInt -> Contract () PoolId
-openPool { poolAdrVal, liquidityMP, poolIdMP, configUtxo } ac1 ac2 amt1 amt2 = do
+openPool (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) ac1 ac2 amt1 amt2 = do
   seed <- seedTx
   poolID <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -224,7 +269,7 @@ initProtocol = do
   logDebug' "config utxo submitted, waiting for confirmation"
   configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
   logDebug' "protocol init complete"
-  pure
+  pure $ Protocol
     { configUtxo
     , poolAdrVal
     , liquidityMP

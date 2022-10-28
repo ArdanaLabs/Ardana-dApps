@@ -1,4 +1,4 @@
-module Ctl.Util
+module Ctl.Utils
   ( waitForTx
   , buildBalanceSignAndSubmitTx
   , buildBalanceSignAndSubmitTx'

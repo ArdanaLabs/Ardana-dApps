@@ -19,8 +19,9 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints (mustMintCurrencyWithRedeemer, mustMintValueWithRedeemer, mustPayToScript, mustReferenceOutput, mustSpendPubKeyOutput, mustSpendScriptOutput) as Constraints
 import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
-import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol, getPoolById, seedTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
+import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol(..), getPoolById, seedTx)
+import DanaSwap.Api (PoolId, Protocol, getPoolById)
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
@@ -70,7 +71,7 @@ openPoolAttack
   -> Contract () PoolId
 openPoolAttack
   attack
-  { poolAdrVal, liquidityMP, poolIdMP, configUtxo }
+  (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo })
   ac1
   ac2
   amt1
@@ -163,7 +164,7 @@ regularDeposit =
 -- TODO ignores report issued for now
 -- this won't matter till we have an actuall pool address validator script
 depositLiquidityAttack :: AttackOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
-depositLiquidityAttack attack protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
