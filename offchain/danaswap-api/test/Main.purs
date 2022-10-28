@@ -230,20 +230,20 @@ main = launchAff_ $ do
               skey <- case mskey of
                 Nothing -> pure Nothing
                 Just (StakingHash (PubKeyCredential skey)) -> pure $ Just skey
-                Just _ ->  liftEffect $ throw "bad staking credential"
+                Just _ -> liftEffect $ throw "bad staking credential"
               pure $ Just $ key /\ skey
             _ -> liftEffect $ throw "bad wallet"
           void $ withKeyWallet alice $ waitForTx bobAdr =<< buildBalanceSignAndSubmitTx
             mempty
-            (singleton $
-              MustPayToPubKeyAddress
-              (PaymentPubKeyHash key)
-              (StakePubKeyHash <$> skey)
-              Nothing
-              Nothing
-              (Value.singleton (fst ac1) (snd ac1) (BigInt.fromInt 1_000_000)
-                <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000_000)
-              )
+            ( singleton $
+                MustPayToPubKeyAddress
+                  (PaymentPubKeyHash key)
+                  (StakePubKeyHash <$> skey)
+                  Nothing
+                  Nothing
+                  ( Value.singleton (fst ac1) (snd ac1) (BigInt.fromInt 1_000_000)
+                      <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000_000)
+                  )
             )
 
           -- This is the actual test
