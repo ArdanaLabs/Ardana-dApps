@@ -20,7 +20,9 @@
       };
 
       apps = {
-        "offchain:danaswap-ui:serve" =
+        "offchain:danaswap-ui:serve:testnet" =
+          cat-lib.makeServeApp self'.packages."danaswap-ui";
+        "offchain:danaswap-ui:serve:mainnet" =
           cat-lib.makeServeApp self'.packages."danaswap-ui";
       };
 
