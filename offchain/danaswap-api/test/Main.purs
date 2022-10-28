@@ -25,8 +25,6 @@ import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
 import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
-import Test.Spec (describe, it)
-import Test.Attacks.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
 import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
@@ -44,7 +42,7 @@ main = launchAff_ $ do
   log "About to start tests"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
-    describe "Pool id minting Policy tests" $ maybePar$ do
+    describe "Pool id minting Policy tests" $ maybePar $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
