@@ -1,6 +1,7 @@
 module Ctl.Util
   ( waitForTx
   , buildBalanceSignAndSubmitTx
+  , buildBalanceSignAndSubmitTx'
   , getUtxos
   , getTxScanUrl
   , maxWait
@@ -11,12 +12,13 @@ import Contract.Prelude
 
 import Aeson (Aeson, getField, toArray, toObject)
 import Contract.Address (Address, NetworkId(..))
+import Contract.BalanceTxConstraints (BalanceTxConstraintsBuilder)
 import Contract.Log (logDebug', logError', logInfo', logWarn')
 import Contract.Monad (Contract, liftContractM, liftedE)
 import Contract.PlutusData (Datum, PlutusData, getDatumByHash)
 import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArray)
 import Contract.ScriptLookups as Lookups
-import Contract.Transaction (OutputDatum(..), TransactionHash(TransactionHash), TransactionInput(..), TransactionOutputWithRefScript, balanceTx, signTransaction, submitE)
+import Contract.Transaction (OutputDatum(..), TransactionHash(TransactionHash), TransactionInput(..), TransactionOutputWithRefScript, balanceTxWithConstraints, signTransaction, submitE)
 import Contract.TxConstraints (TxConstraints)
 import Contract.Utxos (utxosAt, getUtxo)
 import Data.Array (toUnfoldable, fromFoldable, catMaybes)
@@ -61,13 +63,23 @@ buildBalanceSignAndSubmitTx
   :: Lookups.ScriptLookups PlutusData
   -> TxConstraints Unit Unit
   -> Contract () TransactionHash
-buildBalanceSignAndSubmitTx lookups constraints = liftedE
+buildBalanceSignAndSubmitTx lookups constraints =
+  buildBalanceSignAndSubmitTx' lookups constraints mempty
+
+-- | like buildBalanceSignAndSubmitTx but also takes balance Constraints
+-- which are not usually needed
+buildBalanceSignAndSubmitTx'
+  :: Lookups.ScriptLookups PlutusData
+  -> TxConstraints Unit Unit
+  -> BalanceTxConstraintsBuilder
+  -> Contract () TransactionHash
+buildBalanceSignAndSubmitTx' lookups constraints balanceConstraints = liftedE
   $ mapLeft (map $ show >>> error)
   <$>
     retrying
       (limitRetries maxAttempts)
       check
-      (tryBuildBalanceSignAndSubmitTx lookups constraints)
+      (tryBuildBalanceSignAndSubmitTx lookups constraints balanceConstraints)
 
 maxAttempts :: Int
 maxAttempts = 5
@@ -75,12 +87,13 @@ maxAttempts = 5
 tryBuildBalanceSignAndSubmitTx
   :: Lookups.ScriptLookups PlutusData
   -> TxConstraints Unit Unit
+  -> BalanceTxConstraintsBuilder
   -> RetryStatus
   -> Contract () (Either (Array Aeson) TransactionHash)
-tryBuildBalanceSignAndSubmitTx lookups constraints (RetryStatus { iterNumber }) = do
+tryBuildBalanceSignAndSubmitTx lookups constraints balanceConstraints (RetryStatus { iterNumber }) = do
   ubTx <- liftedE $ Lookups.mkUnbalancedTx lookups constraints
   logDebug' $ "ubTx was:" <> show ubTx
-  balanceTx ubTx >>= case _ of
+  balanceTxWithConstraints ubTx balanceConstraints >>= case _ of
     Right unsignedTx -> do
       logDebug' $ "Balancing successful, Tx was:" <> show unsignedTx
       signTransaction unsignedTx >>= submitE >>= case _ of

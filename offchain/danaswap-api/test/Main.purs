@@ -4,20 +4,22 @@ module Test.Main
 
 import Contract.Prelude
 
-import Contract.Address (getWalletAddress)
+import Contract.Address (getWalletAddress, scriptHashAddress)
 import Contract.Log (logInfo')
 import Contract.Monad (launchAff_, liftContractM)
-import Contract.PlutusData (PlutusData(..), Redeemer(..), toData)
+import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
-import Contract.TxConstraints (TxConstraints)
+import Contract.Scripts (mintingPolicyHash, validatorHash)
+import Contract.Test.Plutip (withKeyWallet)
+import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
-import Contract.Value (adaToken, mkTokenName, scriptCurrencySymbol)
+import Contract.Value (adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
-import DanaSwap.CborTyped (simpleNft)
+import DanaSwap.CborTyped (configAddressValidator, simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
@@ -25,7 +27,7 @@ import Setup (prepTestTokens)
 import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), expectScriptError, runWithMode, useRunnerSimple)
+import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -52,8 +54,8 @@ main = launchAff_ $ do
           (BigInt.fromInt 100)
       -- This is the same as the liquidity test of the same name
 
-      describe "Can't open with zero liqudity" $ do
-        it "Both zero" $ useRunnerSimple $ do
+      describe "Open a pool with zero liqudity" $ do
+        it "Fails when both tokens are zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPool
@@ -63,7 +65,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 0)
             (BigInt.fromInt 0)
 
-        it "first zero" $ useRunnerSimple $ do
+        it "fails when the first token is zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPool
@@ -73,7 +75,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 0)
             (BigInt.fromInt 100)
 
-        it "second zero" $ useRunnerSimple $ do
+        it "fails when the second token is zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPool
@@ -83,7 +85,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 0)
 
-        it "pay both set zero" $ useRunnerSimple $ do
+        it "Fails when neither is zero but token we report and mint zero anyway" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPoolSneaky
@@ -97,8 +99,8 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
 
-      describe "Can't under pay" $ do
-        it "report correctly" $ useRunnerSimple $ do
+      describe "Under paying for liquidity" $ do
+        it "Fails when reporting correctly" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPoolSneaky
@@ -112,13 +114,108 @@ main = launchAff_ $ do
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
-        it "report paying in full" $ useRunnerSimple $ do
+        it "Fails when reporting paying in full" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $ openPoolSneaky
             regularOpen
               { reportIssued = Just $ BigInt.fromInt 100
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 100)
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
+
+      it "Fails when config utxo is emmited" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        expectScriptError $ openPoolSneaky
+          regularOpen
+            { hasConfig = false
+            }
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 90)
+          (BigInt.fromInt 90)
+
+      it "Fails when config utxo is invalid" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        configAdrVal <- configAddressValidator
+        liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
+          $ mpsSymbol
+          $ mintingPolicyHash protocol.liquidityMP
+        badConfig <- waitForTx (scriptHashAddress $ validatorHash configAdrVal)
+          =<< buildBalanceSignAndSubmitTx
+            mempty
+            ( Constraints.mustPayToScript
+                (validatorHash configAdrVal)
+                ( Datum $ List
+                    [ toData (validatorHash $ protocol.poolAdrVal), toData liquidityCS ]
+                )
+                DatumInline
+                mempty
+            )
+        expectScriptError $ openPoolSneaky
+          regularOpen
+            { badConfig = Just badConfig
+            }
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 90)
+          (BigInt.fromInt 90)
+
+      it "Fails when minting two id tokens" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        expectScriptError $ openPoolSneaky
+          regularOpen
+            { numberOfIdsToMint = Just (BigInt.fromInt 2)
+            }
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 90)
+          (BigInt.fromInt 90)
+
+      it "Fails when user keeps id token" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        expectScriptError $ openPoolSneaky
+          regularOpen
+            { keepId = true
+            }
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 90)
+          (BigInt.fromInt 90)
+
+      it "Fails when pool is opened with wrong id" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        badId <- (hexToByteArray "aaaa" >>= mkTokenName) # liftContractM "failed to make token name"
+        expectScriptError $ openPoolSneaky
+          regularOpen
+            { idToMint = Just badId
+            }
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 90)
+          (BigInt.fromInt 90)
+
+      when (mode == Local) $ it "Fails when seed utxo is not spent" $ runTwoWallets $
+        \alice bob -> do
+          protocol <- withKeyWallet alice $ initProtocol
+          (ac1 /\ ac2) <- withKeyWallet bob $ prepTestTokens
+          expectScriptError $ withKeyWallet bob $ openPoolSneaky
+            regularOpen
+              { spendSeedTx = false
               }
             protocol
             ac1

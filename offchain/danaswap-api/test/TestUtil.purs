@@ -3,6 +3,7 @@ module TestUtil
   , runWithMode
   , useRunnerSimple
   , expectScriptError
+  , runTwoWallets
   -- Types
   , EnvSpec
   , EnvRunner
@@ -18,6 +19,7 @@ import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFi
 import Control.Monad.Error.Class (throwError, try)
 import Control.Monad.Except (class MonadError)
 import Ctl.Internal.Plutip.PortCheck (isPortAvailable)
+import Data.Array (replicate)
 import Data.BigInt as BigInt
 import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
@@ -66,6 +68,15 @@ useRunnerSimple contract runner = do
     runContractInEnv env
       $ withKeyWallet alice
       $ void contract
+
+runTwoWallets :: forall a. (KeyWallet -> KeyWallet -> Contract () a) -> EnvRunner -> Aff Unit
+runTwoWallets contract _ = retryOkayErrs $ do
+  cfg <- getPlutipConfig
+  withPlutipContractEnv cfg (defaultWallet /\ defaultWallet) $
+    \env (alice /\ bob) ->
+      runContractInEnv env
+        $ void
+        $ contract alice bob
 
 retryOkayErrs :: Aff Unit -> Aff Unit
 retryOkayErrs aff =
@@ -123,7 +134,11 @@ getEnvRunner Testnet = do
     $ \f -> withContractEnv (testnetConfig { logLevel = Warn }) $ \env -> f (env :: ContractEnv ()) (keyWallet :: KeyWallet)
 
 defaultWallet :: Array BigInt.BigInt
-defaultWallet = [ BigInt.fromInt 40_000_000, BigInt.fromInt 40_000_000 ]
+defaultWallet = replicate 5 $ BigInt.fromInt 40_000_000
+
+-- For "fails when seedTx is not spent it's important that
+-- there are other utxos with enough money to cover fees
+-- so the seedTx doesn't have to be spent
 
 getFreePort :: Aff Int
 getFreePort = do

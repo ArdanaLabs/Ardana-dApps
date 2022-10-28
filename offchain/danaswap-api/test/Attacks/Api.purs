@@ -8,16 +8,19 @@ module Test.Attacks.Api
 import Contract.Prelude
 
 import Contract.Address (getWalletAddress, scriptHashAddress)
+import Contract.BalanceTxConstraints (mustNotSpendUtxoWithOutRef) as Constraints
 import Contract.Hashing (datumHash)
+import Contract.Log (logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash, validatorHash)
+import Contract.Transaction (TransactionInput)
 import Contract.TxConstraints (DatumPresence(..))
-import Contract.TxConstraints as Constraints
+import Contract.TxConstraints (mustMintCurrencyWithRedeemer, mustMintValueWithRedeemer, mustPayToScript, mustReferenceOutput, mustSpendPubKeyOutput, mustSpendScriptOutput) as Constraints
 import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Util (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
 import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol, getPoolById, seedTx)
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt (BigInt, toNumber)
@@ -35,6 +38,12 @@ type SneakyOptionsOpen =
   { reportIssued :: Maybe BigInt
   , actuallyMint :: Maybe (CurrencySymbol -> TokenName -> Value)
   , redeemer :: Maybe (TokenName -> Redeemer)
+  , hasConfig :: Boolean
+  , badConfig :: Maybe TransactionInput
+  , numberOfIdsToMint :: Maybe BigInt
+  , keepId :: Boolean
+  , idToMint :: Maybe TokenName
+  , spendSeedTx :: Boolean
   }
 
 regularOpen :: SneakyOptionsOpen
@@ -42,6 +51,12 @@ regularOpen =
   { reportIssued: Nothing
   , actuallyMint: Nothing
   , redeemer: Nothing
+  , hasConfig: true
+  , badConfig: Nothing
+  , numberOfIdsToMint: Nothing
+  , keepId: false
+  , idToMint: Nothing
+  , spendSeedTx: true
   }
 
 -- | like open pool but takes several "sneaky" options
@@ -62,7 +77,8 @@ openPoolSneaky
   amt1
   amt2 = do
   seed <- seedTx
-  poolID <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
+  poolID' <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
+  let poolID = fromMaybe poolID' sneaky.idToMint
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
   let idNft = Value.singleton poolIdCs poolID one
@@ -71,6 +87,7 @@ openPoolSneaky
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
   adr <- getWalletAddress >>= liftContractM "no wallet"
   utxos <- getUtxos adr
+  when (not sneaky.spendSeedTx) $ logError' $ "utxos:" <> show utxos
   let
     liq = BigInt.fromInt $ floor $ sqrt $ toNumber $ amt1 * amt2
     pool = PoolDatum
@@ -83,7 +100,7 @@ openPoolSneaky
       , liquidity: fromMaybe liq sneaky.reportIssued
       , live: true
       }
-  txid <- buildBalanceSignAndSubmitTx
+  txid <- buildBalanceSignAndSubmitTx'
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
         <> Lookups.unspentOutputs configAdrUtxos
@@ -93,7 +110,7 @@ openPoolSneaky
         poolIdMph
         (Redeemer $ toData unit)
         poolID
-        one
+        (fromMaybe one sneaky.numberOfIdsToMint)
         <>
           ( if liq >= one then
               Constraints.mustMintValueWithRedeemer
@@ -111,16 +128,23 @@ openPoolSneaky
                 )
             else mempty
           )
-        <> Constraints.mustReferenceOutput configUtxo
-        <> Constraints.mustSpendPubKeyOutput seed
+        <>
+          ( if sneaky.hasConfig then Constraints.mustReferenceOutput (fromMaybe configUtxo sneaky.badConfig)
+            else mempty
+          )
+        <> (if sneaky.spendSeedTx then Constraints.mustSpendPubKeyOutput seed else mempty)
         <> Constraints.mustPayToScript
           (validatorHash poolAdrVal)
           (Datum $ toData pool)
           DatumInline
-          ( idNft
+          ( (if sneaky.keepId then mempty else idNft)
               <> Value.singleton (fst ac1) (snd ac1) amt1
               <> Value.singleton (fst ac2) (snd ac2) amt2
           )
+    )
+    ( if sneaky.spendSeedTx then mempty
+      else
+        Constraints.mustNotSpendUtxoWithOutRef seed
     )
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
