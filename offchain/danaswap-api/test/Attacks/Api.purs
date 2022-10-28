@@ -1,7 +1,7 @@
 module Test.Attacks.Api
-  ( openPoolSneaky
+  ( openPoolAttack
   , regularOpen
-  , depositLiquiditySneaky
+  , depositLiquidityAttack
   , regularDeposit
   ) where
 
@@ -30,10 +30,10 @@ import Math (sqrt)
 
 -- This module provides alternative implementations
 -- for several normal API functions which take
--- extra "sneaky" (someone please suggest a better word)
+-- extra "attack" (someone please suggest a better word)
 -- options
 
-type SneakyOptionsOpen =
+type AttackOptionsOpen =
   { reportIssued :: Maybe BigInt
   , actuallyMint :: Maybe (CurrencySymbol -> TokenName -> Value)
   , redeemer :: Maybe (TokenName -> Redeemer)
@@ -45,7 +45,7 @@ type SneakyOptionsOpen =
   , spendSeedTx :: Boolean
   }
 
-regularOpen :: SneakyOptionsOpen
+regularOpen :: AttackOptionsOpen
 regularOpen =
   { reportIssued: Nothing
   , actuallyMint: Nothing
@@ -58,18 +58,18 @@ regularOpen =
   , spendSeedTx: true
   }
 
--- | like open pool but takes several "sneaky" options
+-- | like open pool but takes several "attack" options
 -- usefull for atack testing
-openPoolSneaky
-  :: SneakyOptionsOpen
+openPoolAttack
+  :: AttackOptionsOpen
   -> Protocol
   -> AssetClass
   -> AssetClass
   -> BigInt
   -> BigInt
   -> Contract () PoolId
-openPoolSneaky
-  sneaky
+openPoolAttack
+  attack
   { poolAdrVal, liquidityMP, poolIdMP, configUtxo }
   ac1
   ac2
@@ -77,7 +77,7 @@ openPoolSneaky
   amt2 = do
   seed <- seedTx
   poolID' <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
-  let poolID = fromMaybe poolID' sneaky.idToMint
+  let poolID = fromMaybe poolID' attack.idToMint
   let poolIdMph = mintingPolicyHash poolIdMP
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
   let idNft = Value.singleton poolIdCs poolID one
@@ -95,7 +95,7 @@ openPoolSneaky
       , bal2: amt1
       , adminBal1: zero
       , adminBal2: zero
-      , liquidity: fromMaybe liq sneaky.reportIssued
+      , liquidity: fromMaybe liq attack.reportIssued
       , live: true
       }
   txid <- buildBalanceSignAndSubmitTx'
@@ -108,13 +108,13 @@ openPoolSneaky
         poolIdMph
         (Redeemer $ toData unit)
         poolID
-        (fromMaybe one sneaky.numberOfIdsToMint)
+        (fromMaybe one attack.numberOfIdsToMint)
         <>
           ( if liq >= one then
               Constraints.mustMintValueWithRedeemer
                 ( fromMaybe
                     (Redeemer $ List [ toData poolID, Constr zero [] ])
-                    (sneaky.redeemer <#> (_ $ poolID))
+                    (attack.redeemer <#> (_ $ poolID))
                 )
                 ( fromMaybe
                     ( Value.singleton
@@ -122,38 +122,38 @@ openPoolSneaky
                         poolID
                         liq
                     )
-                    (sneaky.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
+                    (attack.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
                 )
             else mempty
           )
         <>
-          ( if sneaky.hasConfig then Constraints.mustReferenceOutput (fromMaybe configUtxo sneaky.badConfig)
+          ( if attack.hasConfig then Constraints.mustReferenceOutput (fromMaybe configUtxo attack.badConfig)
             else mempty
           )
-        <> (if sneaky.spendSeedTx then Constraints.mustSpendPubKeyOutput seed else mempty)
+        <> (if attack.spendSeedTx then Constraints.mustSpendPubKeyOutput seed else mempty)
         <> Constraints.mustPayToScript
           (validatorHash poolAdrVal)
           (Datum $ toData pool)
           DatumInline
-          ( (if sneaky.keepId then mempty else idNft)
+          ( (if attack.keepId then mempty else idNft)
               <> Value.singleton (fst ac1) (snd ac1) amt1
               <> Value.singleton (fst ac2) (snd ac2) amt2
           )
     )
-    ( if sneaky.spendSeedTx then mempty
+    ( if attack.spendSeedTx then mempty
       else
         Constraints.mustNotSpendUtxoWithOutRef seed
     )
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
-type SneakyOptionsDeposit =
+type AttackOptionsDeposit =
   { reportIssued :: Maybe (BigInt -> BigInt)
   , actuallyMint :: Maybe (CurrencySymbol -> Value)
   , redeemer :: Maybe Redeemer
   }
 
-regularDeposit :: SneakyOptionsDeposit
+regularDeposit :: AttackOptionsDeposit
 regularDeposit =
   { reportIssued: Nothing
   , actuallyMint: Nothing
@@ -162,8 +162,8 @@ regularDeposit =
 
 -- TODO ignores report issued for now
 -- this won't matter till we have an actuall pool address validator script
-depositLiquiditySneaky :: SneakyOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
-depositLiquiditySneaky sneaky protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityAttack :: AttackOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
+depositLiquidityAttack attack protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
@@ -180,11 +180,11 @@ depositLiquiditySneaky sneaky protocol@{ poolAdrVal, liquidityMP, poolIdMP } poo
           <> Constraints.mustMintValueWithRedeemer
             ( fromMaybe
                 (Redeemer $ List [ toData poolID, Constr zero [] ])
-                sneaky.redeemer
+                attack.redeemer
             )
             ( fromMaybe
                 (Value.singleton liquidityCs poolID $ BigInt.fromInt 10)
-                (sneaky.actuallyMint <#> (_ $ liquidityCs))
+                (attack.actuallyMint <#> (_ $ liquidityCs))
             )
 
           <> Constraints.mustPayToScript

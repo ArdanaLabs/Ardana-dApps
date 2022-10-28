@@ -26,7 +26,7 @@ import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
-import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
+import Test.Attacks.Api (depositLiquidityAttack, openPoolAttack, regularDeposit, regularOpen)
 import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
@@ -91,7 +91,7 @@ main = launchAff_ $ do
         it "Fails when neither is zero but token we report and mint zero anyway" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { reportIssued = Just zero
               , actuallyMint = Just $ \_ _ -> mempty
@@ -106,7 +106,7 @@ main = launchAff_ $ do
         it "Fails when reporting correctly" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { reportIssued = Just $ BigInt.fromInt 90
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 100)
@@ -120,7 +120,7 @@ main = launchAff_ $ do
         it "Fails when reporting paying in full" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { reportIssued = Just $ BigInt.fromInt 100
               , actuallyMint = Just $ \cs tn -> Value.singleton cs tn (BigInt.fromInt 100)
@@ -135,7 +135,7 @@ main = launchAff_ $ do
         it "Fails when config utxo is emmited" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { hasConfig = false
               }
@@ -163,7 +163,7 @@ main = launchAff_ $ do
                   DatumInline
                   mempty
               )
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { badConfig = Just badConfig
               }
@@ -177,7 +177,7 @@ main = launchAff_ $ do
         it "Fails when minting two id tokens" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { numberOfIdsToMint = Just (BigInt.fromInt 2)
               }
@@ -190,7 +190,7 @@ main = launchAff_ $ do
         it "Fails when user keeps id token" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { keepId = true
               }
@@ -204,7 +204,7 @@ main = launchAff_ $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           badId <- (hexToByteArray "aaaa" >>= mkTokenName) # liftContractM "failed to make token name"
-          expectScriptError $ openPoolSneaky
+          expectScriptError $ openPoolAttack
             regularOpen
               { idToMint = Just badId
               }
@@ -251,7 +251,7 @@ main = launchAff_ $ do
           bal <- withKeyWallet bob $ getWalletBalance >>= liftContractM "no wallet?"
 
           -- This is the actual test
-          expectScriptError $ withKeyWallet bob $ openPoolSneaky
+          expectScriptError $ withKeyWallet bob $ openPoolAttack
             regularOpen
               { spendSeedTx = false
               }
@@ -283,7 +283,7 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $
-            openPoolSneaky
+            openPoolAttack
               ( regularOpen
                   { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 100)
                   , redeemer = Just $ \_poolId -> Redeemer $ List [ toData wrongId, Constr zero [] ]
@@ -300,7 +300,7 @@ main = launchAff_ $ do
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           (ac1 /\ ac2) <- prepTestTokens
           expectScriptError $
-            openPoolSneaky
+            openPoolAttack
               ( regularOpen
                   { actuallyMint = Just \lcs _poolId -> Value.singleton lcs wrongId (BigInt.fromInt 100)
                   }
@@ -316,7 +316,7 @@ main = launchAff_ $ do
         wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
         (ac1 /\ ac2) <- prepTestTokens
         expectScriptError $
-          openPoolSneaky
+          openPoolAttack
             ( regularOpen
                 { actuallyMint = Just \lcs poolId ->
                     Value.singleton lcs wrongId (BigInt.fromInt 100)
@@ -352,7 +352,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectScriptError $
-            depositLiquiditySneaky
+            depositLiquidityAttack
               regularDeposit
                 { actuallyMint = Just \liquidityCs ->
                     Value.singleton liquidityCs wrongId $ BigInt.fromInt 10
@@ -371,7 +371,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
           wrongId <- liftContractM "bad hex string" $ mkTokenName =<< hexToByteArray "aabb"
           expectScriptError $
-            depositLiquiditySneaky
+            depositLiquidityAttack
               regularDeposit
                 { redeemer = Just $ Redeemer $ List [ toData wrongId, Constr zero [] ]
                 , actuallyMint = Just \liquidityCs ->
