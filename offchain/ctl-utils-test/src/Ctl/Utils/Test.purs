@@ -47,7 +47,7 @@ runWithMode mode spec = do
       { timeout = Just $ fromDuration $ Minutes 10.0 }
     [ specReporter ]
     $ before runnerGetter
-    $ (if mode == Local then parallel else sequential)
+    $ sequential -- (if mode == Local then parallel else sequential)
     $ spec
 
 -- | Prepares a contract to be run as an EnvSpec
