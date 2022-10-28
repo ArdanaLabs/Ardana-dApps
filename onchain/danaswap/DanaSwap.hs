@@ -40,14 +40,12 @@ import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extensions.List (unsingleton)
-import Plutarch.Extra.TermCont
-    ( pletC,
-      pletFieldsC,
-      pmatchC,
-      pguardC,
-      pletC,
-      pletFieldsC,
-      pmatchC )
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+ )
 import Plutarch.Maybe (pfromJust)
 
 data LiquidityAction (s :: S)
