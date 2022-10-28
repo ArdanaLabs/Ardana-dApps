@@ -3,6 +3,7 @@ module Ctl.Utils.Test
   , useRunnerSimple
   , expectScriptError
   , runTwoWallets
+  , getPlutipConfig
   -- Types
   , EnvSpec
   , EnvRunner
