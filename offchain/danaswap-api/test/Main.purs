@@ -42,7 +42,7 @@ main = launchAff_ $ do
   log "About to start tests"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
-    describe "Pool id minting Policy tests" $ maybePar $ do
+    describe "Pool id minting Policy tests" $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do
         protocol <- initProtocol
@@ -55,7 +55,7 @@ main = launchAff_ $ do
           (BigInt.fromInt 100)
       -- This is the same as the liquidity test of the same name
 
-      describe "Open a pool with zero liqudity" $ do
+      describe "Open a pool with zero liqudity" $ maybePar $ do
         it "Fails when both tokens are zero" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
@@ -100,7 +100,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
 
-      describe "Under paying for liquidity" $ do
+      describe "Under paying for liquidity" $ maybePar $ do
         it "Fails when reporting correctly" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
@@ -129,86 +129,88 @@ main = launchAff_ $ do
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
-      it "Fails when config utxo is emmited" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        expectScriptError $ openPoolSneaky
-          regularOpen
-            { hasConfig = false
-            }
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 90)
-          (BigInt.fromInt 90)
+      describe "Config utxo" $ maybePar $ do
+        it "Fails when config utxo is emmited" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          expectScriptError $ openPoolSneaky
+            regularOpen
+              { hasConfig = false
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
-      it "Fails when config utxo is invalid" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        configAdrVal <- configAddressValidator
-        liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
-          $ mpsSymbol
-          $ mintingPolicyHash protocol.liquidityMP
-        badConfig <- waitForTx (scriptHashAddress $ validatorHash configAdrVal)
-          =<< buildBalanceSignAndSubmitTx
-            mempty
-            ( Constraints.mustPayToScript
-                (validatorHash configAdrVal)
-                ( Datum $ List
-                    [ toData (validatorHash $ protocol.poolAdrVal), toData liquidityCS ]
-                )
-                DatumInline
-                mempty
-            )
-        expectScriptError $ openPoolSneaky
-          regularOpen
-            { badConfig = Just badConfig
-            }
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 90)
-          (BigInt.fromInt 90)
+        it "Fails when config utxo is invalid" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          configAdrVal <- configAddressValidator
+          liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
+            $ mpsSymbol
+            $ mintingPolicyHash protocol.liquidityMP
+          badConfig <- waitForTx (scriptHashAddress $ validatorHash configAdrVal)
+            =<< buildBalanceSignAndSubmitTx
+              mempty
+              ( Constraints.mustPayToScript
+                  (validatorHash configAdrVal)
+                  ( Datum $ List
+                      [ toData (validatorHash $ protocol.poolAdrVal), toData liquidityCS ]
+                  )
+                  DatumInline
+                  mempty
+              )
+          expectScriptError $ openPoolSneaky
+            regularOpen
+              { badConfig = Just badConfig
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
-      it "Fails when minting two id tokens" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        expectScriptError $ openPoolSneaky
-          regularOpen
-            { numberOfIdsToMint = Just (BigInt.fromInt 2)
-            }
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 90)
-          (BigInt.fromInt 90)
+      describe "Minting id tokens" $ maybePar $ do
+        it "Fails when minting two id tokens" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          expectScriptError $ openPoolSneaky
+            regularOpen
+              { numberOfIdsToMint = Just (BigInt.fromInt 2)
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
-      it "Fails when user keeps id token" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        expectScriptError $ openPoolSneaky
-          regularOpen
-            { keepId = true
-            }
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 90)
-          (BigInt.fromInt 90)
+        it "Fails when user keeps id token" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          expectScriptError $ openPoolSneaky
+            regularOpen
+              { keepId = true
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
-      it "Fails when pool is opened with wrong id" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        badId <- (hexToByteArray "aaaa" >>= mkTokenName) # liftContractM "failed to make token name"
-        expectScriptError $ openPoolSneaky
-          regularOpen
-            { idToMint = Just badId
-            }
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 90)
-          (BigInt.fromInt 90)
+        it "Fails when pool is opened with wrong id" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          badId <- (hexToByteArray "aaaa" >>= mkTokenName) # liftContractM "failed to make token name"
+          expectScriptError $ openPoolSneaky
+            regularOpen
+              { idToMint = Just badId
+              }
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 90)
+            (BigInt.fromInt 90)
 
       when (mode == Local) $ it "Fails when seed utxo is not spent" $ runTwoWallets $
         \alice bob -> do
