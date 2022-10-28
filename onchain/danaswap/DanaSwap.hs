@@ -13,13 +13,12 @@ import Plutarch.Prelude
 import Utils (closedTermToHexString, globalConfig, validatorToHexString)
 
 import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator, mkValidator)
-import Plutarch.Extensions.Api (passert, passert_)
 
 import Plutarch.Api.V1 (PTokenName, PValue (PValue))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V2.Tx (PTxOutRef)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
-import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC, pguardC)
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))
@@ -87,9 +86,9 @@ liqudityTokenMP = phoistAcyclic $
       PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
       PMap.PMap liquidityAsList <- pmatchC liquidity
       -- Common assertions for both actions
-      passert_ "minted exactly one token name of liquidity tokens" $
+      pguardC "minted exactly one token name of liquidity tokens" $
         plength # liquidityAsList #== 1
-      passert_ "token name matched redeemer" $
+      pguardC "token name matched redeemer" $
         pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
       -- Case over the action field of the redeemer
       pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
@@ -102,8 +101,9 @@ liqudityTokenMP = phoistAcyclic $
           pure $ popaque $ pcon PUnit
         Spend _ -> do
           let inputs = pfromData $ getField @"inputs" infoRec
-          passert "token name matched redeemer" $
+          pguardC "token name matched redeemer" $
             pany # isRightPool # inputs
+          pure $ popaque $ pcon PUnit
           where
             isRightPool = plam $ \input -> unTermCont $ do
               -- Check that the value of the field contains the right poolID
@@ -127,4 +127,5 @@ standardNft = phoistAcyclic $
           pmap # pfield @"outRef"
             #$ pfield @"inputs"
             #$ pfield @"txInfo" # sc
-    passert "didn't spend out ref" $ pelem # outRef # inputs
+    pguardC "didn't spend out ref" $ pelem # outRef # inputs
+    pure $ popaque $ pcon PUnit
