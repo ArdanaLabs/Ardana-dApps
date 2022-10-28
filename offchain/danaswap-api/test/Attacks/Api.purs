@@ -10,7 +10,6 @@ import Contract.Prelude
 import Contract.Address (getWalletAddress, scriptHashAddress)
 import Contract.BalanceTxConstraints (mustNotSpendUtxoWithOutRef) as Constraints
 import Contract.Hashing (datumHash)
-import Contract.Log (logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
@@ -87,7 +86,6 @@ openPoolSneaky
   liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
   adr <- getWalletAddress >>= liftContractM "no wallet"
   utxos <- getUtxos adr
-  when (not sneaky.spendSeedTx) $ logError' $ "utxos:" <> show utxos
   let
     liq = BigInt.fromInt $ floor $ sqrt $ toNumber $ amt1 * amt2
     pool = PoolDatum

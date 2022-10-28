@@ -4,7 +4,8 @@ module Test.Main
 
 import Contract.Prelude
 
-import Contract.Address (getWalletAddress, scriptHashAddress)
+import Contract.Address (PaymentPubKeyHash(..), StakePubKeyHash(..), getWalletAddress, scriptHashAddress)
+import Contract.Credential (Credential(..), StakingCredential(..))
 import Contract.Log (logInfo')
 import Contract.Monad (launchAff_, liftContractM)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
@@ -12,7 +13,7 @@ import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash, validatorHash)
 import Contract.Test.Plutip (withKeyWallet)
-import Contract.TxConstraints (DatumPresence(..), TxConstraints)
+import Contract.TxConstraints (DatumPresence(..), TxConstraint(..), TxConstraints, singleton)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
@@ -25,7 +26,7 @@ import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
 import Test.Attacks.Api (depositLiquiditySneaky, openPoolSneaky, regularDeposit, regularOpen)
-import Test.Spec (describe, it, parallel, sequential)
+import Test.Spec (describe, it, itOnly, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 
@@ -212,10 +213,40 @@ main = launchAff_ $ do
             (BigInt.fromInt 90)
             (BigInt.fromInt 90)
 
-      when (mode == Local) $ it "Fails when seed utxo is not spent" $ runTwoWallets $
+      when (mode == Local) $ itOnly "Fails when seed utxo is not spent" $ runTwoWallets $
         \alice bob -> do
+
+          -- This whole mess is trying to get bob set up with out using up his utxos
+          -- without this his wallet is insuficent when you exclude the seed utxo
+          -- it seems CTL likes to clump utxos when it's possible, which makes sense
+          -- but make this kinda hard to test
           protocol <- withKeyWallet alice $ initProtocol
-          (ac1 /\ ac2) <- withKeyWallet bob $ prepTestTokens
+          (ac1 /\ ac2) <- withKeyWallet alice $ prepTestTokens
+          bobAdr <- withKeyWallet bob $ getWalletAddress >>= liftContractM "no wallet?"
+          -- For some reason it's way harder than you'd think to send value
+          -- to a wallet. Maybe there's a good way to do this I just haven't been able to find?
+          (key /\ skey) <- liftContractM "bad adr" =<< case unwrap bobAdr of
+            { addressCredential: PubKeyCredential key, addressStakingCredential: mskey } -> do
+              skey <- case mskey of
+                Nothing -> pure Nothing
+                Just (StakingHash (PubKeyCredential skey)) -> pure $ Just skey
+                Just _ ->  liftEffect $ throw "bad staking credential"
+              pure $ Just $ key /\ skey
+            _ -> liftEffect $ throw "bad wallet"
+          void $ withKeyWallet alice $ waitForTx bobAdr =<< buildBalanceSignAndSubmitTx
+            mempty
+            (singleton $
+              MustPayToPubKeyAddress
+              (PaymentPubKeyHash key)
+              (StakePubKeyHash <$> skey)
+              Nothing
+              Nothing
+              (Value.singleton (fst ac1) (snd ac1) (BigInt.fromInt 1_000_000)
+                <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000_000)
+              )
+            )
+
+          -- This is the actual test
           expectScriptError $ withKeyWallet bob $ openPoolSneaky
             regularOpen
               { spendSeedTx = false
