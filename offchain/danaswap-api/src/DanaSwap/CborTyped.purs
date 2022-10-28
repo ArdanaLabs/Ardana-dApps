@@ -9,13 +9,14 @@ module DanaSwap.CborTyped
 import Contract.Prelude
 
 import CBOR as CBOR
-import Contract.Log (logDebug')
+import Contract.Log (logDebug', logError')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (toData)
+import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
-import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgsM)
+import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
+import Effect.Exception (throw)
 
 {- This module should be the only place where CBOR is imported
 - all of its exports should handle all of the validator's parameters
@@ -29,36 +30,44 @@ poolAddressValidator poolIdToken liquidityToken = do
   logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
   logDebug' $ "liquidity token:" <> show liquidityToken
-  Validator <$> decodeCbor CBOR.trivial
+  decodeCbor CBOR.trivial []
+    <#> Validator
 
 -- | Placeholder
 poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 poolIdTokenMintingPolicy configUtxoNftCS = do
   logDebug' "creating pool id token minting policy"
   logDebug' $ "nft cs:" <> show configUtxoNftCS
-  PlutusMintingPolicy <$> decodeCbor CBOR.trivial
+  decodeCbor CBOR.trivial []
+    <#> PlutusMintingPolicy
 
--- | Placeholder
+-- | MintingPolicy for the pool liquidity tokens parametized by the
+-- currency symbol of the poolId tokens
 liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
 liqudityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
-  PlutusMintingPolicy <$> decodeCbor CBOR.trivial
+  decodeCbor CBOR.liqudityTokenMintingPolicy [ toData poolId ]
+    <#> PlutusMintingPolicy
 
 configAddressValidator :: Contract () Validator
-configAddressValidator = Validator <$> decodeCbor CBOR.configScript
+configAddressValidator = decodeCbor CBOR.configScript []
+  <#> Validator
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
-  raw <- decodeCbor CBOR.nft
-  applyArgsM raw [ toData ref ]
-    >>= liftContractM "failed to apply args"
+  decodeCbor CBOR.nft [ toData ref ]
     <#> PlutusMintingPolicy
 
--- These helpers should not be exported
-
-decodeCbor :: String -> Contract () PlutusScript
-decodeCbor cborHex = liftContractM "failed to decode cbor"
-  $ plutusV2Script
-  <$> hexToByteArray cborHex
+-- This helper should not be exported
+decodeCbor :: String -> Array PlutusData -> Contract () PlutusScript
+decodeCbor cborHex args = do
+  rawScript <- liftContractM "failed to decode cbor"
+    $ plutusV2Script
+    <$> hexToByteArray cborHex
+  applyArgs rawScript args >>= case _ of
+    Left err -> do
+      logError' $ "error in apply args:" <> show err
+      liftEffect $ throw $ show err
+    Right newScript -> pure newScript
