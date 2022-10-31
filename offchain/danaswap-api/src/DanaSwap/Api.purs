@@ -4,6 +4,7 @@ module DanaSwap.Api
   , getAllPools
   , getPoolById
   , depositLiquidity
+  , swapLeft
   -- Types
   , AssetClass
   , Protocol(..)
@@ -21,7 +22,7 @@ import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddres
 import Contract.Hashing (datumHash)
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), class ToData, toData)
+import Contract.PlutusData (class FromData, class ToData, Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (MintingPolicy, Validator, mintingPolicyHash, validatorHash)
 import Contract.Transaction (TransactionInput(..), TransactionHash(..), TransactionOutputWithRefScript)
@@ -36,11 +37,11 @@ import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, p
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
 import Data.Int (floor)
-import Data.UInt as U
 import Data.List (head)
 import Data.Map (Map, keys)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
+import Data.UInt as U
 import Effect.Exception (throw)
 import Math (sqrt)
 
@@ -120,6 +121,15 @@ instance ToData PoolDatum where
     , toData live
     ]
 
+instance FromData PoolDatum where
+  fromData = undefined
+
+data PoolAdrRedeemer
+  = Swap BigInt
+
+instance ToData PoolAdrRedeemer where
+  toData (Swap fee) = Constr zero [toData fee]
+
 -- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
 getAllPools protocol@(Protocol { poolAdrVal }) =
@@ -133,8 +143,11 @@ getAllPools protocol@(Protocol { poolAdrVal }) =
 getPoolById :: Protocol -> PoolId -> Contract () (TransactionInput /\ TransactionOutputWithRefScript)
 getPoolById protocol@(Protocol { poolIdMP }) token = do
   pools <- getAllPools protocol
-  cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy" $ mpsSymbol $ mintingPolicyHash poolIdMP
-  let valid = Map.filter (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > BigInt.fromInt 0) pools
+  cs <- liftContractM "Failed to get the currency symbol for the protocols mintingPolicy"
+    $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let valid = Map.filter
+              (\vault -> valueOf (unwrap (unwrap vault).output).amount cs token > zero)
+              pools
   case Map.toUnfoldableUnordered valid of
     [] -> liftEffect $ throw "no pools with that ID"
     [ vault ] -> pure vault
@@ -145,6 +158,54 @@ hasNft :: Protocol -> TransactionOutputWithRefScript -> Boolean
 hasNft (Protocol { poolIdMP }) out = case (mpsSymbol $ mintingPolicyHash poolIdMP) of
   Nothing -> false -- protocol was invalid
   Just cs -> cs `elem` (symbols $ (unwrap (unwrap out).output).amount)
+
+ceilDiv :: BigInt -> BigInt -> BigInt
+ceilDiv a b = (a `div` b) + (if a `mod` b == zero then zero else one)
+
+-- TODO swap right would be really similar
+-- find a good way to not be repeditive here
+swapLeft :: Protocol -> PoolId -> Int -> Contract () Unit
+swapLeft protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
+  (poolIn /\ poolOut) <- getPoolById protocol poolID
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let idNft = Value.singleton poolIdCS poolID one
+  let inPoolOutDatum = poolOut # unwrap # _.output # unwrap # _.datum
+  PoolDatum inPoolDatum  <-
+    liftContractM "pool didn't parse" =<< fromData <$> case inPoolOutDatum of
+      OutputDatum d -> pure $ unwrap d
+      _ -> liftEffect $ throw "input pool had no datum"
+  let newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
+      invariant = inPoolDatum.bal1*inPoolDatum.bal2
+      newBal2' = invariant `ceilDiv` newBal1
+      fee = (newBal2' - inPoolDatum.bal2) * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
+      newBal2 = newBal2' + fee
+      ac1 = inPoolDatum.ac1
+      ac2 = inPoolDatum.ac2
+      newAdminBal2 =inPoolDatum.adminBal2 + fee
+      outPool = PoolDatum $
+                inPoolDatum
+                  { bal1 = newBal1
+                  , bal2 = newBal2
+                  , adminBal2 = newAdminBal2
+                  }
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+    buildBalanceSignAndSubmitTx
+      ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
+          <> Lookups.validator poolAdrVal
+      )
+      ( Constraints.mustSpendScriptOutput
+          poolIn
+          (Redeemer $ toData $ Swap fee)
+          <> Constraints.mustPayToScript
+            (validatorHash poolAdrVal)
+            (Datum $ toData outPool)
+            DatumInline
+            (idNft
+              <> Value.singleton (fst ac1) (snd ac1) (newBal1 + inPoolDatum.adminBal1)
+              <> Value.singleton (fst ac2) (snd ac2) (newBal2 + newAdminBal2)
+            )
+      )
+
 
 -- TODO this is a placeholder implementation
 depositLiquidity :: Protocol -> PoolId -> Contract () Unit
