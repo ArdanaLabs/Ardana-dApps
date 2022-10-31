@@ -525,7 +525,7 @@ For this section a "valid pool open" refers to a Tx where
 	\item The seed utxo is spent
 	\item The seed utxo is passed to the pool id minting policy via the redeemer
 	\item the pool id is the hash of the seed utxo
-	\item The same number as the issued liquidity of liquidity tokens of the same id as the pool are minted
+	\item The number of issued liquidity tokens set in the pool's UTxO datum matches the number of liquidity tokens minted from the liquidity token minting policy.
 	\item The pool id NFT is sent to the pool
 \end{itemize}
 
