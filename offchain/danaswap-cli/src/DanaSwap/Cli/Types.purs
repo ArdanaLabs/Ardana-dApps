@@ -24,7 +24,7 @@ data WalletConf
 -- | The available Danaswap CLI options
 data Options = Options
   { command :: Command
-  , protocolFilePath :: FilePath
+  , protocolFilePath :: Maybe FilePath
   , walletConfigFilePath :: FilePath
   , networkId :: NetworkId
   , ctlPort :: Maybe UInt

@@ -23,7 +23,7 @@ rawParser :: Parser Options
 rawParser = (helper <*> _)
   $ map Options
   $ { protocolFilePath: _, walletConfigFilePath: _, networkId: _, command: _, ctlPort: _, ogmiosPort: _, odcPort: _ }
-      <$> protocolFilePath
+      <$> optional protocolFilePath
       <*> walletConfigFilePath
       <*> networkId
       <*> command'
