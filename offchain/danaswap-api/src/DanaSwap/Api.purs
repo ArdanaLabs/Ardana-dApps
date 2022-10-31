@@ -122,7 +122,38 @@ instance ToData PoolDatum where
     ]
 
 instance FromData PoolDatum where
-  fromData = undefined
+  fromData =
+    case _ of
+    List
+      [ ac1'
+      , ac2'
+      , bal1'
+      , bal2'
+      , adminBal1'
+      , adminBal2'
+      , liqudity'
+      , live'
+      ] -> do
+        ac1 <- fromData ac1'
+        ac2 <- fromData ac2'
+        bal1 <- fromData bal1'
+        bal2 <- fromData bal2'
+        adminBal1 <- fromData adminBal1'
+        adminBal2 <- fromData adminBal2'
+        liquidity <- fromData liqudity'
+        live <- fromData live'
+        pure $
+          PoolDatum
+          { ac1
+          , ac2
+          , bal1
+          , bal2
+          , adminBal1
+          , adminBal2
+          , liquidity
+          , live
+          }
+    _ -> Nothing
 
 data PoolAdrRedeemer
   = Swap BigInt
