@@ -574,25 +574,139 @@ except for any contradicting details stated in that test.
 
 \subsection*{Pool Address Validator tests}
 
+Terms
+
+A Valid pool refers to
+A pool as created by the ``valid pool open" described in the section above
+except with initial balances of $2,000,000$ and $1,000,000$.
+meaning the issued liquidity is $1,414,214$.
+
+A swap refers to a Tx where:
+\begin{itemize}
+	\item one input is a valid pool
+	\item one output is a valid pool
+	\item the new A balance is 2,001,000
+	\item the new B balance is 999,504 $\lceil \frac{1,000,000^2}{1,001,000}+999(0.003) \rceil$
+	\item the new admin fee A balance is 0
+	\item the new admin fee B balance is 3
+	\item the utxo's value reflects this sum correctly
+	\item the utxo still has the id NFT
+	\item no liquidity is minted or burned
+	\item the datum reflects that the pool is still live
+	\item the datum reflects that the issued liquidity is still $1,414,214$
+\end{itemize}
+
+A balanced deposit refers to a Tx where:
+\begin{itemize}
+	\item one input is a valid pool
+	\item one output is a valid pool
+	\item the new A balance is 2,002,006
+	\item the new B balance is 1,001,003
+	\item the new admin fee A balance is 6
+	\item the new admin fee B balance is 3
+	\item the utxo's value reflects this sum correctly
+	\item the utxo still has the id NFT
+	\item the datum reflects that the pool is still live
+	\item the new issued liquidity is $1,415,628$ ($\lfloor 1,414,214*1.001 \rfloor$)
+	\item 1,414 ($\lfloor 1,414,214*0.001 \rfloor$) new liquidity is minted
+\end{itemize}
+
+A balanced withdraw refers to a Tx where:
+\begin{itemize}
+	\item one input is a valid pool
+	\item one output is a valid pool
+	\item the new A balance is 1,998,006
+	\item the new B balance is 998,003
+	\item the new admin fee A balance is 6
+	\item the new admin fee B balance is 3
+	\item the utxo's value reflects this sum correctly
+	\item the utxo still has the id NFT
+	\item the datum reflects that the pool is still live
+	\item the new issued liquidity is $1,415,628$ ($\lfloor 1,414,214*1.001 \rfloor$)
+	\item 1,414 ($\lfloor 1,414,214*0.001 \rfloor$) liquidity is burned
+\end{itemize}
+
+A pool kill refers to a Tx where one input is a valid pool
+and the output has the following properties:
+\begin{itemize}
+	\item one input is a valid pool
+	\item one output is a valid pool
+	\item An admin signed the Tx
+	\item the output pool is dead
+	\item everything else is the same in the output pool
+\end{itemize}
+
 \begin{itemize}
 	\item Can't remove pool id from address during any type of transaction
-	\item Can't kill a pool with a swap
-	\item Can't kill a pool with a liquidity change
+		\\ To test this we should fail to validate the following:
+		\begin{itemize}
+			\item A swap that steals the id
+			\item A deposit that steals the id
+			\item A withdraw that steals the id
+		\end{itemize}
+	\item Can't kill a pool with a non pool kill
+		\\ To test this we should fail to validate the following:
+		\begin{itemize}
+			\item A swap that marks the output pool dead
+			\item A deposit that marks the output pool dead
+			\item A withdraw that marks the output pool dead
+		\end{itemize}
 	\item can perform valid swaps
+		\\ to test this we should validate a swap
 	\item can't underpay for swaps
-	\item can perform valid liquidity changes
-	\item can't perform underpaid liquidity changes
+		\\ to test this we should fail to validate the following:
+			\begin{itemize}
+				\item A swap that provides 10 less of A than reported in the datum
+				\item A swap that provides 10 less of B than reported in the datum
+				\item A swap that pays 10 less A and reports this correctly
+				\item A swap that pays 10 less B and reports this correctly
+				\item A swap that pays 1 less B to the admin fees and reports this correctly
+					%% you can't do this for A cause the fee is payed in B
+			\end{itemize}
+	\item Can perform valid liquidity changes
+		\\ to test this we should validate a deposit and a withdraw
+	\item Can't perform underpaid liquidity changes
+		\\ to test this we should fail to validate
+			\begin{itemize}
+				\item A deposit that provides 10 less of A than reported in the datum
+				\item A deposit that provides 10 less of B than reported in the datum
+				\item A deposit that pays 10 less A and reports this correctly
+				\item A deposit that pays 10 less B and reports this correctly
+				\item A deposit that pays 1 less A to the admin fees and reports this correctly
+				\item A deposit that pays 1 less B to the admin fees and reports this correctly
+				\item A deposit that mints 1 too many liquidity tokens
+				\item A withdraw that provides 10 less of A than reported in the datum
+				\item A withdraw that provides 10 less of B than reported in the datum
+				\item A withdraw that pays 10 less A and reports this correctly
+				\item A withdraw that pays 10 less B and reports this correctly
+				\item A withdraw that pays 1 less A to the admin fees and reports this correctly
+				\item A withdraw that pays 1 less B to the admin fees and reports this correctly
+				\item A withdraw that burns 1 too few liquidity tokens
+			\end{itemize}
 	\item admin can kill a pool
+		\\ to test this we should validate a pool kill
 	\item non-admin can't kill a pool
+		\\ to test this we should fail to validate a pool kill without an admin signature
 	\item admin can't over extract fees
+		\\ to test this we should fail to validate an admin withdraw where
+			\begin{itemize}
+				\item the admin withdraws 1 more A reporting zero fess left
+				\item the admin withdraws 1 more A reporting $-1$ fess left
+				\item the admin withdraws 1 more B reporting zero fess left
+				\item the admin withdraws 1 more B reporting $-1$ fess left
+			\end{itemize}
 	\item liquidity can be extracted from a dead pool
-	\item Can't steal pool ID tokens (this should consist of tests at each endpoint)
+		\\ to test this we should validate a balanced withdraw from a dead pool
 	\item Pool ids can't be swapped between two pools
-  \item It shouldn't be possible to add liquidity and then withdraw it in order to essentially swap with
+		\\ to test this we should fail to validate a tx where
+		 we perform two swaps on two pools but also swap the ids
 	\item Can't swap on a dead pool
+		\\ to test this we should fail to validate a swap where the input pool is dead
 	\item Can't add liquidity to a dead pool
+		\\ to test this we should fail to validate a deposit where the input pool is dead
 	\item Can't make unbalanced withdrawals from a dead pool
-    reduced fees
+		\\ to test this we should fail to validate a unbalanced withdraw where the input pool is dead
+
 	\item Given a pool containing total issued liquidity tokens of quantity $t$ of $T$ and asset
 	      pair of quantities $a$ of $A$ and $b$ of $B$, when the user provides quantities $\Delta a$ and $\Delta b$
   	      and mints a quantity of liquidity tokens less than or equal to
