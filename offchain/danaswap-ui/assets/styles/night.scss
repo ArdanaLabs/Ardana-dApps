@@ -100,9 +100,6 @@ $navbar-item-color: #F5FCFE;
   color: #F5FCFE;
 }
 
-.footer {
-  background: #1F297B;
-}
 
 .navbar-brand a.navbar-item {
   background: url(../images/logo_header_night.png) no-repeat center center;
@@ -130,3 +127,5 @@ $navbar-item-color: #F5FCFE;
   background: #0B0E2B;
   border-radius: 5px;
 }
+
+@import "./common";

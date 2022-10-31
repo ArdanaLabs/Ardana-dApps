@@ -102,10 +102,6 @@ $navbar-item-color: #080E42;
   color: #1E2769;
 }
 
-.footer {
-  background: #1F297B;
-}
-
 .navbar-brand a.navbar-item {
   background: url(../images/logo_header_light.png) no-repeat center center;
   background-size: cover;
@@ -132,3 +128,5 @@ $navbar-item-color: #080E42;
   background: linear-gradient(106.08deg, rgba(125, 171, 255, 0.15) -108.8%, rgba(125, 171, 255, 0) 92.91%);
   border-radius: 5px;
 }
+
+@import "./common";
