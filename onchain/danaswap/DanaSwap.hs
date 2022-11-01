@@ -8,7 +8,7 @@ module DanaSwap (
   nftCbor,
   liqudityTokenCbor,
   poolIdTokenMPCbor,
-  poolAdrValidator,
+  poolAdrValidatorCbor,
   -- testing
   validOpenAmts,
 ) where
@@ -25,18 +25,18 @@ import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V1.Value (PCurrencySymbol)
 import Plutarch.Api.V1.Value qualified as Value
-import Plutarch.Api.V2 (
-  PAddress (..),
-  PDatum (..),
-  PMintingPolicy,
-  POutputDatum (POutputDatum),
-  PScriptPurpose (PMinting),
-  PTxInInfo (PTxInInfo),
-  PTxOut (PTxOut),
-  PTxOutRef,
-  PValidator,
-  mkValidator,
- )
+import Plutarch.Api.V2
+    ( PAddress(..),
+      PDatum(..),
+      PMintingPolicy,
+      POutputDatum(POutputDatum),
+      PScriptPurpose(PMinting),
+      PTxInInfo(PTxInInfo),
+      PTxOut(PTxOut),
+      PTxOutRef,
+      PValidator,
+      mkValidator,
+      PScriptPurpose(..) )
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
@@ -48,8 +48,6 @@ import Plutarch.Extra.TermCont (
   pmatchC,
  )
 import Plutarch.Maybe (pfromJust)
-import Plutarch.Api.V2 (PScriptPurpose(..))
-import Plutarch.Api.V2 (PTxOutRef(..))
 import Plutarch.Extensions.Monad (pletFieldC)
 
 newtype PoolRed (s :: S)
@@ -369,6 +367,9 @@ atCS = phoistAcyclic $
     PValue valMap <- pmatchC val
     PJust subMap <- pmatchC $ AssocMap.plookup # cs # valMap
     pure subMap
+
+poolAdrValidatorCbor :: Maybe String
+poolAdrValidatorCbor = closedTermToHexString poolAdrValidator
 
 poolAdrValidator :: ClosedTerm (PData :--> PData :--> PValidator)
 poolAdrValidator = phoistAcyclic $

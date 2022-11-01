@@ -33,7 +33,7 @@ poolAddressValidator poolIdToken liquidityToken = do
   logDebug' "creating pool address validator"
   logDebug' $ "pool id:" <> show poolIdToken
   logDebug' $ "liquidity token:" <> show liquidityToken
-  decodeCbor CBOR.trivial []
+  decodeCbor CBOR.poolAdrValidator [ toData poolIdToken , toData liquidityToken ]
     <#> Validator
 
 -- | Placeholder

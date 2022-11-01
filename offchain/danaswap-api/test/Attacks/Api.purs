@@ -22,7 +22,7 @@ import Contract.TxConstraints (mustMintCurrencyWithRedeemer, mustMintValueWithRe
 import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
-import DanaSwap.Api (AssetClass, PoolAdrRedeemer(..), PoolDatum(..), PoolId, Protocol(..), ceilDiv, getPoolById, seedTx )
+import DanaSwap.Api (AssetClass, PoolAction(..), PoolDatum(..), PoolId, PoolRed(..), Protocol(..), ceilDiv, getPoolById, seedTx)
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
@@ -249,7 +249,7 @@ swapLeftAttack attack protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = d
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
-          (Redeemer $ toData $ Swap fee)
+          (Redeemer $ toData $ PoolRed poolID $ Swap fee)
           <> (case attack.mintLiquidity of
                 Nothing -> mempty
                 Just (val /\ red) ->

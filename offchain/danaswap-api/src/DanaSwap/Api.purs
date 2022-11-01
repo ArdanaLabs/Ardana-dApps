@@ -11,7 +11,8 @@ module DanaSwap.Api
   , PoolId
   -- Testing
   , ceilDiv
-  , PoolAdrRedeemer(..)
+  , PoolRed(..)
+  , PoolAction(..)
   , PoolDatum(..)
   , mintNft
   , seedTx
@@ -157,11 +158,15 @@ instance FromData PoolDatum where
           }
     _ -> Nothing
 
-data PoolAdrRedeemer
-  = Swap BigInt
+data PoolRed = PoolRed TokenName PoolAction
 
-instance ToData PoolAdrRedeemer where
+data PoolAction = Swap BigInt
+
+instance ToData PoolAction where
   toData (Swap fee) = Constr zero [toData fee]
+
+instance ToData PoolRed where
+  toData (PoolRed id action) = List [ toData id , toData action ]
 
 -- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
@@ -210,7 +215,7 @@ swapLeft protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
   let newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
       invariant = inPoolDatum.bal1*inPoolDatum.bal2
       newBal2' = invariant `ceilDiv` newBal1
-      fee = (newBal2' - inPoolDatum.bal2) * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
+      fee = (inPoolDatum.bal2 - newBal2') * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
       newBal2 = newBal2' + fee
       ac1 = inPoolDatum.ac1
       ac2 = inPoolDatum.ac2
@@ -228,7 +233,7 @@ swapLeft protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
-          (Redeemer $ toData $ Swap fee)
+          (Redeemer $ toData $ PoolRed poolID $ Swap fee)
           <> Constraints.mustPayToScript
             (validatorHash poolAdrVal)
             (Datum $ toData outPool)
