@@ -16,6 +16,7 @@
                 [
                   halogen
                   halogen-store
+                  halogen-svg-elems
                   cardano-transaction-lib
                   # self'.packages."offchain:danaswap-api"
                 ];

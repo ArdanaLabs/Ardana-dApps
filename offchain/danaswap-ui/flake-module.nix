@@ -6,6 +6,27 @@
       inherit (config) cat-lib dream2nix;
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.danaswap-ui;
+      font-awesome-sprites =
+        # TODO: figure out which icons we _need_, and strip the rest as almost
+        # all of these icons are unused dead weight
+        # NOTE: "--enable-comment-stripping" can’t be added due to licensing
+        # (CC BY 4.0 requires attribution). To enable, the license data
+        # should be moved to the proper metadata elements and namespaces (I’m
+        # unsure why Font Awesome didn’t do this to begin with)
+        pkgs.runCommand "get-font-awesome"
+          {
+            nativeBuildInputs = with pkgs; [ parallel scour ];
+          }
+          ''
+            set -euo pipefail
+            mkdir -p $out
+            filenames=("brands" "solid")
+            parallel scour \
+              -i ${self.inputs.font-awesome}/sprites/{}.svg \
+              -o "$out/font-awesome-sprite-{}.svg" \
+              --indent=none \
+              ::: ''${filenames[@]}
+          '';
     in
     {
       packages = {
@@ -13,9 +34,10 @@
           pkgs.runCommand "build-danaswap-ui"
             { }
             ''
-              mkdir -p $out/assets/scripts
+              mkdir -p $out/assets/{images,scripts}
               cp -r ${ui}/lib/node_modules/danaswap-ui/build/* $out/
               cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/assets/scripts
+              cp -r ${font-awesome-sprites}/*.svg $out/assets/images
             '';
       };
 
