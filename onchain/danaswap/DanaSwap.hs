@@ -8,6 +8,7 @@ module DanaSwap (
   nftCbor,
   liqudityTokenCbor,
   poolIdTokenMPCbor,
+  poolAdrValidator,
   -- testing
   validOpenAmts,
 ) where
@@ -47,6 +48,34 @@ import Plutarch.Extra.TermCont (
   pmatchC,
  )
 import Plutarch.Maybe (pfromJust)
+import Plutarch.Api.V2 (PScriptPurpose(..))
+import Plutarch.Api.V2 (PTxOutRef(..))
+import Plutarch.Extensions.Monad (pletFieldC)
+
+newtype PoolRed (s :: S)
+  = PoolRed
+  (Term s
+    ( PDataRecord
+      '[ "id" ':= PTokenName
+       , "action" ':= PoolAction
+       ]
+    )
+  )
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PIsData, PEq)
+
+instance DerivePlutusType PoolRed where type DPTStrat _ = PlutusTypeData
+instance PTryFrom PData (PAsData PoolRed)
+
+data PoolAction (s :: S)
+  = Swap (Term s (PDataRecord '[ "fee" ':= PInteger]))
+  | Liq (Term s (PDataRecord '[]))
+  | Kill (Term s (PDataRecord '[]))
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PIsData, PEq)
+
+instance DerivePlutusType PoolAction where type DPTStrat _ = PlutusTypeData
+instance PTryFrom PData PoolAction
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))
@@ -118,6 +147,17 @@ instance PTryFrom PData (PAsData PoolData)
 -- TODO should this be upstreamed?
 -- or is there a reason I shouldn't need this?
 instance PTryFrom PData (PAsData PBool)
+
+type AllPoolFields =
+    '[ "ac1"
+     , "ac2"
+     , "bal1"
+     , "bal2"
+     , "adminBal1"
+     , "adminBal2"
+     , "issuedLiquidity"
+     , "live"
+     ]
 
 trivialCbor :: Maybe String
 trivialCbor = closedTermToHexString trivial
@@ -251,17 +291,7 @@ poolIdTokenMP = phoistAcyclic $
         POutputDatum outPoolDatum' <- pmatchC $ getField @"datum" outPoolRec
         PDatum outPoolDatumrec <- pmatchC $ pfield @"outputDatum" # outPoolDatum'
         PoolData poolDataRec' <- pmatchC $ pfromData $ ptryFromData outPoolDatumrec
-        poolDataRec <-
-          pletFieldsC
-            @'[ "issuedLiquidity"
-              , "ac1"
-              , "ac2"
-              , "bal1"
-              , "bal2"
-              , "adminBal1"
-              , "adminBal2"
-              ]
-            poolDataRec'
+        poolDataRec <- pletFieldsC @AllPoolFields poolDataRec'
         let issuedLiquidity = pfromData $ getField @"issuedLiquidity" poolDataRec
         liquidity <- pletC $ atCS # minting # liquidityCS
         pguardC "actaully minted same amount reported in datum" $
@@ -339,3 +369,81 @@ atCS = phoistAcyclic $
     PValue valMap <- pmatchC val
     PJust subMap <- pmatchC $ AssocMap.plookup # cs # valMap
     pure subMap
+
+poolAdrValidator :: ClosedTerm (PData :--> PData :--> PValidator)
+poolAdrValidator = phoistAcyclic $
+  plam $ \poolIdCsData _liquidityCsData redeemer datum sc
+    -> unTermCont $ do
+      -- Get old pool
+      PoolData oldPool <- pmatchC $ pfromData $ ptryFromData datum
+      oldPoolRec <- pletFieldsC @AllPoolFields oldPool
+
+      -- get poolId Currency Symbol from data
+      poolIdCs <- pletC $ pfromData $ ptryFromData poolIdCsData
+
+      scRec <- pletFieldsC @'["txInfo" , "purpose" ] sc
+      PSpending outRef' <- pmatchC (getField @"purpose" scRec)
+      outRef <- pletC $ pfield @"_0" # outRef'
+      let txInfo = getField @"txInfo" scRec
+      infoRec <- pletFieldsC @'[ "inputs" , "outputs" ] txInfo
+      let inputs :: Term _ (PBuiltinList PTxInInfo) = getField @"inputs" infoRec
+
+      -- find old pool in inputs
+      PJust poolInput <- pmatchC $
+            pfind
+            # plam (\input -> unTermCont $ do
+                      PTxInInfo rec <- pmatchC input
+                      pure $ pfield @"outRef" # rec #== outRef
+                   )
+            # inputs
+      PTxInInfo input' <- pmatchC poolInput
+      PTxOut resolved <- pmatchC $ pfield  @"resolved" # input'
+      resolvedRec <- pletFieldsC @'[ "address" , "value" ] resolved
+      ownAdr <- pletC $ getField @"address" resolvedRec
+
+      -- parse redeemer
+      PoolRed poolRed <- pmatchC $ pfromData $ ptryFromData redeemer
+      redRec <- pletFieldsC @'[ "id" , "action" ] poolRed
+      let poolId = getField @"id" redRec
+      let action = getField @"action" redRec
+
+      -- get the old pool's value and check pool was valid
+      inputValue <- pletC $ getField @"value" resolvedRec
+      idTokens <- pletC $ atCS # inputValue # poolIdCs
+      pguardC "in pool was valid" $ isJustTn # idTokens # poolId
+
+      -- find pool output
+      let outputs :: Term _ (PBuiltinList PTxOut) = getField @"outputs" infoRec
+      PJust poolOut <- pmatchC $
+        pfind
+        # plam (\output -> unTermCont $ do
+                PTxOut out <- pmatchC output
+                let val = pfield @"value" # out
+                pure $ isJustTn # (atCS # val # poolIdCs) # poolId
+               )
+        # outputs
+
+      PTxOut outPool <- pmatchC poolOut
+      outPoolRec <- pletFieldsC @'[ "address" , "datum" , "value" ] outPool
+      let outPoolDatumOut = getField @"datum" outPoolRec
+      POutputDatum outDatum' <- pmatchC outPoolDatumOut
+      PDatum outDatum <- pmatchC $ pfield @"outputDatum" # outDatum'
+      PoolData outPoolData <- pmatchC $ pfromData $ ptryFromData outDatum
+      outPoolDataRec <- pletFieldsC @AllPoolFields outPoolData
+
+      -- check that datum is accurate in the output pool
+      valueMatchesDatum outPoolDataRec (getField @"value" outPoolRec)
+
+      pguardC "out pool is at the right address" $ getField @"address" outPoolRec #== ownAdr
+
+      pmatchC action >>= \case
+        Swap _ -> do
+          -- compute old invariant
+          let oldk2 :: Term _ PInteger = getField @"bal1" oldPoolRec * getField @"bal2" oldPoolRec
+          let newk2 :: Term _ PInteger = getField @"bal1" outPoolDataRec * getField @"bal2" outPoolDataRec
+          pguardC "invariant is non-decreasing" $ oldk2 #<= newk2
+          -- TODO add stuff for fees
+          pure $ popaque $ pcon PUnit
+        _ -> pure perror
+
+
