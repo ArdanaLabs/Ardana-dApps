@@ -20,7 +20,7 @@
           ''
             set -euo pipefail
             mkdir -p $out
-            filenames=("regular" "brands")
+            filenames=("brands" "solid")
             parallel scour \
               -i ${self.inputs.font-awesome}/sprites/{}.svg \
               -o "$out/font-awesome-sprite-{}.svg" \

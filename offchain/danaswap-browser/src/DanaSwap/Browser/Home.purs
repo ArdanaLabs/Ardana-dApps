@@ -14,6 +14,9 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties (ButtonType(..))
 import Halogen.HTML.Properties as HP
+import Halogen.HTML.Properties.ARIA (role)
+import Halogen.Svg.Attributes (Color(..), fill, height, href, width)
+import Halogen.Svg.Elements as SE
 import Halogen.VDom.Driver (runUI)
 import Web.DOM.ParentNode (QuerySelector(..))
 
@@ -162,9 +165,7 @@ component =
           ]
       , HH.div [ mkClass "columns is-mobile is-vcentered" ]
           [ HH.div [ mkClass "column is-offset-1-desktop is-offset-3-touch is-1 has-text-centered" ]
-              [ HH.span
-                  [ mkClass "icon is-medium" ]
-                  [ HH.i [ mkClass $ "fas fa-exchange-alt" ] [] ]
+              [ mkIcon "right-left"
               ]
           ]
       , HH.div [ mkClass "columns is-mobile is-vcentered" ]
@@ -259,8 +260,11 @@ mkClass = HP.class_ <<< HH.ClassName
 
 mkIcon :: forall slots m. String -> H.ComponentHTML Action slots m
 mkIcon icon = HH.span
-  [ mkClass "icon is-small" ]
-  [ HH.i [ mkClass $ "fas fa-" <> icon ] [] ]
+  [ mkClass "icon" ]
+  [ SE.svg [ role "none", width 16.0, height 16.0 ]
+      [ SE.use [ href ("/assets/images/font-awesome-sprite-solid.svg#" <> icon), fill $ Named "currentColor" ]
+      ]
+  ]
 
 printAsset :: Asset -> String
 printAsset (Asset { name, value }) = (toString value) <> " " <> name
