@@ -14,7 +14,7 @@ import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
 import DanaSwap.CborTyped (simpleNft)
 import Data.BigInt as BigInt
@@ -23,7 +23,9 @@ import Node.Process (lookupEnv)
 import Test.Attacks.Api (depositLiquidityWrongTokenRightRedeemer, depositLiquidityWrongTokenWrongRedeemer, openPoolMultipleTokens, openPoolWrongTokenRightRedeemer, openPoolWrongTokenWrongRedeemer)
 import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), runWithMode, useRunnerSimple)
+import Ctl.Utils.Test (runWithMode, useRunnerSimple)
+import Ctl.Utils.Test.Types (Mode(..))
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 
 main :: Effect Unit
 main = launchAff_ $ do

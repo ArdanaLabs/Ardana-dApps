@@ -18,15 +18,15 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value (mkTokenName, mpsSymbol)
 import Contract.Value as Value
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.Api (PoolId, Protocol, getPoolById)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import DanaSwap.Api (PoolId, Protocol(..), getPoolById)
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt as BigInt
 import Data.Map as Map
 
 -- TODO rework this when the real open pool gets updated
 openPoolWrongTokenWrongRedeemer :: Protocol -> Contract () PoolId
-openPoolWrongTokenWrongRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolWrongTokenWrongRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -62,7 +62,7 @@ openPoolWrongTokenWrongRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo 
   pure poolID
 
 openPoolWrongTokenRightRedeemer :: Protocol -> Contract () PoolId
-openPoolWrongTokenRightRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolWrongTokenRightRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -100,7 +100,7 @@ openPoolWrongTokenRightRedeemer { poolAdrVal, liquidityMP, poolIdMP, configUtxo 
 
 -- TODO rework this when the real open pool gets updated
 openPoolMultipleTokens :: Protocol -> Contract () PoolId
-openPoolMultipleTokens { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
+openPoolMultipleTokens (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) = do
   poolID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aaaa"
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let poolIdMph = mintingPolicyHash poolIdMP
@@ -144,7 +144,7 @@ openPoolMultipleTokens { poolAdrVal, liquidityMP, poolIdMP, configUtxo } = do
 
 -- TODO rework with real depositLiquidity
 depositLiquidityWrongTokenRightRedeemer :: Protocol -> PoolId -> Contract () Unit
-depositLiquidityWrongTokenRightRedeemer protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityWrongTokenRightRedeemer protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
@@ -171,7 +171,7 @@ depositLiquidityWrongTokenRightRedeemer protocol@{ poolAdrVal, liquidityMP, pool
       )
 
 depositLiquidityWrongTokenWrongRedeemer :: Protocol -> PoolId -> Contract () Unit
-depositLiquidityWrongTokenWrongRedeemer protocol@{ poolAdrVal, liquidityMP, poolIdMP } poolID = do
+depositLiquidityWrongTokenWrongRedeemer protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
