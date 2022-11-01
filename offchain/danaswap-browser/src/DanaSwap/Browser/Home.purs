@@ -4,7 +4,7 @@ import Contract.Prelude
 
 import DanaSwapBrowser.Types (Asset(..), Pool(..))
 import Data.Array (concat)
-import Data.BigInt (fromInt, fromString)
+import Data.BigInt (fromInt, fromString, toString)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
 import Effect.Aff.Class (class MonadAff)
@@ -12,6 +12,7 @@ import Halogen as H
 import Halogen.Aff as HA
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties (ButtonType(..))
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 import Web.DOM.ParentNode (QuerySelector(..))
@@ -21,7 +22,7 @@ main = HA.runHalogenAff do
   _ <- HA.awaitLoad
   mbHome <- HA.selectElement $ QuerySelector "#home"
   case mbHome of
-    Nothing -> throwError $ error "Cannot find #home"
+    Nothing -> throwError $ error "`#home` element to found. DanaSwap component unable to mount."
     Just elem -> void $ runUI component unit elem
 
 type State =
@@ -112,10 +113,10 @@ component =
           ]
 
           [ HH.div [ mkClass "column" ]
-              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-left" ] [ HH.text $ show pool ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-left" ] [ HH.text $ printPool pool ]
               ]
           , HH.div [ mkClass "column" ]
-              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show p.assetA <> " / " <> show p.assetB ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ printAsset p.assetA <> " / " <> printAsset p.assetB ]
               ]
           , HH.div [ mkClass "column" ]
               [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show p.fee <> "ADA" ]
@@ -131,13 +132,13 @@ component =
         [ HH.div [ mkClass "pools-table-row-dropdown box my-6" ]
             [ HH.div [ mkClass "columns is-mobile" ]
                 [ HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HH.attr (H.AttrName "role") "button", HE.onClick $ const (SetActivity Swap), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == Swap) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "swap" ]
+                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity Swap), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == Swap) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "swap" ]
                     ]
                 , HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HH.attr (H.AttrName "role") "button", HE.onClick $ const (SetActivity AddLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == AddLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "add liquidity" ]
+                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity AddLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == AddLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "add liquidity" ]
                     ]
                 , HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HH.attr (H.AttrName "role") "button", HE.onClick $ const (SetActivity WithdrawLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == WithdrawLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "withdraw" ]
+                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity WithdrawLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == WithdrawLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "withdraw" ]
                     ]
                 ]
             , case activity of
@@ -148,7 +149,7 @@ component =
         ]
       else []
 
-    renderSwapForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.div [ mkClass "mt-6" ]
+    renderSwapForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.form [ mkClass "mt-6" ]
       [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
           [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
               [ HH.div [ mkClass "field" ]
@@ -162,7 +163,7 @@ component =
       , HH.div [ mkClass "columns is-mobile is-vcentered" ]
           [ HH.div [ mkClass "column is-offset-1-desktop is-offset-3-touch is-1 has-text-centered" ]
               [ HH.span
-                  [ mkClass "icon is-medium", HH.attr (H.AttrName "role") "none" ]
+                  [ mkClass "icon is-medium" ]
                   [ HH.i [ mkClass $ "fas fa-exchange-alt" ] [] ]
               ]
           ]
@@ -184,12 +185,12 @@ component =
           ]
       , HH.div [ mkClass "columns" ]
           [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HH.attr (H.AttrName "role") "button", mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
+              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
               ]
           ]
       ]
 
-    renderAddLiquidityForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.div [ mkClass "mt-6" ]
+    renderAddLiquidityForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.form [ mkClass "mt-6" ]
       [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
           [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
               [ HH.div [ mkClass "field" ]
@@ -218,12 +219,12 @@ component =
           ]
       , HH.div [ mkClass "columns" ]
           [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HH.attr (H.AttrName "role") "button", mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
+              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
               ]
           ]
       ]
 
-    renderWithdrawLiquidityForm = HH.div [ mkClass "mt-6" ]
+    renderWithdrawLiquidityForm = HH.form [ mkClass "mt-6" ]
       [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
           [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
               [ HH.div [ mkClass "field" ]
@@ -248,7 +249,7 @@ component =
           ]
       , HH.div [ mkClass "columns" ]
           [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HH.attr (H.AttrName "role") "button", mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
+              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
               ]
           ]
       ]
@@ -258,5 +259,11 @@ mkClass = HP.class_ <<< HH.ClassName
 
 mkIcon :: forall slots m. String -> H.ComponentHTML Action slots m
 mkIcon icon = HH.span
-  [ mkClass "icon is-small", HH.attr (H.AttrName "role") "none" ]
+  [ mkClass "icon is-small" ]
   [ HH.i [ mkClass $ "fas fa-" <> icon ] [] ]
+
+printAsset :: Asset -> String
+printAsset (Asset { name, value }) = (toString value) <> " " <> name
+
+printPool :: Pool -> String
+printPool (Pool { assetA: (Asset a), assetB: (Asset b) }) = a.name <> " + " <> b.name

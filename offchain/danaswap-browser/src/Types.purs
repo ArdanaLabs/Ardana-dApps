@@ -2,7 +2,7 @@ module DanaSwapBrowser.Types where
 
 import Contract.Prelude
 
-import Data.BigInt (BigInt, toString)
+import Data.BigInt (BigInt)
 import Data.Newtype (class Newtype)
 
 newtype Asset = Asset
@@ -12,8 +12,6 @@ newtype Asset = Asset
 
 derive instance newtypeAsset :: Newtype Asset _
 derive instance eqAsset :: Eq Asset
-instance showAsset :: Show Asset where
-  show (Asset { name, value }) = (toString value) <> " " <> name
 
 newtype Pool = Pool
   { assetA :: Asset
@@ -23,5 +21,3 @@ newtype Pool = Pool
 
 derive instance newtypePool :: Newtype Pool _
 derive instance eqPool :: Eq Pool
-instance showPool :: Show Pool where
-  show (Pool { assetA: (Asset a), assetB: (Asset b) }) = a.name <> " + " <> b.name
