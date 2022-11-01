@@ -63,11 +63,6 @@ executeTests (Options { mode, testResources }) = do
         $ \ports wallet ->
             ("danaswap-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `failsSaying` "Missing: (--mainnet | --testnet)"
 
-      it "should fail if the protocol-file option was not set"
-        $ withEnv
-        $ \ports wallet ->
-            (cli <> ports <> "-w" <> wallet <> "init") `failsSaying` "Missing: (-p|--protocol-config FILE_PATH)"
-
       it "should fail if the wallet-config option was not set" $
         (cli <> "-p" <> protocolFile <> "init") `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
 
@@ -90,16 +85,26 @@ executeTests (Options { mode, testResources }) = do
           withTmpDir $ \tmpDir ->
             withFundedHsmWalletFile config [ BigInt.fromInt 35_000_000 ] tmpDir $
               \ports wallet -> do
+                hasOldProtocol <- exists (trim protocolFile)
+                when hasOldProtocol $ unlink (trim protocolFile)
                 (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `passesSaying` "initialized protocol"
                 exists (trim protocolFile) `shouldReturn` true
 
       it "should initialize the protocol successfully and create a protocol config file"
         $ withEnv
         $ \ports wallet -> do
-
             hasOldProtocol <- exists (trim protocolFile)
             when hasOldProtocol $ unlink (trim protocolFile)
             (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init")
               `passesSaying` "initialized protocol"
             exists (trim protocolFile) `shouldReturn` true
+
+      it "should initialize the protocol successfully and create a protocol config file at the default location"
+        $ withEnv
+        $ \ports wallet -> do
+            hasOldProtocol <- exists "protocol.json"
+            when hasOldProtocol $ unlink "protocol.json"
+            (cli <> ports <> "-w" <> wallet <> "init")
+              `passesSaying` "initialized protocol"
+            exists "protocol.json" `shouldReturn` true
 
