@@ -10,6 +10,8 @@ module DanaSwap.Api
   , Protocol(..)
   , PoolId
   -- Testing
+  , ceilDiv
+  , PoolAdrRedeemer(..)
   , PoolDatum(..)
   , mintNft
   , seedTx

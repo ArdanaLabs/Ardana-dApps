@@ -22,13 +22,13 @@ import Control.Safely (replicateM_)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import Ctl.Utils.Test (expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
+import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx, swapLeft)
 import DanaSwap.CborTyped (configAddressValidator, simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Setup (prepTestTokens)
-import Test.Attacks.Api (depositLiquidityAttack, openPoolAttack, regularDeposit, regularOpen)
+import Test.Attacks.Api (depositLiquidityAttack, openPoolAttack, regularDeposit, regularOpen, regularSwap, swapLeftAttack)
 import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
 
@@ -45,6 +45,154 @@ main = launchAff_ $ do
   log "About to start tests"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
+
+    describe "swaps" $ do
+
+      it "can  perform swaps" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        pool <- openPool
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 100_000)
+          (BigInt.fromInt 100_000)
+        swapLeft protocol pool 1_000
+
+      describe "basic attacks" $ maybePar $ do
+        it "can't grab NFT in swap" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { grabNft = true
+              }
+            protocol
+            pool
+            1_000
+
+        it "can't kill the pool" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { killThePool = true
+              }
+            protocol
+            pool
+            1_000
+
+        it "can't mint liquidity on swap" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          liquidityCS <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash (unwrap protocol).liquidityMP)
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { mintLiquidity = Just (Value.singleton liquidityCS pool one /\ (Redeemer $ Constr one [toData pool]))
+              }
+            protocol
+            pool
+            1_000
+
+      describe "under paying" $ maybePar $ do
+
+        it "under pay A no report" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { underPay = Just (BigInt.fromInt 10 /\ BigInt.fromInt 0)
+              }
+            protocol
+            pool
+            1_000
+
+        it "under pay B no report" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { underPay = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
+              }
+            protocol
+            pool
+            1_000
+
+        it "under pay A do report" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { underPay = Just (BigInt.fromInt 10 /\ BigInt.fromInt 0)
+              , underReport = Just (BigInt.fromInt 10 /\ BigInt.fromInt 0)
+              }
+            protocol
+            pool
+            1_000
+
+        it "under pay B do report" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+            regularSwap
+              { underPay = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
+              , underReport = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
+              }
+            protocol
+            pool
+            1_000
+
+          -- TODO once pool kills are implemented test that you can't swap on a dead pool
+
     describe "Pool id minting Policy tests" $ do
 
       it "Allows minting id on pool open" $ useRunnerSimple $ do

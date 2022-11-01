@@ -3,6 +3,8 @@ module Test.Attacks.Api
   , regularOpen
   , depositLiquidityAttack
   , regularDeposit
+  , swapLeftAttack
+  , regularSwap
   ) where
 
 import Contract.Prelude
@@ -11,7 +13,7 @@ import Contract.Address (getWalletAddress, scriptHashAddress)
 import Contract.BalanceTxConstraints (mustNotSpendUtxoWithOutRef) as Constraints
 import Contract.Hashing (datumHash)
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
+import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash, validatorHash)
 import Contract.Transaction (TransactionInput)
@@ -20,13 +22,13 @@ import Contract.TxConstraints (mustMintCurrencyWithRedeemer, mustMintValueWithRe
 import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
-import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol(..), getPoolById, seedTx)
-import DanaSwap.Api (PoolId, Protocol, getPoolById)
+import DanaSwap.Api (AssetClass, PoolAdrRedeemer(..), PoolDatum(..), PoolId, Protocol(..), ceilDiv, getPoolById, seedTx )
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
 import Data.Int (floor)
 import Data.Map as Map
+import Effect.Exception (throw)
 import Math (sqrt)
 
 -- This module provides alternative implementations
@@ -194,4 +196,75 @@ depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, pool
             DatumInline
             idNft
       )
+
+type AttackOptionsSwap =
+  { grabNft :: Boolean
+  , killThePool :: Boolean
+  , mintLiquidity :: Maybe (Value /\ Redeemer)
+  , underPay :: Maybe (BigInt /\ BigInt)
+  , underReport :: Maybe (BigInt /\ BigInt)
+  , underReportAdmin :: Maybe (BigInt /\ BigInt)
+  }
+
+regularSwap :: AttackOptionsSwap
+regularSwap =
+  { grabNft : false
+  , killThePool : false
+  , mintLiquidity : Nothing
+  , underPay : Nothing
+  , underReport : Nothing
+  , underReportAdmin : Nothing
+  }
+
+swapLeftAttack :: AttackOptionsSwap -> Protocol -> PoolId -> Int -> Contract () Unit
+swapLeftAttack attack protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
+  (poolIn /\ poolOut) <- getPoolById protocol poolID
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let idNft = Value.singleton poolIdCS poolID one
+  let inPoolOutDatum = poolOut # unwrap # _.output # unwrap # _.datum
+  PoolDatum inPoolDatum  <-
+    liftContractM "pool didn't parse" =<< fromData <$> case inPoolOutDatum of
+      OutputDatum d -> pure $ unwrap d
+      _ -> liftEffect $ throw "input pool had no datum"
+  let newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
+      invariant = inPoolDatum.bal1*inPoolDatum.bal2
+      newBal2' = invariant `ceilDiv` newBal1
+      fee = (newBal2' - inPoolDatum.bal2) * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
+      newBal2 = newBal2' + fee
+      ac1 = inPoolDatum.ac1
+      ac2 = inPoolDatum.ac2
+      newAdminBal2 =inPoolDatum.adminBal2 + fee
+      outPool = PoolDatum $
+                inPoolDatum
+                  { bal1 = newBal1 - (fromMaybe zero (fst <$> attack.underReport))
+                  , bal2 = newBal2 - (fromMaybe zero (snd <$> attack.underReport))
+                  , adminBal1 = inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underReportAdmin))
+                  , adminBal2 = newAdminBal2 - (fromMaybe zero (snd <$> attack.underReportAdmin))
+                  , live = not attack.killThePool
+                  }
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+    buildBalanceSignAndSubmitTx
+      ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
+          <> Lookups.validator poolAdrVal
+      )
+      ( Constraints.mustSpendScriptOutput
+          poolIn
+          (Redeemer $ toData $ Swap fee)
+          <> (case attack.mintLiquidity of
+                Nothing -> mempty
+                Just (val /\ red) ->
+                  Constraints.mustMintValueWithRedeemer
+                    red
+                    val
+              )
+          <> Constraints.mustPayToScript
+            (validatorHash poolAdrVal)
+            (Datum $ toData outPool)
+            DatumInline
+            ((if attack.grabNft then mempty else idNft)
+              <> Value.singleton (fst ac1) (snd ac1) (newBal1 + inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underPay)))
+              <> Value.singleton (fst ac2) (snd ac2) (newBal2 + newAdminBal2 - (fromMaybe zero (snd <$> attack.underPay)))
+            )
+      )
+
 
