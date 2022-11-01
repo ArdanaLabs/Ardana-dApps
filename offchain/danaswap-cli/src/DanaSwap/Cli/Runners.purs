@@ -19,19 +19,27 @@ import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (readTextFile, writeTextFile)
 import Node.FS.Sync (exists)
 import Node.Path (FilePath, dirname, isAbsolute, normalize)
+import Node.Process (cwd)
 
 runCli :: Options -> Aff Unit
 runCli (Options { command, protocolFilePath, walletConfigFilePath, networkId, ctlPort, ogmiosPort, odcPort }) = do
   wallet <- parseWalletFromConfigFile walletConfigFilePath
   let configParams = createCtlConfigParams networkId ctlPort ogmiosPort odcPort
 
+  realProtocolFilePath <- case protocolFilePath of
+    Nothing -> do
+      dir <- liftEffect cwd
+      pure $ normalize $ dir <> "/protocol.json"
+    Just path -> pure path
+
   case command of
     InitializeProtocol -> do
-      stateExists <- liftEffect $ exists protocolFilePath
+      stateExists <- liftEffect $ exists realProtocolFilePath
       when stateExists $ do
         void $ liftEffect $ throw "Can't use initialize when state file already exists"
       protocolParameters <- runContract configParams $ withKeyWallet wallet initProtocol
-      writeTextFile UTF8 protocolFilePath $ show $ encodeAeson protocolParameters
+      writeTextFile UTF8 realProtocolFilePath $ show $ encodeAeson protocolParameters
+      log $ "created protocol configuration file: " <> realProtocolFilePath
       log "initialized protocol"
 
 parseWalletFromConfigFile :: FilePath -> Aff KeyWallet
