@@ -15,7 +15,6 @@
             aff
             bigints
             cardano-transaction-lib
-            node-fs-aff
             ordered-collections
             aff-retry
             self'.packages."offchain:danaswap-cbor"
@@ -73,11 +72,11 @@
         "offchain:danaswap-api:test:local" = cat-lib.mkApp (danaswap-api-tests { mode = "local"; });
       };
       checks = {
-        run-danaswap-api-tests =
+        "offchain:danaswap-api:test:local" =
           let test = danaswap-api-tests { mode = "local"; }; in
           pkgs.runCommand test.name { }
             "${test}/bin/${test.meta.mainProgram} | tee $out";
-        run-danaswap-api-volume-tests =
+        "offchain:danaswap-api:test:volume" =
           let test = danaswap-api-tests { mode = "local"; runVolumeTests = true; }; in
           pkgs.runCommand test.name { }
             "${test}/bin/${test.meta.mainProgram} | tee $out";

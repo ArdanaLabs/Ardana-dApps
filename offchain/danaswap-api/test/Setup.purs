@@ -11,7 +11,7 @@ import Contract.ScriptLookups as Lookups
 import Contract.Scripts (mintingPolicyHash)
 import Contract.TxConstraints as Constraints
 import Contract.Value (mkTokenName, mpsSymbol)
-import Ctl.Util (buildBalanceSignAndSubmitTx, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, waitForTx)
 import DanaSwap.Api (AssetClass)
 import DanaSwap.CborTyped (testToken)
 import Data.BigInt as BigInt

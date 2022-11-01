@@ -1,9 +1,9 @@
-module TestUtil
-  ( Mode(..)
-  , runWithMode
+module Ctl.Utils.Test
+  ( runWithMode
   , useRunnerSimple
   , expectScriptError
   , runTwoWallets
+  , getPlutipConfig
   -- Types
   , EnvSpec
   , EnvRunner
@@ -38,10 +38,7 @@ import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, sequential)
 import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
-
-data Mode = Local | Testnet
-
-derive instance Eq Mode
+import Ctl.Utils.Test.Types (Mode(..))
 
 type EnvRunner = (ContractEnv () -> KeyWallet -> Aff Unit) -> Aff Unit
 type EnvSpec = SpecT Aff EnvRunner Identity Unit
@@ -113,6 +110,7 @@ okayErrs =
   , "timed out waiting for tx"
   , "Error: Command failed: psql -h 127.0.0.1"
   , "Error: Unable to run the following services, because the ports are occupied:"
+  , "[object Object]"
   ]
 
 -- returns a contiunation that gets the EnvRunner

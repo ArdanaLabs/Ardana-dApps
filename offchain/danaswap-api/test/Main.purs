@@ -19,7 +19,9 @@ import Contract.Utxos (getUtxo, getWalletBalance)
 import Contract.Value (adaToken, mkTokenName, mpsSymbol, scriptCurrencySymbol)
 import Contract.Value as Value
 import Control.Safely (replicateM_)
-import Ctl.Util (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import Ctl.Utils.Test (expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
+import Ctl.Utils.Test.Types (Mode(..))
 import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx)
 import DanaSwap.CborTyped (configAddressValidator, simpleNft)
 import Data.BigInt as BigInt
@@ -29,7 +31,6 @@ import Setup (prepTestTokens)
 import Test.Attacks.Api (depositLiquidityAttack, openPoolAttack, regularDeposit, regularOpen)
 import Test.Spec (describe, it, parallel, sequential)
 import Test.Spec.Assertions (expectError, shouldEqual)
-import TestUtil (Mode(..), expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -151,14 +152,14 @@ main = launchAff_ $ do
           configAdrVal <- configAddressValidator
           liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
             $ mpsSymbol
-            $ mintingPolicyHash protocol.liquidityMP
+            $ mintingPolicyHash (unwrap protocol).liquidityMP
           badConfig <- waitForTx (scriptHashAddress $ validatorHash configAdrVal)
             =<< buildBalanceSignAndSubmitTx
               mempty
               ( Constraints.mustPayToScript
                   (validatorHash configAdrVal)
                   ( Datum $ List
-                      [ toData (validatorHash $ protocol.poolAdrVal), toData liquidityCS ]
+                      [ toData (validatorHash $ (unwrap protocol).poolAdrVal), toData liquidityCS ]
                   )
                   DatumInline
                   mempty
@@ -247,8 +248,6 @@ main = launchAff_ $ do
                       <> Value.singleton (fst ac2) (snd ac2) (BigInt.fromInt 1_000)
                   )
             )
-
-          bal <- withKeyWallet bob $ getWalletBalance >>= liftContractM "no wallet?"
 
           -- This is the actual test
           expectScriptError $ withKeyWallet bob $ openPoolAttack
