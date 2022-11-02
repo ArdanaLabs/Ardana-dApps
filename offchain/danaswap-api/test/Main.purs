@@ -22,7 +22,7 @@ import Control.Safely (replicateM_)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import Ctl.Utils.Test (expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx, swapLeft)
+import DanaSwap.Api (initProtocol, mintNft, openPool, seedTx, swapLeft)
 import DanaSwap.CborTyped (configAddressValidator, simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
@@ -46,10 +46,10 @@ main = launchAff_ $ do
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
 
-    describe "swaps" $ do
+    describe "Swap tests" $ do
 
-      describe "should work" $ maybePar $ do
-        it "can  perform swaps" $ useRunnerSimple $ do
+      describe "Should work" $ maybePar $ do
+        it "Can  perform swaps" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -60,7 +60,7 @@ main = launchAff_ $ do
             (BigInt.fromInt 100_000)
           swapLeft protocol pool 1_000
 
-        it "swap attack with no attacks works too" $ useRunnerSimple $ do
+        it "Swap attack with no attacks works too" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -71,8 +71,8 @@ main = launchAff_ $ do
             (BigInt.fromInt 100_000)
           swapLeftAttack regularSwap protocol pool 1_000
 
-      describe "basic attacks" $ maybePar $ do
-        it "can't grab NFT in swap" $ useRunnerSimple $ do
+      describe "Basic attacks" $ maybePar $ do
+        it "Can't grab NFT in swap" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -90,7 +90,7 @@ main = launchAff_ $ do
                 pool
                 1_000
 
-        it "can't kill the pool" $ useRunnerSimple $ do
+        it "Can't kill the pool" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -108,7 +108,7 @@ main = launchAff_ $ do
                 pool
                 1_000
 
-        it "can't mint liquidity on swap" $ useRunnerSimple $ do
+        it "Can't mint liquidity on swap" $ useRunnerSimple $ do
           protocol <- initProtocol
           liquidityCS <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash (unwrap protocol).liquidityMP)
           (ac1 /\ ac2) <- prepTestTokens
@@ -127,45 +127,9 @@ main = launchAff_ $ do
                 pool
                 1_000
 
-      describe "under paying" $ maybePar $ do
+      describe "Under paying tests" $ maybePar $ do
 
-        it "under pay A no report" $ useRunnerSimple $ do
-          protocol <- initProtocol
-          (ac1 /\ ac2) <- prepTestTokens
-          pool <- openPool
-            protocol
-            ac1
-            ac2
-            (BigInt.fromInt 100_000)
-            (BigInt.fromInt 100_000)
-          expectScriptError
-            $ swapLeftAttack
-                regularSwap
-                  { underPay = Just (BigInt.fromInt 10 /\ BigInt.fromInt 0)
-                  }
-                protocol
-                pool
-                1_000
-
-        it "under pay B no report" $ useRunnerSimple $ do
-          protocol <- initProtocol
-          (ac1 /\ ac2) <- prepTestTokens
-          pool <- openPool
-            protocol
-            ac1
-            ac2
-            (BigInt.fromInt 100_000)
-            (BigInt.fromInt 100_000)
-          expectScriptError
-            $ swapLeftAttack
-                regularSwap
-                  { underPay = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
-                  }
-                protocol
-                pool
-                1_000
-
-        it "under pay A do report" $ useRunnerSimple $ do
+        it "Can't under pay with A" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -184,7 +148,7 @@ main = launchAff_ $ do
                 pool
                 1_000
 
-        it "under pay B do report" $ useRunnerSimple $ do
+        it "Can't under pay with B" $ useRunnerSimple $ do
           protocol <- initProtocol
           (ac1 /\ ac2) <- prepTestTokens
           pool <- openPool
@@ -198,6 +162,42 @@ main = launchAff_ $ do
                 regularSwap
                   { underPay = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
                   , underReport = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
+                  }
+                protocol
+                pool
+                1_000
+
+        it "Can't under pay with A not reporting" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+                regularSwap
+                  { underPay = Just (BigInt.fromInt 10 /\ BigInt.fromInt 0)
+                  }
+                protocol
+                pool
+                1_000
+
+        it "Can't under pay with B not reporting" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError
+            $ swapLeftAttack
+                regularSwap
+                  { underPay = Just (BigInt.fromInt 0 /\ BigInt.fromInt 10)
                   }
                 protocol
                 pool
@@ -488,16 +488,18 @@ main = launchAff_ $ do
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
 
-      it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
-        protocol <- initProtocol
-        (ac1 /\ ac2) <- prepTestTokens
-        poolId <- openPool
-          protocol
-          ac1
-          ac2
-          (BigInt.fromInt 100)
-          (BigInt.fromInt 100)
-        depositLiquidity protocol poolId
+      -- TODO bring this test back when the pool address validator has liquidity transactions
+
+      --it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
+      --  protocol <- initProtocol
+      --  (ac1 /\ ac2) <- prepTestTokens
+      --  poolId <- openPool
+      --    protocol
+      --    ac1
+      --    ac2
+      --    (BigInt.fromInt 100)
+      --    (BigInt.fromInt 100)
+      --  depositLiquidity protocol poolId
 
       describe "Minting liquidity token for a pool other than the pool being spent" $ do
         it "Fails to validate with the right redeemer" $ useRunnerSimple $ do

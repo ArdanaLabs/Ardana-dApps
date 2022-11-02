@@ -450,6 +450,10 @@ poolAdrValidator = phoistAcyclic $
         PValue mintingMap <- pmatchC minting
         liquidityMinted <- pletC $ AssocMap.plookup # liquidityCS # mintingMap
 
+        pguardC "no asset switches" $
+          getField @"ac1" outPoolDataRec #== getField @"ac1" oldPoolRec
+            #&& getField @"ac2" outPoolDataRec #== getField @"ac2" oldPoolRec
+
         pmatchC action >>= \case
           Swap swap -> do
             PNothing <- pmatchC liquidityMinted
