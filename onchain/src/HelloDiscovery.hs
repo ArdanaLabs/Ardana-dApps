@@ -38,6 +38,7 @@ import PlutusLedgerApi.V2 (MintingPolicy, TxOutRef, adaToken)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.Value qualified as Value
 
+import Plutarch (Config)
 import Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
@@ -47,7 +48,6 @@ import Plutarch.Extensions.Data (parseData, parseDatum)
 import Plutarch.Extensions.List (unsingleton)
 import Plutarch.Extensions.Monad (pmatchFieldC)
 import Plutarch.Extra.TermCont
-import Plutarch (Config)
 
 configScriptCbor :: Config -> Maybe String
 configScriptCbor = closedTermToHexString configScript

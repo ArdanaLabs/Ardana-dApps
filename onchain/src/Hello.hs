@@ -28,9 +28,9 @@ import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Extensions.Api (passert, pgetContinuingDatum)
 import Plutarch.Unsafe (punsafeCoerce)
 
-import Plutarch.Extra.TermCont (pmatchC)
+import Data.Default (Default (..))
 import Plutarch (Config (tracingMode), TracingMode (..))
-import Data.Default (Default(..))
+import Plutarch.Extra.TermCont (pmatchC)
 
 data HelloRedemer (s :: S)
   = Inc (Term s (PDataRecord '[]))

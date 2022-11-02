@@ -22,6 +22,8 @@ import Plutarch.Api.V1 (AmountGuarantees (..), KeyGuarantees (..), PTokenName (P
 import Plutarch.Api.V1.AssocMap (PMap)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 
+import Data.Default (def)
+import Plutarch (Config (tracingMode), TracingMode (..))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V1.Value (PCurrencySymbol)
 import Plutarch.Api.V1.Value qualified as Value
@@ -50,8 +52,6 @@ import Plutarch.Extra.TermCont (
   ptraceC,
  )
 import Plutarch.Maybe (pfromJust)
-import Plutarch (Config (tracingMode), TracingMode (..))
-import Data.Default(def)
 
 newtype PoolRed (s :: S)
   = PoolRed
@@ -174,7 +174,7 @@ trivialFail :: ClosedTerm PValidator
 trivialFail = perror
 
 configScriptCbor :: String
-configScriptCbor = validatorToHexString $ mkValidator def{tracingMode=NoTracing} configScript
+configScriptCbor = validatorToHexString $ mkValidator def {tracingMode = NoTracing} configScript
 
 configScript :: ClosedTerm PValidator
 configScript = perror

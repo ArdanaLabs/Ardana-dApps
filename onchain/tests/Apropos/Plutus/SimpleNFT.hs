@@ -24,8 +24,8 @@ import PlutusLedgerApi.V2 (
 import PlutusLedgerApi.V1.Scripts (Datum (..), applyArguments)
 
 import Control.Monad (forM_)
+import Data.Default (def)
 import Gen (address, datum, maybeOf, txOutRef, value)
-import Data.Default(def)
 
 data NFTModel = NFTModel
   { param :: TxOutRef

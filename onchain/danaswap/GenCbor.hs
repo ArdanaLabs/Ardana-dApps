@@ -2,12 +2,12 @@ module Main (main) where
 
 import Control.Monad (unless)
 import DanaSwap (configScriptCbor, liqudityTokenCbor, nftCbor, poolAdrValidatorCbor, poolIdTokenMPCbor, trivialCbor)
+import Data.Default (Default (def))
+import Plutarch (Config (tracingMode), TracingMode (..))
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
 import Utils (Cbor (..), toPureScript)
-import Plutarch (Config (tracingMode), TracingMode (..))
-import Data.Default (Default(def))
 
 {- | Main takes a directory as a comand line argument
   and creates a file CBOR.purs in that directory
@@ -30,7 +30,7 @@ main = do
     _ -> die "usage: cabal run hello-world <file_path>"
 
 config :: Config
-config = def{tracingMode = DoTracing}
+config = def {tracingMode = DoTracing}
 
 cbors :: [Cbor]
 cbors =
