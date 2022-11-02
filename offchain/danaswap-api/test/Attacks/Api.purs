@@ -21,18 +21,12 @@ import Contract.Value (CurrencySymbol, TokenName, Value, mkTokenName, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, buildBalanceSignAndSubmitTx', getUtxos, waitForTx)
 import DanaSwap.Api (AssetClass, PoolDatum(..), PoolId, Protocol(..), getPoolById, seedTx)
-import DanaSwap.Api (PoolId, Protocol, getPoolById)
 import DanaSwap.CborTyped (configAddressValidator)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
 import Data.Int (floor)
 import Data.Map as Map
 import Math (sqrt)
-
--- This module provides alternative implementations
--- for several normal API functions which take
--- extra "attack" (someone please suggest a better word)
--- options
 
 type AttackOptionsOpen =
   { reportIssued :: Maybe BigInt
@@ -80,11 +74,11 @@ openPoolAttack
   poolID' <- liftContractM "failed to make poolID" $ datumHash (Datum (toData seed)) <#> unwrap >>= mkTokenName
   let poolID = fromMaybe poolID' attack.idToMint
   let poolIdMph = mintingPolicyHash poolIdMP
-  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
-  let idNft = Value.singleton poolIdCs poolID one
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
+  let idNft = Value.singleton poolIdCS poolID one
   configVal <- configAddressValidator
   configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
-  liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
+  liquidityCS <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
   adr <- getWalletAddress >>= liftContractM "no wallet"
   utxos <- getUtxos adr
   let
@@ -119,11 +113,11 @@ openPoolAttack
                 )
                 ( fromMaybe
                     ( Value.singleton
-                        liquidityCs
+                        liquidityCS
                         poolID
                         liq
                     )
-                    (attack.actuallyMint <#> (_ $ liquidityCs) <#> (_ $ poolID))
+                    (attack.actuallyMint <#> (_ $ liquidityCS) <#> (_ $ poolID))
                 )
             else mempty
           )
@@ -166,9 +160,9 @@ regularDeposit =
 depositLiquidityAttack :: AttackOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
 depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
-  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
-  liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
-  let idNft = Value.singleton poolIdCs poolID one
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  liquidityCS <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
+  let idNft = Value.singleton poolIdCS poolID one
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
@@ -184,8 +178,8 @@ depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, pool
                 attack.redeemer
             )
             ( fromMaybe
-                (Value.singleton liquidityCs poolID $ BigInt.fromInt 10)
-                (attack.actuallyMint <#> (_ $ liquidityCs))
+                (Value.singleton liquidityCS poolID $ BigInt.fromInt 10)
+                (attack.actuallyMint <#> (_ $ liquidityCS))
             )
 
           <> Constraints.mustPayToScript

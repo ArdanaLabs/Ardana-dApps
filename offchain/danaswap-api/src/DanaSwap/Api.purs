@@ -104,8 +104,8 @@ newtype PoolDatum =
     , bal2 :: BigInt
     , adminBal1 :: BigInt
     , adminBal2 :: BigInt
-    , liquidity :: BigInt
-    , live :: Boolean
+    , issuedLiquidity :: BigInt
+    , isLive :: Boolean
     }
 
 instance ToData PoolDatum where
