@@ -32,7 +32,7 @@ import Contract.Value (CurrencySymbol, TokenName, adaToken, mkTokenName, mpsSymb
 import Contract.Value as Value
 import Ctl.Internal.Types.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import DanaSwap.CborTyped (configAddressValidator, liqudityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
+import DanaSwap.CborTyped (configAddressValidator, liquidityTokenMintingPolicy, poolAddressValidator, poolIdTokenMintingPolicy, simpleNft)
 import Data.BigInt (BigInt, toNumber)
 import Data.BigInt as BigInt
 import Data.Int (floor)
@@ -104,19 +104,19 @@ newtype PoolDatum =
     , bal2 :: BigInt
     , adminBal1 :: BigInt
     , adminBal2 :: BigInt
-    , issuedLiquidity :: BigInt
+    , issuedLiquidityTokens :: BigInt
     , isLive :: Boolean
     }
 
 instance ToData PoolDatum where
-  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, issuedLiquidity, isLive }) = List
+  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, issuedLiquidityTokens, isLive }) = List
     [ toData ac1
     , toData ac2
     , toData bal1
     , toData bal2
     , toData adminBal1
     , toData adminBal2
-    , toData issuedLiquidity
+    , toData issuedLiquidityTokens
     , toData isLive
     ]
 
@@ -196,7 +196,7 @@ openPool (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) ac1 ac2 am
       , bal2: amt1
       , adminBal1: zero
       , adminBal2: zero
-      , issuedLiquidity: liq
+      , issuedLiquidityTokens: liq
       , isLive: true
       }
   txid <- buildBalanceSignAndSubmitTx
@@ -247,7 +247,7 @@ initProtocol = do
   poolIdCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
     $ mintingPolicyHash poolIdMP
-  liquidityMP <- liqudityTokenMintingPolicy poolIdCS
+  liquidityMP <- liquidityTokenMintingPolicy poolIdCS
   liquidityCS <- liftContractM "invalid hex string from mintingPolicyHash"
     $ mpsSymbol
     $ mintingPolicyHash liquidityMP

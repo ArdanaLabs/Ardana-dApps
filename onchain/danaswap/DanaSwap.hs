@@ -6,7 +6,7 @@ module DanaSwap (
   trivialFailCbor,
   configScriptCbor,
   nftCbor,
-  liqudityTokenCbor,
+  liquidityTokenCbor,
   poolIdTokenMPCbor,
   -- testing
   validOpenAmts,
@@ -104,7 +104,7 @@ newtype PoolData (s :: S)
                , "bal2" ':= PInteger
                , "adminBal1" ':= PInteger
                , "adminBal2" ':= PInteger
-               , "issuedLiquidity" ':= PInteger
+               , "issuedLiquidityTokens" ':= PInteger
                , "isLive" ':= PBool
                ]
           )
@@ -140,11 +140,11 @@ configScript = perror
 poolIdTokenMPCbor :: Maybe String
 poolIdTokenMPCbor = closedTermToHexString poolIdTokenMP
 
-liqudityTokenCbor :: Maybe String
-liqudityTokenCbor = closedTermToHexString liqudityTokenMP
+liquidityTokenCbor :: Maybe String
+liquidityTokenCbor = closedTermToHexString liquidityTokenMP
 
-liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
-liqudityTokenMP = phoistAcyclic $
+liquidityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
+liquidityTokenMP = phoistAcyclic $
   plam $
     \poolIdCSData redeemerData scriptContextData -> unTermCont $ do
       -- Parse various information
@@ -253,7 +253,7 @@ poolIdTokenMP = phoistAcyclic $
         PoolData poolDataRec' <- pmatchC $ pfromData $ ptryFromData outPoolDatumrec
         poolDataRec <-
           pletFieldsC
-            @'[ "issuedLiquidity"
+            @'[ "issuedLiquidityTokens"
               , "ac1"
               , "ac2"
               , "bal1"
@@ -262,16 +262,16 @@ poolIdTokenMP = phoistAcyclic $
               , "adminBal2"
               ]
             poolDataRec'
-        let issuedLiquidity = pfromData $ getField @"issuedLiquidity" poolDataRec
+        let issuedLiquidityTokens = pfromData $ getField @"issuedLiquidityTokens" poolDataRec
         liquidity <- pletC $ atCS # minting # liquidityCS
         pguardC "actaully minted same amount reported in datum" $
-          isJustTn' # liquidity # poolId # issuedLiquidity
+          isJustTn' # liquidity # poolId # issuedLiquidityTokens
         valueMatchesDatum poolDataRec (getField @"value" outPoolRec)
         pguardC "liquidity is correct" $
           validOpenAmts
             # getField @"bal1" poolDataRec
             # getField @"bal2" poolDataRec
-            # issuedLiquidity
+            # issuedLiquidityTokens
         pure $ popaque $ pcon PUnit
 
 -- This part of the logic is seperated mainly for ease of testing

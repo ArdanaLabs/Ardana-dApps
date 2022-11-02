@@ -90,7 +90,7 @@ openPoolAttack
       , bal2: amt1
       , adminBal1: zero
       , adminBal2: zero
-      , issuedLiquidity: fromMaybe liq attack.reportIssued
+      , issuedLiquidityTokens: fromMaybe liq attack.reportIssued
       , isLive: true
       }
   txid <- buildBalanceSignAndSubmitTx'

@@ -1,7 +1,7 @@
 module DanaSwap.CborTyped
   ( poolAddressValidator
   , poolIdTokenMintingPolicy
-  , liqudityTokenMintingPolicy
+  , liquidityTokenMintingPolicy
   , simpleNft
   , configAddressValidator
   -- Test exports
@@ -46,11 +46,11 @@ poolIdTokenMintingPolicy configUtxoNftCS = do
 
 -- | MintingPolicy for the pool liquidity tokens parametized by the
 -- currency symbol of the poolId tokens
-liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
-liqudityTokenMintingPolicy poolId = do
+liquidityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
+liquidityTokenMintingPolicy poolId = do
   logDebug' "creating liquidity token minting policy"
   logDebug' $ "pool id:" <> show poolId
-  decodeCbor CBOR.liqudityTokenMintingPolicy [ toData poolId ]
+  decodeCbor CBOR.liquidityTokenMintingPolicy [ toData poolId ]
     <#> PlutusMintingPolicy
 
 configAddressValidator :: Contract () Validator

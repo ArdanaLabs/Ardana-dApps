@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Control.Monad (unless)
-import DanaSwap (configScriptCbor, liqudityTokenCbor, nftCbor, poolIdTokenMPCbor, trivialCbor)
+import DanaSwap (configScriptCbor, liquidityTokenCbor, nftCbor, poolIdTokenMPCbor, trivialCbor)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
@@ -32,6 +32,6 @@ cbors =
   [ Cbor "trivial" trivialCbor
   , Cbor "nft" nftCbor
   , Cbor "configScript" $ pure configScriptCbor
-  , Cbor "liqudityTokenMintingPolicy" liqudityTokenCbor
+  , Cbor "liquidityTokenMintingPolicy" liquidityTokenCbor
   , Cbor "poolIdTokenMintingPolicy" poolIdTokenMPCbor
   ]
