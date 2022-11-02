@@ -25,41 +25,42 @@ import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V1.Value (PCurrencySymbol)
 import Plutarch.Api.V1.Value qualified as Value
-import Plutarch.Api.V2
-    ( PAddress(..),
-      PDatum(..),
-      PMintingPolicy,
-      POutputDatum(POutputDatum),
-      PScriptPurpose(PMinting),
-      PTxInInfo(PTxInInfo),
-      PTxOut(PTxOut),
-      PTxOutRef,
-      PValidator,
-      mkValidator,
-      PScriptPurpose(..) )
+import Plutarch.Api.V2 (
+  PAddress (..),
+  PDatum (..),
+  PMintingPolicy,
+  POutputDatum (POutputDatum),
+  PScriptPurpose (..),
+  PTxInInfo (PTxInInfo),
+  PTxOut (PTxOut),
+  PTxOutRef,
+  PValidator,
+  mkValidator,
+ )
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extensions.List (unsingleton)
+import Plutarch.Extensions.Monad (pletFieldC)
 import Plutarch.Extra.TermCont (
   pguardC,
   pletC,
   pletFieldsC,
   pmatchC,
-  ptraceC
+  ptraceC,
  )
 import Plutarch.Maybe (pfromJust)
-import Plutarch.Extensions.Monad (pletFieldC)
 
 newtype PoolRed (s :: S)
   = PoolRed
-  (Term s
-    ( PDataRecord
-      '[ "id" ':= PTokenName
-       , "action" ':= PoolAction
-       ]
-    )
-  )
+      ( Term
+          s
+          ( PDataRecord
+              '[ "id" ':= PTokenName
+               , "action" ':= PoolAction
+               ]
+          )
+      )
   deriving stock (Generic)
   deriving anyclass (PlutusType, PIsData, PEq)
 
@@ -67,7 +68,7 @@ instance DerivePlutusType PoolRed where type DPTStrat _ = PlutusTypeNewtype
 instance PTryFrom PData (PAsData PoolRed)
 
 data PoolAction (s :: S)
-  = Swap (Term s (PDataRecord '[ "fee" ':= PInteger]))
+  = Swap (Term s (PDataRecord '["fee" ':= PInteger]))
   | Liq (Term s (PDataRecord '[]))
   | Kill (Term s (PDataRecord '[]))
   deriving stock (Generic)
@@ -148,15 +149,15 @@ instance PTryFrom PData (PAsData PoolData)
 instance PTryFrom PData (PAsData PBool)
 
 type AllPoolFields =
-    '[ "ac1"
-     , "ac2"
-     , "bal1"
-     , "bal2"
-     , "adminBal1"
-     , "adminBal2"
-     , "issuedLiquidity"
-     , "isLive"
-     ]
+  '[ "ac1"
+   , "ac2"
+   , "bal1"
+   , "bal2"
+   , "adminBal1"
+   , "adminBal2"
+   , "issuedLiquidity"
+   , "isLive"
+   ]
 
 trivialCbor :: Maybe String
 trivialCbor = closedTermToHexString trivial
@@ -184,51 +185,52 @@ liqudityTokenCbor = closedTermToHexString liqudityTokenMP
 
 liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
 liqudityTokenMP = phoistAcyclic $
-  plam $
-    \poolIdCSData redeemerData scriptContextData -> unTermCont $ do
-      -- Parse various information
-      LiquidityRedeemer redeemerRec' <- pmatchC $ pfromData $ ptryFromData redeemerData
-      redeemerRec <- pletFieldsC @'["poolId", "action"] redeemerRec'
-      scriptContextRec <- pletFieldsC @'["txInfo", "purpose"] scriptContextData
-      poolIdCS <- pletC $ pfromData (ptryFromData poolIdCSData)
-      poolIdTokenName <- pletC $ getField @"poolId" redeemerRec
-      -- Get own CS from script purpose
-      PMinting liquidityCSRec <- pmatchC $ getField @"purpose" scriptContextRec
-      infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scriptContextRec)
-      let minting = getField @"mint" infoRec
-      PValue mintingMap <- pmatchC minting
-      PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
-      PMap.PMap liquidityAsList <- pmatchC liquidity
-      -- Common assertions for both actions
-      pguardC "minted exactly one token name of liquidity tokens" $
-        plength # liquidityAsList #== 1
-      pguardC "token name matched redeemer" $
-        pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
-      -- Case over the action field of the redeemer
-      pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
-        Open _ -> do
-          -- look up the pool id from the mint field of the script context
-          -- and check that it matches the redeemer
-          PJust idTokens <- pmatchC $ PMap.plookup # poolIdCS # mintingMap
-          PJust _shouldBe1 <- pmatchC $ PMap.plookup # getField @"poolId" redeemerRec # idTokens
-          -- TODO should we check that it is just 1? It should be redundant so for now I'm not checking
-          pure $ popaque $ pcon PUnit
-        Spend _ -> do
-          let inputs = pfromData $ getField @"inputs" infoRec
-          pguardC "token name matched redeemer" $
-            pany # isRightPool # inputs
-          pure $ popaque $ pcon PUnit
-          where
-            isRightPool = plam $ \input -> unTermCont $ do
-              -- Check that the value of the field contains the right poolID
-              -- This can't error when it doesn't (not all inputs are the pool) hence the cases
-              PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
-              pmatchC (PMap.plookup # poolIdCS # val) >>= \case
-                PNothing -> pure $ pcon PFalse
-                PJust poolIdToken ->
-                  pmatchC (PMap.plookup # poolIdTokenName # poolIdToken) >>= \case
-                    PNothing -> pure $ pcon PFalse
-                    PJust _ -> pure $ pcon PTrue
+  ptrace "liquidity minting policy" $
+    plam $
+      \poolIdCSData redeemerData scriptContextData -> unTermCont $ do
+        -- Parse various information
+        LiquidityRedeemer redeemerRec' <- pmatchC $ pfromData $ ptryFromData redeemerData
+        redeemerRec <- pletFieldsC @'["poolId", "action"] redeemerRec'
+        scriptContextRec <- pletFieldsC @'["txInfo", "purpose"] scriptContextData
+        poolIdCS <- pletC $ pfromData (ptryFromData poolIdCSData)
+        poolIdTokenName <- pletC $ getField @"poolId" redeemerRec
+        -- Get own CS from script purpose
+        PMinting liquidityCSRec <- pmatchC $ getField @"purpose" scriptContextRec
+        infoRec <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" scriptContextRec)
+        let minting = getField @"mint" infoRec
+        PValue mintingMap <- pmatchC minting
+        PJust liquidity <- pmatchC $ PMap.plookup # (pfield @"_0" # liquidityCSRec) # mintingMap
+        PMap.PMap liquidityAsList <- pmatchC liquidity
+        -- Common assertions for both actions
+        pguardC "minted exactly one token name of liquidity tokens" $
+          plength # liquidityAsList #== 1
+        pguardC "token name matched redeemer" $
+          pfromData (pfstBuiltin #$ phead # liquidityAsList) #== poolIdTokenName
+        -- Case over the action field of the redeemer
+        pmatchC (pfromData $ getField @"action" redeemerRec) >>= \case
+          Open _ -> do
+            -- look up the pool id from the mint field of the script context
+            -- and check that it matches the redeemer
+            PJust idTokens <- pmatchC $ PMap.plookup # poolIdCS # mintingMap
+            PJust _shouldBe1 <- pmatchC $ PMap.plookup # getField @"poolId" redeemerRec # idTokens
+            -- TODO should we check that it is just 1? It should be redundant so for now I'm not checking
+            pure $ popaque $ pcon PUnit
+          Spend _ -> do
+            let inputs = pfromData $ getField @"inputs" infoRec
+            pguardC "token name matched redeemer" $
+              pany # isRightPool # inputs
+            pure $ popaque $ pcon PUnit
+            where
+              isRightPool = plam $ \input -> unTermCont $ do
+                -- Check that the value of the field contains the right poolID
+                -- This can't error when it doesn't (not all inputs are the pool) hence the cases
+                PValue val <- pmatchC $ pfield @"value" # (pfield @"resolved" # input)
+                pmatchC (PMap.plookup # poolIdCS # val) >>= \case
+                  PNothing -> pure $ pcon PFalse
+                  PJust poolIdToken ->
+                    pmatchC (PMap.plookup # poolIdTokenName # poolIdToken) >>= \case
+                      PNothing -> pure $ pcon PFalse
+                      PJust _ -> pure $ pcon PTrue
 
 nftCbor :: Maybe String
 nftCbor = closedTermToHexString standardNft
@@ -373,96 +375,106 @@ poolAdrValidatorCbor :: Maybe String
 poolAdrValidatorCbor = closedTermToHexString poolAdrValidator
 
 poolAdrValidator :: ClosedTerm (PData :--> PData :--> PValidator)
-poolAdrValidator = phoistAcyclic $ ptrace "poolAdrValidator" $
-  plam $ \poolIdCsData _liquidityCsData datum redeemer sc
-    -> unTermCont $ do
-      -- Get old pool
-      PoolData oldPool <- pmatchC $ pfromData $ ptryFromData datum
-      oldPoolRec <- pletFieldsC @AllPoolFields oldPool
+poolAdrValidator = phoistAcyclic $
+  ptrace "poolAdrValidator" $
+    plam $ \poolIdCsData liquidityCsData datum redeemer sc ->
+      unTermCont $ do
+        -- Get old pool
+        PoolData oldPool <- pmatchC $ pfromData $ ptryFromData datum
+        oldPoolRec <- pletFieldsC @AllPoolFields oldPool
 
-      -- get poolId Currency Symbol from data
-      poolIdCs <- pletC $ pfromData $ ptryFromData poolIdCsData
+        -- get poolId Currency Symbol from data
+        poolIdCs <- pletC $ pfromData $ ptryFromData poolIdCsData
 
-      scRec <- pletFieldsC @'["txInfo" , "purpose" ] sc
-      PSpending outRef' <- pmatchC (getField @"purpose" scRec)
-      outRef <- pletC $ pfield @"_0" # outRef'
-      let txInfo = getField @"txInfo" scRec
-      infoRec <- pletFieldsC @'[ "inputs" , "outputs" ] txInfo
-      let inputs :: Term _ (PBuiltinList PTxInInfo) = getField @"inputs" infoRec
+        scRec <- pletFieldsC @'["txInfo", "purpose"] sc
+        PSpending outRef' <- pmatchC (getField @"purpose" scRec)
+        outRef <- pletC $ pfield @"_0" # outRef'
+        let txInfo = getField @"txInfo" scRec
+        infoRec <- pletFieldsC @'["inputs", "outputs", "mint"] txInfo
+        let inputs :: Term _ (PBuiltinList PTxInInfo) = getField @"inputs" infoRec
 
-      -- find old pool in inputs
-      PJust poolInput <- pmatchC $
+        -- find old pool in inputs
+        PJust poolInput <-
+          pmatchC $
             pfind
-            # plam (\input -> unTermCont $ do
-                      PTxInInfo rec <- pmatchC input
-                      pure $ pfield @"outRef" # rec #== outRef
-                   )
-            # inputs
-      PTxInInfo input' <- pmatchC poolInput
-      PTxOut resolved <- pmatchC $ pfield  @"resolved" # input'
-      resolvedRec <- pletFieldsC @'[ "address" , "value" ] resolved
-      ownAdr <- pletC $ getField @"address" resolvedRec
+              # plam
+                ( \input -> unTermCont $ do
+                    PTxInInfo rec <- pmatchC input
+                    pure $ pfield @"outRef" # rec #== outRef
+                )
+              # inputs
+        PTxInInfo input' <- pmatchC poolInput
+        PTxOut resolved <- pmatchC $ pfield @"resolved" # input'
+        resolvedRec <- pletFieldsC @'["address", "value"] resolved
+        ownAdr <- pletC $ getField @"address" resolvedRec
 
-      -- parse redeemer
-      PoolRed poolRed <- pmatchC $ pfromData $ ptryFromData redeemer
-      redRec <- pletFieldsC @'[ "id" , "action" ] poolRed
-      let poolId = getField @"id" redRec
-      let action = getField @"action" redRec
+        -- parse redeemer
+        PoolRed poolRed <- pmatchC $ pfromData $ ptryFromData redeemer
+        redRec <- pletFieldsC @'["id", "action"] poolRed
+        let poolId = getField @"id" redRec
+        let action = getField @"action" redRec
 
-      -- get the old pool's value and check pool was valid
-      inputValue <- pletC $ getField @"value" resolvedRec
-      idTokens <- pletC $ atCS # inputValue # poolIdCs
-      pguardC "in pool was valid" $ isJustTn # idTokens # poolId
+        -- get the old pool's value and check pool was valid
+        inputValue <- pletC $ getField @"value" resolvedRec
+        idTokens <- pletC $ atCS # inputValue # poolIdCs
+        pguardC "in pool was valid" $ isJustTn # idTokens # poolId
 
-      -- find pool output
-      let outputs :: Term _ (PBuiltinList PTxOut) = getField @"outputs" infoRec
-      PJust poolOut <- pmatchC $
-        pfind
-        # plam (\output -> unTermCont $ do
-                PTxOut out <- pmatchC output
-                let val = pfield @"value" # out
-                pure $ isJustTn # (atCS # val # poolIdCs) # poolId
-               )
-        # outputs
+        -- find pool output
+        let outputs :: Term _ (PBuiltinList PTxOut) = getField @"outputs" infoRec
+        PJust poolOut <-
+          pmatchC $
+            pfind
+              # plam
+                ( \output -> unTermCont $ do
+                    PTxOut out <- pmatchC output
+                    let val = pfield @"value" # out
+                    pure $ isJustTn # (atCS # val # poolIdCs) # poolId
+                )
+              # outputs
 
-      PTxOut outPool <- pmatchC poolOut
-      outPoolRec <- pletFieldsC @'[ "address" , "datum" , "value" ] outPool
-      let outPoolDatumOut = getField @"datum" outPoolRec
-      POutputDatum outDatum' <- pmatchC outPoolDatumOut
-      PDatum outDatum <- pmatchC $ pfield @"outputDatum" # outDatum'
-      PoolData outPoolData <- pmatchC $ pfromData $ ptryFromData outDatum
-      outPoolDataRec <- pletFieldsC @AllPoolFields outPoolData
+        PTxOut outPool <- pmatchC poolOut
+        outPoolRec <- pletFieldsC @'["address", "datum", "value"] outPool
+        let outPoolDatumOut = getField @"datum" outPoolRec
+        POutputDatum outDatum' <- pmatchC outPoolDatumOut
+        PDatum outDatum <- pmatchC $ pfield @"outputDatum" # outDatum'
+        PoolData outPoolData <- pmatchC $ pfromData $ ptryFromData outDatum
+        outPoolDataRec <- pletFieldsC @AllPoolFields outPoolData
 
-      -- check that datum is accurate in the output pool
-      valueMatchesDatum outPoolDataRec (getField @"value" outPoolRec)
+        -- check that datum is accurate in the output pool
+        valueMatchesDatum outPoolDataRec (getField @"value" outPoolRec)
 
-      pguardC "out pool is at the right address" $ getField @"address" outPoolRec #== ownAdr
+        -- get liquidity minted so it can be used in multiple branches
+        pguardC "out pool is at the right address" $ getField @"address" outPoolRec #== ownAdr
+        let minting = getField @"mint" infoRec
+        liquidityCS <- pletC $ pfromData $ ptryFromData liquidityCsData
+        PValue mintingMap <- pmatchC minting
+        liquidityMinted <- pletC $ AssocMap.plookup # liquidityCS # mintingMap
 
-      pmatchC action >>= \case
-        Swap swap -> do
-          -- compute old invariant
-          ptraceC "swap branch"
-          fee <- pletFieldC @"fee" swap
-          let oldk2 :: Term _ PInteger = getField @"bal1" oldPoolRec * getField @"bal2" oldPoolRec
-          d1 :: Term _ PInteger <- pletC $ getField @"bal1" outPoolDataRec - getField @"bal1" oldPoolRec
-          d2 :: Term _ PInteger <- pletC $ getField @"bal2" outPoolDataRec - getField @"bal2" oldPoolRec
-          fee1 <- pletC $ pif (d1 #< 0) fee 0
-          fee2 <- pletC $ pif (d2 #< 0) fee 0
-          ptraceC $ "fee 1:" <> pshow fee1
-          ptraceC $ "fee 2:" <> pshow fee2
-          ptraceC $ "d 1:" <> pshow d1
-          ptraceC $ "d 2:" <> pshow d2
-          pguardC "fee is enough" $ d1 * (-3) #<= fee1 * 1_000 #&& d2 * (-3) #<= fee2 * 1_000
-          let newk2 :: Term _ PInteger = (getField @"bal1" outPoolDataRec - fee1) * (getField @"bal2" outPoolDataRec - fee2)
-          pguardC "invariant is non-decreasing" $ oldk2 #<= newk2
-          pguardC "admin fee paid" $
-            getField @"adminBal1" oldPoolRec + fee1 #<= getField @"adminBal1" outPoolDataRec
-            #&& getField @"adminBal2" oldPoolRec + fee2 #<= getField @"adminBal2" outPoolDataRec
-          -- TODO add stuff for fees
-          pguardC "in and out pools are live" $
-            getField @"isLive" oldPoolRec
-            #&& getField @"isLive" outPoolDataRec
-          pure $ popaque $ pcon PUnit
-        _ -> pure perror
-
-
+        pmatchC action >>= \case
+          Swap swap -> do
+            PNothing <- pmatchC liquidityMinted
+            -- check no liqudity is minted
+            -- compute old invariant
+            ptraceC "swap branch"
+            fee <- pletFieldC @"fee" swap
+            let oldk2 :: Term _ PInteger = getField @"bal1" oldPoolRec * getField @"bal2" oldPoolRec
+            d1 :: Term _ PInteger <- pletC $ getField @"bal1" outPoolDataRec - getField @"bal1" oldPoolRec
+            d2 :: Term _ PInteger <- pletC $ getField @"bal2" outPoolDataRec - getField @"bal2" oldPoolRec
+            fee1 <- pletC $ pif (d1 #< 0) fee 0
+            fee2 <- pletC $ pif (d2 #< 0) fee 0
+            ptraceC $ "fee 1:" <> pshow fee1
+            ptraceC $ "fee 2:" <> pshow fee2
+            ptraceC $ "d 1:" <> pshow d1
+            ptraceC $ "d 2:" <> pshow d2
+            pguardC "fee is enough" $ d1 * (-3) #<= fee1 * 1_000 #&& d2 * (-3) #<= fee2 * 1_000
+            let newk2 :: Term _ PInteger = (getField @"bal1" outPoolDataRec - fee1) * (getField @"bal2" outPoolDataRec - fee2)
+            pguardC "invariant is non-decreasing" $ oldk2 #<= newk2
+            pguardC "admin fee paid" $
+              getField @"adminBal1" oldPoolRec + fee1 #<= getField @"adminBal1" outPoolDataRec
+                #&& getField @"adminBal2" oldPoolRec + fee2 #<= getField @"adminBal2" outPoolDataRec
+            -- TODO add stuff for fees
+            pguardC "in and out pools are live" $
+              getField @"isLive" oldPoolRec
+                #&& getField @"isLive" outPoolDataRec
+            pure $ popaque $ pcon PUnit
+          _ -> pure perror

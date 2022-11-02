@@ -208,63 +208,65 @@ type AttackOptionsSwap =
 
 regularSwap :: AttackOptionsSwap
 regularSwap =
-  { grabNft : false
-  , killThePool : false
-  , mintLiquidity : Nothing
-  , underPay : Nothing
-  , underReport : Nothing
-  , underReportAdmin : Nothing
+  { grabNft: false
+  , killThePool: false
+  , mintLiquidity: Nothing
+  , underPay: Nothing
+  , underReport: Nothing
+  , underReportAdmin: Nothing
   }
 
 swapLeftAttack :: AttackOptionsSwap -> Protocol -> PoolId -> Int -> Contract () Unit
-swapLeftAttack attack protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
+swapLeftAttack attack protocol@(Protocol { poolIdMP, poolAdrVal, liquidityMP }) poolID amt = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCS poolID one
   let inPoolOutDatum = poolOut # unwrap # _.output # unwrap # _.datum
-  PoolDatum inPoolDatum  <-
+  PoolDatum inPoolDatum <-
     liftContractM "pool didn't parse" =<< fromData <$> case inPoolOutDatum of
       OutputDatum d -> pure $ unwrap d
       _ -> liftEffect $ throw "input pool had no datum"
-  let newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
-      invariant = inPoolDatum.bal1*inPoolDatum.bal2
-      newBal2' = invariant `ceilDiv` newBal1
-      fee = (newBal2' - inPoolDatum.bal2) * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
-      newBal2 = newBal2' + fee
-      ac1 = inPoolDatum.ac1
-      ac2 = inPoolDatum.ac2
-      newAdminBal2 =inPoolDatum.adminBal2 + fee
-      outPool = PoolDatum $
-                inPoolDatum
-                  { bal1 = newBal1 - (fromMaybe zero (fst <$> attack.underReport))
-                  , bal2 = newBal2 - (fromMaybe zero (snd <$> attack.underReport))
-                  , adminBal1 = inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underReportAdmin))
-                  , adminBal2 = newAdminBal2 - (fromMaybe zero (snd <$> attack.underReportAdmin))
-                  , live = not attack.killThePool
-                  }
+  let
+    newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
+    invariant = inPoolDatum.bal1 * inPoolDatum.bal2
+    newBal2' = invariant `ceilDiv` newBal1
+    fee = ((inPoolDatum.bal2 - newBal2') * (BigInt.fromInt 3)) `ceilDiv` (BigInt.fromInt 1000)
+    newBal2 = newBal2' + fee
+    ac1 = inPoolDatum.ac1
+    ac2 = inPoolDatum.ac2
+    newAdminBal2 = inPoolDatum.adminBal2 + fee
+    outPool = PoolDatum $
+      inPoolDatum
+        { bal1 = newBal1 - (fromMaybe zero (fst <$> attack.underReport))
+        , bal2 = newBal2 - (fromMaybe zero (snd <$> attack.underReport))
+        , adminBal1 = inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underReportAdmin))
+        , adminBal2 = newAdminBal2 - (fromMaybe zero (snd <$> attack.underReportAdmin))
+        , live = not attack.killThePool
+        }
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.validator poolAdrVal
+          <> (if isJust attack.mintLiquidity then Lookups.mintingPolicy liquidityMP else mempty)
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
           (Redeemer $ toData $ PoolRed poolID $ Swap fee)
-          <> (case attack.mintLiquidity of
+          <>
+            ( case attack.mintLiquidity of
                 Nothing -> mempty
                 Just (val /\ red) ->
                   Constraints.mustMintValueWithRedeemer
                     red
                     val
-              )
+            )
           <> Constraints.mustPayToScript
             (validatorHash poolAdrVal)
             (Datum $ toData outPool)
             DatumInline
-            ((if attack.grabNft then mempty else idNft)
-              <> Value.singleton (fst ac1) (snd ac1) (newBal1 + inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underPay)))
-              <> Value.singleton (fst ac2) (snd ac2) (newBal2 + newAdminBal2 - (fromMaybe zero (snd <$> attack.underPay)))
+            ( (if attack.grabNft then mempty else idNft)
+                <> Value.singleton (fst ac1) (snd ac1) (newBal1 + inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underPay)))
+                <> Value.singleton (fst ac2) (snd ac2) (newBal2 + newAdminBal2 - (fromMaybe zero (snd <$> attack.underPay)))
             )
       )
-
 
