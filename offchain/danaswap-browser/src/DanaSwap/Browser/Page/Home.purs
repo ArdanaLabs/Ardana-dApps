@@ -2,7 +2,7 @@ module DanaSwap.Browser.Home where
 
 import Contract.Prelude
 
-import DanaSwapBrowser.Types (Asset(..), Pool(..))
+import DanaSwap.Browser.Types (Asset(..), Pool(..))
 import Data.Array (concat)
 import Data.BigInt (fromInt, fromString, toString)
 import Effect (Effect)
@@ -261,8 +261,10 @@ mkClass = HP.class_ <<< HH.ClassName
 mkIcon :: forall slots m. String -> H.ComponentHTML Action slots m
 mkIcon icon = HH.span
   [ mkClass "icon" ]
-  [ SE.svg [ role "none", width 16.0, height 16.0 ]
-      [ SE.use [ href ("/assets/images/font-awesome-sprite-solid.svg#" <> icon), fill $ Named "currentColor" ]
+  [ HH.a [ HP.title icon ]
+      [ SE.svg [ role "none" ]
+          [ SE.use [ href ("/assets/images/font-awesome-sprite-solid.svg#" <> icon) ]
+          ]
       ]
   ]
 

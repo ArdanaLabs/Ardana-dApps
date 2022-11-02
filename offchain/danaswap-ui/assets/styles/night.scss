@@ -54,7 +54,7 @@
   font-weight: 900;
 }
 
-$scheme-main: #080E42;
+$scheme-main: #080e42;
 
 $family-primary: "Museo Sans", serif;
 
@@ -62,18 +62,19 @@ $button-border-width: 0;
 
 $table-cell-padding: 1.5em;
 
-$text: #F5FCFE;
-$link-focus: #F5FCFE;
-$link-hover: #F5FCFE;
-$text-strong: #F5FCFE;
-$input-color: #F5FCFE;
-$title-color: #F5FCFE;
-$subtitle-color: #F5FCFE;
-$input-placeholder-color: #F5FCFE;
-$navbar-item-hover-background-color: #080E42;
-$navbar-item-active-color: #73D6F1;
-$navbar-item-hover-color: #F5FCFE;
-$navbar-item-color: #F5FCFE;
+$link: #f5fcfe;
+$text: #f5fcfe;
+$link-focus: #f5fcfe;
+$link-hover: #f5fcfe;
+$text-strong: #f5fcfe;
+$input-color: #f5fcfe;
+$title-color: #f5fcfe;
+$subtitle-color: #f5fcfe;
+$input-placeholder-color: #f5fcfe;
+$navbar-item-hover-background-color: #080e42;
+$navbar-item-active-color: #73d6f1;
+$navbar-item-hover-color: #f5fcfe;
+$navbar-item-color: #f5fcfe;
 
 @import "../../node_modules/bulma/bulma";
 
@@ -82,12 +83,12 @@ $navbar-item-color: #F5FCFE;
 }
 
 .danaswap-btn-has-background {
-  background: linear-gradient(89.62deg, #72D2F2 0.3%, #6077FF 99.64%);
+  background: linear-gradient(89.62deg, #72d2f2 0.3%, #6077ff 99.64%);
   font-style: normal;
   font-weight: 700;
   line-height: 115%;
   text-align: center;
-  color: #F5FCFE;
+  color: #f5fcfe;
 }
 
 .danaswap-btn-has-border {
@@ -97,9 +98,8 @@ $navbar-item-color: #F5FCFE;
   font-weight: 700;
   line-height: 100%;
   text-align: center;
-  color: #F5FCFE;
+  color: #f5fcfe;
 }
-
 
 .navbar-brand a.navbar-item {
   background-image: url(../images/logo_header_night.png);
@@ -119,12 +119,12 @@ $navbar-item-color: #F5FCFE;
 
 .pools-table-row {
   box-sizing: border-box;
-  border: 1px solid #0A5884;
+  border: 1px solid #0a5884;
   border-radius: 38px;
 }
 
 .pools-table-row-dropdown {
-  background: #0B0E2B;
+  background: #0b0e2b;
   border-radius: 5px;
 }
 

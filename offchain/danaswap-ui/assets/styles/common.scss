@@ -1,7 +1,19 @@
 .footer {
-  background: #1F297B;
+  background: #1f297b;
 }
 
 .button {
   text-transform: uppercase;
+}
+
+.icon svg {
+  fill: currentColor;
+  width: 1em;
+  height: 1em;
+}
+
+.footer .icon svg {
+  fill: currentColor;
+  width: 2em;
+  height: 2em;
 }
