@@ -150,52 +150,7 @@ openPoolAttack
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
   pure poolID
 
-type AttackOptionsDeposit =
-  { reportIssued :: Maybe (BigInt -> BigInt)
-  , actuallyMint :: Maybe (CurrencySymbol -> Value)
-  , redeemer :: Maybe Redeemer
-  }
 
-regularDeposit :: AttackOptionsDeposit
-regularDeposit =
-  { reportIssued: Nothing
-  , actuallyMint: Nothing
-  , redeemer: Nothing
-  }
-
--- TODO ignores report issued for now
--- this won't matter till we have an actuall pool address validator script
-depositLiquidityAttack :: AttackOptionsDeposit -> Protocol -> PoolId -> Contract () Unit
-depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
-  (poolIn /\ poolOut) <- getPoolById protocol poolID
-  poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
-  liquidityCs <- liftContractM "failed to hash mp" (mpsSymbol $ mintingPolicyHash liquidityMP)
-  let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
-    buildBalanceSignAndSubmitTx
-      ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
-          <> Lookups.mintingPolicy liquidityMP
-          <> Lookups.validator poolAdrVal
-      )
-      ( Constraints.mustSpendScriptOutput
-          poolIn
-          (Redeemer $ toData unit)
-          <> Constraints.mustMintValueWithRedeemer
-            ( fromMaybe
-                (Redeemer $ List [ toData poolID, Constr zero [] ])
-                attack.redeemer
-            )
-            ( fromMaybe
-                (Value.singleton liquidityCs poolID $ BigInt.fromInt 10)
-                (attack.actuallyMint <#> (_ $ liquidityCs))
-            )
-
-          <> Constraints.mustPayToScript
-            (validatorHash poolAdrVal)
-            (Datum $ toData unit)
-            DatumInline
-            idNft
-      )
 
 type AttackOptionsSwap =
   { grabNft :: Boolean
@@ -267,6 +222,78 @@ swapLeftAttack attack protocol@(Protocol { poolIdMP, poolAdrVal, liquidityMP }) 
             ( (if attack.grabNft then mempty else idNft)
                 <> Value.singleton (fst ac1) (snd ac1) (newBal1 + inPoolDatum.adminBal1 - (fromMaybe zero (fst <$> attack.underPay)))
                 <> Value.singleton (fst ac2) (snd ac2) (newBal2 + newAdminBal2 - (fromMaybe zero (snd <$> attack.underPay)))
+            )
+      )
+
+type AttackOptionsDeposit =
+  { grabNft :: Boolean
+  -- TODO reimplement these options
+  , reportIssued :: Maybe (BigInt -> BigInt)
+  , actuallyMint :: Maybe (CurrencySymbol -> Value)
+  , redeemer :: Maybe Redeemer
+  }
+
+regularDeposit :: AttackOptionsDeposit
+regularDeposit =
+  { grabNft: false
+  , reportIssued : Nothing
+  , actuallyMint : Nothing
+  , redeemer : Nothing
+  }
+
+depositLiquidityAttack :: AttackOptionsDeposit -> Protocol -> PoolId -> BigInt -> BigInt -> Contract () Unit
+depositLiquidityAttack attack protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID a b = do
+  (poolIn /\ poolOut) <- getPoolById protocol poolID
+  poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
+  let idNft = Value.singleton poolIdCS poolID one
+  let inPoolOutDatum = poolOut # unwrap # _.output # unwrap # _.datum
+  PoolDatum inPoolDatum <-
+    liftContractM "pool didn't parse" =<< fromData <$> case inPoolOutDatum of
+      OutputDatum d -> pure $ unwrap d
+      _ -> liftEffect $ throw "input pool had no datum"
+  let
+    fee1 = (BigInt.fromInt 3 * a) `div` (BigInt.fromInt 1006)
+    fee2 = (BigInt.fromInt 3 * b) `div` (BigInt.fromInt 1006)
+    d1 = a - BigInt.fromInt 2 * fee1
+    d2 = b - BigInt.fromInt 2 * fee2
+    ac1 = inPoolDatum.ac1
+    ac2 = inPoolDatum.ac2
+    square x = x * x
+    liqInv = (inPoolDatum.bal1 * inPoolDatum.bal2) / (square inPoolDatum.liquidity)
+    poolInvOut = ((inPoolDatum.bal1 + d1) * (inPoolDatum.bal2 + d2))
+    newLiq = BigInt.fromInt $ floor $ sqrt $ BigInt.toNumber poolInvOut / BigInt.toNumber liqInv
+    mintLiq = newLiq - inPoolDatum.liquidity
+    newBal1 = inPoolDatum.bal1 + d1 + fee1
+    newBal2 = inPoolDatum.bal2 + d2 + fee2
+    outPool = PoolDatum $
+      inPoolDatum
+        { bal1 = newBal1
+        , bal2 = newBal2
+        , adminBal1 = inPoolDatum.bal1 + fee1
+        , adminBal2 = inPoolDatum.bal2 + fee2
+        , liquidity = newLiq
+        }
+  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+    buildBalanceSignAndSubmitTx
+      ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
+          <> Lookups.mintingPolicy liquidityMP
+          <> Lookups.validator poolAdrVal
+      )
+      ( Constraints.mustSpendScriptOutput
+          poolIn
+          (Redeemer $ toData $ PoolRed poolID $ Liquidity fee1 fee2)
+          <> Constraints.mustMintCurrencyWithRedeemer
+            (mintingPolicyHash liquidityMP)
+            (Redeemer $ List [ toData poolID, Constr (BigInt.fromInt 2) [] ])
+            poolID
+            mintLiq
+          <> Constraints.mustPayToScript
+            (validatorHash poolAdrVal)
+            (Datum $ toData outPool)
+            DatumInline
+            ((if attack.grabNft then mempty else idNft)
+              <> Value.singleton (fst ac1) (snd ac1) newBal1
+              <> Value.singleton (fst ac2) (snd ac2) newBal2
             )
       )
 

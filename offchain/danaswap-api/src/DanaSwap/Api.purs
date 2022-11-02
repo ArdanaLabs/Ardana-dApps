@@ -266,15 +266,19 @@ depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolI
     fee2 = (BigInt.fromInt 3 * b) `div` (BigInt.fromInt 1006)
     d1 = a - BigInt.fromInt 2 * fee1
     d2 = b - BigInt.fromInt 2 * fee2
+    ac1 = inPoolDatum.ac1
+    ac2 = inPoolDatum.ac2
     square x = x * x
     liqInv = (inPoolDatum.bal1 * inPoolDatum.bal2) / (square inPoolDatum.liquidity)
     poolInvOut = ((inPoolDatum.bal1 + d1) * (inPoolDatum.bal2 + d2))
     newLiq = BigInt.fromInt $ floor $ sqrt $ BigInt.toNumber poolInvOut / BigInt.toNumber liqInv
     mintLiq = newLiq - inPoolDatum.liquidity
+    newBal1 = inPoolDatum.bal1 + d1 + fee1
+    newBal2 = inPoolDatum.bal2 + d2 + fee2
     outPool = PoolDatum $
       inPoolDatum
-        { bal1 = inPoolDatum.bal1 + d1 + fee1
-        , bal2 = inPoolDatum.bal2 + d2 + fee2
+        { bal1 = newBal1
+        , bal2 = newBal2
         , adminBal1 = inPoolDatum.bal1 + fee1
         , adminBal2 = inPoolDatum.bal2 + fee2
         , liquidity = newLiq
@@ -297,7 +301,10 @@ depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolI
             (validatorHash poolAdrVal)
             (Datum $ toData outPool)
             DatumInline
-            idNft
+            ( idNft
+                <> Value.singleton (fst ac1) (snd ac1) newBal1
+                <> Value.singleton (fst ac2) (snd ac2) newBal2
+            )
       )
 
 -- TODO this is a placeholder implementation

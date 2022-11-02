@@ -46,7 +46,7 @@ main = launchAff_ $ do
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
 
-    describe "Liquidity tests" $ maybePar $ do
+    describe "Liquidity tests" $ do
       it "Can make a valid deposit" $ useRunnerSimple $ do
         protocol <- initProtocol
         (ac1 /\ ac2) <- prepTestTokens
@@ -57,6 +57,26 @@ main = launchAff_ $ do
           (BigInt.fromInt 1_000_000)
           (BigInt.fromInt 1_000_000)
         depositLiquidity protocol poolId (BigInt.fromInt 1_000) (BigInt.fromInt 1_000)
+
+      describe "Basic attacks" $ maybePar $ do
+        it "Can't grab NFT in deposit" $ useRunnerSimple $ do
+          protocol <- initProtocol
+          (ac1 /\ ac2) <- prepTestTokens
+          pool <- openPool
+            protocol
+            ac1
+            ac2
+            (BigInt.fromInt 100_000)
+            (BigInt.fromInt 100_000)
+          expectScriptError $
+            depositLiquidityAttack
+              regularDeposit
+                {grabNft = true
+                }
+              protocol
+              pool
+              (BigInt.fromInt 1_000)
+              (BigInt.fromInt 1_000)
 
     describe "Swap tests" $ do
 
@@ -519,6 +539,8 @@ main = launchAff_ $ do
                 }
               protocol
               poolId
+            (BigInt.fromInt 1_000)
+            (BigInt.fromInt 1_000)
 
         it "Fails to validate with the wrong redeemer" $ useRunnerSimple $ do
           protocol <- initProtocol
@@ -539,6 +561,8 @@ main = launchAff_ $ do
                 }
               protocol
               poolId
+              (BigInt.fromInt 1_000)
+              (BigInt.fromInt 1_000)
 
     describe "Protocol Initialization" $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
