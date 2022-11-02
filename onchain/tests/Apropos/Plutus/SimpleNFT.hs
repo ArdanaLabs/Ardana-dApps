@@ -25,6 +25,7 @@ import PlutusLedgerApi.V1.Scripts (Datum (..), applyArguments)
 
 import Control.Monad (forM_)
 import Gen (address, datum, maybeOf, txOutRef, value)
+import Data.Default(def)
 
 data NFTModel = NFTModel
   { param :: TxOutRef
@@ -79,7 +80,7 @@ instance ScriptModel NFTProp NFTModel where
   expect = Var HasParam
   script hm@NFTModel {param} =
     let redeemer = toData ()
-     in applyMintingPolicy (mkCtx hm) (standardNftMp param) (Redeemer $ BuiltinData redeemer)
+     in applyMintingPolicy (mkCtx hm) (standardNftMp def param) (Redeemer $ BuiltinData redeemer)
 
 spec :: Spec
 spec = do

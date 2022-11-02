@@ -15,7 +15,7 @@ module DanaSwap (
 
 import Plutarch.Prelude
 
-import Utils (closedTermToHexString, globalConfig, validatorToHexString)
+import Utils (closedTermToHexString, validatorToHexString)
 
 import GHC.Records (HasField)
 import Plutarch.Api.V1 (AmountGuarantees (..), KeyGuarantees (..), PTokenName (PTokenName), PValue (PValue))
@@ -50,6 +50,8 @@ import Plutarch.Extra.TermCont (
   ptraceC,
  )
 import Plutarch.Maybe (pfromJust)
+import Plutarch (Config (tracingMode), TracingMode (..))
+import Data.Default(def)
 
 newtype PoolRed (s :: S)
   = PoolRed
@@ -159,28 +161,28 @@ type AllPoolFields =
    , "isLive"
    ]
 
-trivialCbor :: Maybe String
+trivialCbor :: Config -> Maybe String
 trivialCbor = closedTermToHexString trivial
 
 trivial :: ClosedTerm (PData :--> PValidator)
 trivial = plam $ \_ _ _ _ -> popaque $ pcon PUnit
 
-trivialFailCbor :: Maybe String
+trivialFailCbor :: Config -> Maybe String
 trivialFailCbor = closedTermToHexString trivialFail
 
 trivialFail :: ClosedTerm PValidator
 trivialFail = perror
 
 configScriptCbor :: String
-configScriptCbor = validatorToHexString $ mkValidator globalConfig configScript
+configScriptCbor = validatorToHexString $ mkValidator def{tracingMode=NoTracing} configScript
 
 configScript :: ClosedTerm PValidator
 configScript = perror
 
-poolIdTokenMPCbor :: Maybe String
+poolIdTokenMPCbor :: Config -> Maybe String
 poolIdTokenMPCbor = closedTermToHexString poolIdTokenMP
 
-liqudityTokenCbor :: Maybe String
+liqudityTokenCbor :: Config -> Maybe String
 liqudityTokenCbor = closedTermToHexString liqudityTokenMP
 
 liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
@@ -232,7 +234,7 @@ liqudityTokenMP = phoistAcyclic $
                       PNothing -> pure $ pcon PFalse
                       PJust _ -> pure $ pcon PTrue
 
-nftCbor :: Maybe String
+nftCbor :: Config -> Maybe String
 nftCbor = closedTermToHexString standardNft
 
 standardNft :: ClosedTerm (PData :--> PMintingPolicy)
@@ -371,7 +373,7 @@ atCS = phoistAcyclic $
     PJust subMap <- pmatchC $ AssocMap.plookup # cs # valMap
     pure subMap
 
-poolAdrValidatorCbor :: Maybe String
+poolAdrValidatorCbor :: Config -> Maybe String
 poolAdrValidatorCbor = closedTermToHexString poolAdrValidator
 
 poolAdrValidator :: ClosedTerm (PData :--> PData :--> PValidator)

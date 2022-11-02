@@ -31,7 +31,7 @@ import Plutarch.Api.V1 (
   PValue (PValue),
  )
 
-import Utils (closedTermToHexString, globalConfig, validatorToHexString)
+import Utils (closedTermToHexString)
 
 import PlutusLedgerApi.V2 (MintingPolicy, TxOutRef, adaToken)
 
@@ -47,18 +47,19 @@ import Plutarch.Extensions.Data (parseData, parseDatum)
 import Plutarch.Extensions.List (unsingleton)
 import Plutarch.Extensions.Monad (pmatchFieldC)
 import Plutarch.Extra.TermCont
+import Plutarch (Config)
 
-configScriptCbor :: String
-configScriptCbor = validatorToHexString $ mkValidator globalConfig configScript
+configScriptCbor :: Config -> Maybe String
+configScriptCbor = closedTermToHexString configScript
 
-nftCbor :: Maybe String
+nftCbor :: Config -> Maybe String
 nftCbor = closedTermToHexString standardNft
 
-authTokenCbor :: Maybe String
+authTokenCbor :: Config -> Maybe String
 authTokenCbor = closedTermToHexString authTokenMP
 
-vaultScriptCbor :: Maybe String
-vaultScriptCbor = closedTermToHexString vaultAdrValidator
+vaultScriptCbor :: Config -> Maybe String
+vaultScriptCbor conf = closedTermToHexString (vaultAdrValidator conf) conf
 
 {- | The config validator
  since read only spends don't trigger the validator
@@ -73,9 +74,9 @@ configScript = perror
  to mint:
  the txid must be spent as an input
 -}
-standardNftMp :: TxOutRef -> MintingPolicy
-standardNftMp outRef =
-  mkMintingPolicy globalConfig $
+standardNftMp :: Config -> TxOutRef -> MintingPolicy
+standardNftMp conf outRef =
+  mkMintingPolicy conf $
     standardNft # pforgetData (pdata (pconstant outRef))
 
 standardNft :: ClosedTerm (PData :--> PMintingPolicy)
@@ -170,8 +171,8 @@ authTokenMP = ptrace "vault auth mp" $
  if it's spend
  the nft must be burned
 -}
-vaultAdrValidator :: ClosedTerm (PData :--> PValidator)
-vaultAdrValidator = ptrace "vaultAdrValidator" $
+vaultAdrValidator :: Config -> ClosedTerm (PData :--> PValidator)
+vaultAdrValidator conf = ptrace "vaultAdrValidator" $
   plam $ \configNftCsData datum' redeemer' sc -> unTermCont $ do
     datum :: Term _ CounterDatum <- parseData datum'
     info <- pletC $ pfield @"txInfo" # sc
@@ -179,7 +180,7 @@ vaultAdrValidator = ptrace "vaultAdrValidator" $
       pelem # (pfield @"owner" # datum) #$ pfield @"signatories" # info
     redeemer :: Term _ HelloRedeemer <- parseData redeemer'
     configNftCs :: Term _ PCurrencySymbol <- parseData configNftCsData
-    PJust config <- pmatchC $ pfind # (isConfigInput # configNftCs) # (pfield @"referenceInputs" # info)
+    PJust config <- pmatchC $ pfind # (isConfigInput conf # configNftCs) # (pfield @"referenceInputs" # info)
     POutputDatum configDatum <- pmatchC (pfield @"datum" #$ pfield @"resolved" # config)
     PDatum configData <- pmatchFieldC @"outputDatum" configDatum
     nftCs <- parseData configData
@@ -199,11 +200,11 @@ vaultAdrValidator = ptrace "vaultAdrValidator" $
         let minting = pfield @"mint" # info
         passert "burned nft" $ Value.pvalueOf # minting # nftCs # nftTn #< 0
 
-isConfigInput :: ClosedTerm (PCurrencySymbol :--> PTxInInfo :--> PBool)
-isConfigInput = phoistAcyclic $
+isConfigInput :: Config -> ClosedTerm (PCurrencySymbol :--> PTxInInfo :--> PBool)
+isConfigInput conf = phoistAcyclic $
   plam $ \cs inInfo -> unTermCont $ do
     out <- pletC $ pfield @"resolved" # inInfo
-    configAdr <- pletC $ pcon (PScriptCredential $ pdcons # pdata (pconstant (validatorHash $ mkValidator globalConfig configScript)) # pdnil)
+    configAdr <- pletC $ pcon (PScriptCredential $ pdcons # pdata (pconstant (validatorHash $ mkValidator conf configScript)) # pdnil)
     let isAtConfigAdr = (pfield @"credential" #$ pfield @"address" # out) #== configAdr
     let hasConfigNft = 0 #< Value.pvalueOf # (pfield @"value" # out) # cs # pconstant adaToken
     pure $ isAtConfigAdr #&& hasConfigNft

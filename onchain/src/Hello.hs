@@ -1,6 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Hello (
+  helloConfig,
   helloValidator,
   helloLogic,
   helloValidatorHash,
@@ -13,7 +14,7 @@ module Hello (
   HelloRedemer (..),
 ) where
 
-import Utils (closedTermToHexString, globalConfig, validatorToHexString)
+import Utils (closedTermToHexString, validatorToHexString)
 
 import PlutusLedgerApi.V2 (Validator, ValidatorHash)
 
@@ -28,6 +29,8 @@ import Plutarch.Extensions.Api (passert, pgetContinuingDatum)
 import Plutarch.Unsafe (punsafeCoerce)
 
 import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch (Config (tracingMode), TracingMode (..))
+import Data.Default (Default(..))
 
 data HelloRedemer (s :: S)
   = Inc (Term s (PDataRecord '[]))
@@ -37,23 +40,26 @@ data HelloRedemer (s :: S)
 
 instance DerivePlutusType HelloRedemer where type DPTStrat _ = PlutusTypeData
 
+helloConfig :: Config
+helloConfig = def {tracingMode = NoTracing}
+
 helloWorldCbor :: String
 helloWorldCbor = validatorToHexString helloValidator
 
-paramHelloCbor :: Maybe String
+paramHelloCbor :: Config -> Maybe String
 paramHelloCbor = closedTermToHexString paramValidator
 
-trivialCbor :: Maybe String
+trivialCbor :: Config -> Maybe String
 trivialCbor = closedTermToHexString trivial
 
-trivialFailCbor :: Maybe String
+trivialFailCbor :: Config -> Maybe String
 trivialFailCbor = closedTermToHexString trivialFail
 
-trivialSerialise :: Maybe String
-trivialSerialise = closedTermToHexString $ plam $ \a _ _ -> pserialiseData # a
+trivialSerialise :: Config -> Maybe String
+trivialSerialise = closedTermToHexString (plam $ \a _ _ -> pserialiseData # a)
 
 helloValidator :: Validator
-helloValidator = mkValidator globalConfig (paramValidator #$ pforgetData (pdata (1 :: Term _ PInteger)))
+helloValidator = mkValidator helloConfig (paramValidator #$ pforgetData (pdata (1 :: Term _ PInteger)))
 
 helloValidatorHash :: ValidatorHash
 helloValidatorHash = validatorHash helloValidator

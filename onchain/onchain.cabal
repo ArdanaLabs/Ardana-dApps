@@ -130,6 +130,7 @@ executable danaswap
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
     , plutarch
@@ -184,6 +185,7 @@ test-suite tests
     , bytestring
     , containers
     , cryptonite
+    , data-default
     , hedgehog
     , lens
     , memory
