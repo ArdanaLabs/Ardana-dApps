@@ -7316,8 +7316,8 @@
       },
       "original": {
         "owner": "ursi",
-        "ref": "ps-0.14",
         "repo": "purs-nix",
+        "rev": "760ed36cf6c7e90e8f2d4774d5a23c2973abef38",
         "type": "github"
       }
     },
