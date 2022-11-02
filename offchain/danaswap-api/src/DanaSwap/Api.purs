@@ -109,15 +109,15 @@ newtype PoolDatum =
     }
 
 instance ToData PoolDatum where
-  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, liquidity, live }) = List
+  toData (PoolDatum { ac1, ac2, bal1, bal2, adminBal1, adminBal2, issuedLiquidity, isLive }) = List
     [ toData ac1
     , toData ac2
     , toData bal1
     , toData bal2
     , toData adminBal1
     , toData adminBal2
-    , toData liquidity
-    , toData live
+    , toData issuedLiquidity
+    , toData isLive
     ]
 
 -- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
@@ -196,8 +196,8 @@ openPool (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) ac1 ac2 am
       , bal2: amt1
       , adminBal1: zero
       , adminBal2: zero
-      , liquidity: liq
-      , live: true
+      , issuedLiquidity: liq
+      , isLive: true
       }
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
