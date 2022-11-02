@@ -160,10 +160,13 @@ instance FromData PoolDatum where
 
 data PoolRed = PoolRed TokenName PoolAction
 
-data PoolAction = Swap BigInt
+data PoolAction
+  = Swap BigInt
+  | Liquidity BigInt BigInt
 
 instance ToData PoolAction where
   toData (Swap fee) = Constr zero [ toData fee ]
+  toData (Liquidity fee1 fee2) = Constr one [ toData fee1, toData fee2 ]
 
 instance ToData PoolRed where
   toData (PoolRed id action) = List [ toData id, toData action ]
@@ -248,11 +251,34 @@ swapLeft protocol@(Protocol { poolIdMP, poolAdrVal }) poolID amt = do
       )
 
 -- TODO this is a placeholder implementation
-depositLiquidity :: Protocol -> PoolId -> Contract () Unit
-depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID = do
+depositLiquidity :: Protocol -> PoolId -> BigInt -> BigInt -> Contract () Unit
+depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolID a b = do
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCS poolID one
+  let inPoolOutDatum = poolOut # unwrap # _.output # unwrap # _.datum
+  PoolDatum inPoolDatum <-
+    liftContractM "pool didn't parse" =<< fromData <$> case inPoolOutDatum of
+      OutputDatum d -> pure $ unwrap d
+      _ -> liftEffect $ throw "input pool had no datum"
+  let
+    fee1 = (BigInt.fromInt 3 * a) `div` (BigInt.fromInt 1006)
+    fee2 = (BigInt.fromInt 3 * b) `div` (BigInt.fromInt 1006)
+    d1 = a - BigInt.fromInt 2 * fee1
+    d2 = b - BigInt.fromInt 2 * fee2
+    square x = x * x
+    liqInv = (inPoolDatum.bal1 * inPoolDatum.bal2) / (square inPoolDatum.liquidity)
+    poolInvOut = ((inPoolDatum.bal1 + d1) * (inPoolDatum.bal2 + d2))
+    newLiq = BigInt.fromInt $ floor $ sqrt $ BigInt.toNumber poolInvOut / BigInt.toNumber liqInv
+    mintLiq = newLiq - inPoolDatum.liquidity
+    outPool = PoolDatum $
+      inPoolDatum
+        { bal1 = inPoolDatum.bal1 + d1 + fee1
+        , bal2 = inPoolDatum.bal2 + d2 + fee2
+        , adminBal1 = inPoolDatum.bal1 + fee1
+        , adminBal2 = inPoolDatum.bal2 + fee2
+        , liquidity = newLiq
+        }
   void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
@@ -261,15 +287,15 @@ depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolI
       )
       ( Constraints.mustSpendScriptOutput
           poolIn
-          (Redeemer $ toData unit)
+          (Redeemer $ toData $ PoolRed poolID $ Liquidity fee1 fee2)
           <> Constraints.mustMintCurrencyWithRedeemer
             (mintingPolicyHash liquidityMP)
-            (Redeemer $ List [ toData poolID, Constr one [] ])
+            (Redeemer $ List [ toData poolID, Constr (BigInt.fromInt 2) [] ])
             poolID
-            (BigInt.fromInt 10)
+            mintLiq
           <> Constraints.mustPayToScript
             (validatorHash poolAdrVal)
-            (Datum $ toData unit)
+            (Datum $ toData outPool)
             DatumInline
             idNft
       )

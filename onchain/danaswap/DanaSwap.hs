@@ -481,4 +481,6 @@ poolAdrValidator = phoistAcyclic $
               getField @"isLive" oldPoolRec
                 #&& getField @"isLive" outPoolDataRec
             pure $ popaque $ pcon PUnit
-          _ -> pure perror
+          _ -> do
+            ptraceC "not yet implemented"
+            pure perror

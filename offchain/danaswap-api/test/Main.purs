@@ -22,7 +22,7 @@ import Control.Safely (replicateM_)
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
 import Ctl.Utils.Test (expectScriptError, runTwoWallets, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DanaSwap.Api (initProtocol, mintNft, openPool, seedTx, swapLeft)
+import DanaSwap.Api (depositLiquidity, initProtocol, mintNft, openPool, seedTx, swapLeft)
 import DanaSwap.CborTyped (configAddressValidator, simpleNft)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
@@ -45,6 +45,18 @@ main = launchAff_ $ do
   log "About to start tests"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
+
+    describe "Liquidity tests" $ maybePar $ do
+      it "Can make a valid deposit" $ useRunnerSimple $ do
+        protocol <- initProtocol
+        (ac1 /\ ac2) <- prepTestTokens
+        poolId <- openPool
+          protocol
+          ac1
+          ac2
+          (BigInt.fromInt 1_000_000)
+          (BigInt.fromInt 1_000_000)
+        depositLiquidity protocol poolId (BigInt.fromInt 1_000) (BigInt.fromInt 1_000)
 
     describe "Swap tests" $ do
 
@@ -487,19 +499,6 @@ main = launchAff_ $ do
             ac2
             (BigInt.fromInt 100)
             (BigInt.fromInt 100)
-
-      -- TODO bring this test back when the pool address validator has liquidity transactions
-
-      --it "Allows Liquidity minting when spending pool" $ useRunnerSimple $ do
-      --  protocol <- initProtocol
-      --  (ac1 /\ ac2) <- prepTestTokens
-      --  poolId <- openPool
-      --    protocol
-      --    ac1
-      --    ac2
-      --    (BigInt.fromInt 100)
-      --    (BigInt.fromInt 100)
-      --  depositLiquidity protocol poolId
 
       describe "Minting liquidity token for a pool other than the pool being spent" $ do
         it "Fails to validate with the right redeemer" $ useRunnerSimple $ do

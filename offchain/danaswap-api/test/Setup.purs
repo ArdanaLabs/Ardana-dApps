@@ -36,11 +36,11 @@ prepTestTokens = do
     ( Constraints.mustMintCurrency
         (mintingPolicyHash testMp1)
         testTn1
-        (BigInt.fromInt 1_000_000)
+        (BigInt.fromInt 1_000_000_000)
         <> Constraints.mustMintCurrency
           (mintingPolicyHash testMp2)
           testTn2
-          (BigInt.fromInt 1_000_000)
+          (BigInt.fromInt 1_000_000_000)
     )
   pure $ (testCs1 /\ testTn1) /\ (testCs2 /\ testTn2)
 
