@@ -23,7 +23,7 @@ import Contract.Prelude
 import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
 import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Hashing (datumHash)
-import Contract.Log (logDebug', logInfo')
+import Contract.Log (logDebug', logError', logInfo')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (class FromData, class ToData, Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
@@ -215,7 +215,7 @@ swapLeft protocol@(Protocol{ poolIdMP , poolAdrVal}) poolID amt = do
   let newBal1 = inPoolDatum.bal1 + BigInt.fromInt amt
       invariant = inPoolDatum.bal1*inPoolDatum.bal2
       newBal2' = invariant `ceilDiv` newBal1
-      fee = (inPoolDatum.bal2 - newBal2') * (BigInt.fromInt 3) `ceilDiv` (BigInt.fromInt 1000)
+      fee = ((inPoolDatum.bal2 - newBal2') * (BigInt.fromInt 3)) `ceilDiv` (BigInt.fromInt 1000)
       newBal2 = newBal2' + fee
       ac1 = inPoolDatum.ac1
       ac2 = inPoolDatum.ac2

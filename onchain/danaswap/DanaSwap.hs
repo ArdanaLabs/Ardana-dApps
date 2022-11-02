@@ -46,6 +46,7 @@ import Plutarch.Extra.TermCont (
   pletC,
   pletFieldsC,
   pmatchC,
+  ptraceC
  )
 import Plutarch.Maybe (pfromJust)
 import Plutarch.Extensions.Monad (pletFieldC)
@@ -62,7 +63,7 @@ newtype PoolRed (s :: S)
   deriving stock (Generic)
   deriving anyclass (PlutusType, PIsData, PEq)
 
-instance DerivePlutusType PoolRed where type DPTStrat _ = PlutusTypeData
+instance DerivePlutusType PoolRed where type DPTStrat _ = PlutusTypeNewtype
 instance PTryFrom PData (PAsData PoolRed)
 
 data PoolAction (s :: S)
@@ -372,8 +373,8 @@ poolAdrValidatorCbor :: Maybe String
 poolAdrValidatorCbor = closedTermToHexString poolAdrValidator
 
 poolAdrValidator :: ClosedTerm (PData :--> PData :--> PValidator)
-poolAdrValidator = phoistAcyclic $
-  plam $ \poolIdCsData _liquidityCsData redeemer datum sc
+poolAdrValidator = phoistAcyclic $ ptrace "poolAdrValidator" $
+  plam $ \poolIdCsData _liquidityCsData datum redeemer sc
     -> unTermCont $ do
       -- Get old pool
       PoolData oldPool <- pmatchC $ pfromData $ ptryFromData datum
@@ -440,18 +441,23 @@ poolAdrValidator = phoistAcyclic $
       pmatchC action >>= \case
         Swap swap -> do
           -- compute old invariant
+          ptraceC "swap branch"
           fee <- pletFieldC @"fee" swap
           let oldk2 :: Term _ PInteger = getField @"bal1" oldPoolRec * getField @"bal2" oldPoolRec
-          d1 :: Term _ PInteger <- pletC $ getField @"bal1" oldPoolRec - getField @"bal1" outPoolDataRec
-          d2 :: Term _ PInteger <- pletC $ getField @"bal2" oldPoolRec - getField @"bal2" outPoolDataRec
-          fee1 <- pletC $ pif (0 #< d1) fee 0
-          fee2 <- pletC $ pif (0 #< d2) fee 0
-          pguardC "fee is enough" $ d1 * 3 #< fee1 * 100 #&& d2 * 3 #< fee2 * 100
+          d1 :: Term _ PInteger <- pletC $ getField @"bal1" outPoolDataRec - getField @"bal1" oldPoolRec
+          d2 :: Term _ PInteger <- pletC $ getField @"bal2" outPoolDataRec - getField @"bal2" oldPoolRec
+          fee1 <- pletC $ pif (d1 #< 0) fee 0
+          fee2 <- pletC $ pif (d2 #< 0) fee 0
+          ptraceC $ "fee 1:" <> pshow fee1
+          ptraceC $ "fee 2:" <> pshow fee2
+          ptraceC $ "d 1:" <> pshow d1
+          ptraceC $ "d 2:" <> pshow d2
+          pguardC "fee is enough" $ d1 * (-3) #<= fee1 * 1_000 #&& d2 * (-3) #<= fee2 * 1_000
           let newk2 :: Term _ PInteger = (getField @"bal1" outPoolDataRec - fee1) * (getField @"bal2" outPoolDataRec - fee2)
           pguardC "invariant is non-decreasing" $ oldk2 #<= newk2
           pguardC "admin fee paid" $
-            getField @"adminBal1" oldPoolRec + fee1 #== getField @"adminBal1" outPoolDataRec
-            #&& getField @"adminBal2" oldPoolRec + fee2 #== getField @"adminBal2" outPoolDataRec
+            getField @"adminBal1" oldPoolRec + fee1 #<= getField @"adminBal1" outPoolDataRec
+            #&& getField @"adminBal2" oldPoolRec + fee2 #<= getField @"adminBal2" outPoolDataRec
           -- TODO add stuff for fees
           pguardC "in and out pools are live" $
             getField @"isLive" oldPoolRec
