@@ -2,15 +2,15 @@
 <html lang="en-US">
   <head>
     <%- include('../../components/head.ejs'); %>
+    <script type="module" src="./assets/scripts/home/bundle.js" defer></script>
   </head>
   <body>
-    <%- include('../../components/noscript.ejs'); %>
     <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
 
-    <div id="home"></div>
+    <main id="home">
+      <%- include('../../components/noscript.ejs'); %>
+    </main>
 
     <%- include('../../components/footer.ejs'); %>
-
-    <script type="module" src="./assets/scripts/home/bundle.js" defer></script>
   </body>
 </html>
