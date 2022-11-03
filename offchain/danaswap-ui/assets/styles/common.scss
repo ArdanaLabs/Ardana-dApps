@@ -31,3 +31,12 @@ main {
   width: 2em;
   height: 2em;
 }
+
+.NoScript {
+  max-width: 55ch;
+  margin: auto;
+}
+
+.NoScript a {
+  text-decoration: revert;
+}
