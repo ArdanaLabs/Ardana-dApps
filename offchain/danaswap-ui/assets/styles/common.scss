@@ -1,3 +1,17 @@
+html {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-flow: column nowrap;
+  min-height: 100%;
+}
+
+main {
+  flex: 1 1 auto;
+}
+
 .footer {
   background: #1f297b;
 }
@@ -16,4 +30,13 @@
   fill: currentColor;
   width: 2em;
   height: 2em;
+}
+
+.NoScript {
+  max-width: 55ch;
+  margin: auto;
+}
+
+.NoScript a {
+  text-decoration: revert;
 }
