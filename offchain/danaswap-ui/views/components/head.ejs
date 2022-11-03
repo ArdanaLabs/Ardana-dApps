@@ -8,6 +8,13 @@
 <meta name="keywords" content="DanaSwap" />
 <meta name="description" content="" />
 
+<% if (!process.env.IS_DEVELOPMENT) { %>
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; img-src 'self'; object-src 'none'; script-src 'self'"
+/>
+<% } %>
+
 <title>DanaSwap App</title>
 
 <link rel="icon" href="./assets/images/favicon.ico" />

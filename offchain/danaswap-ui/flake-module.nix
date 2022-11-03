@@ -6,6 +6,17 @@
       inherit (config) cat-lib dream2nix;
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.danaswap-ui;
+      ui-dev = (dream2nix.lib.makeOutputs {
+        source = ./.;
+        settings = [{ subsystemInfo.nodejs = 16; }];
+        packageOverrides = {
+          danaswap-ui = {
+            build = {
+              buildScript = ''npm run build-dev'';
+            };
+          };
+        };
+      }).packages.danaswap-ui;
       font-awesome-sprites =
         # TODO: figure out which icons we _need_, and strip the rest as almost
         # all of these icons are unused dead weight
@@ -39,13 +50,22 @@
               cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
             '';
+        danaswap-ui-dev =
+          pkgs.runCommand "build-danaswap-ui-dev"
+            { }
+            ''
+              mkdir -p $out/assets/{images,scripts}
+              cp -r ${ui-dev}/lib/node_modules/danaswap-ui/build/* $out/
+              cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/assets/scripts
+              cp -r ${font-awesome-sprites}/*.svg $out/assets/images
+            '';
       };
 
       apps = {
         "offchain:danaswap-ui:serve:testnet" =
-          cat-lib.makeServeApp self'.packages."danaswap-ui";
+          cat-lib.makeServeApp self'.packages."danaswap-ui-dev";
         "offchain:danaswap-ui:serve:mainnet" =
-          cat-lib.makeServeApp self'.packages."danaswap-ui";
+          cat-lib.makeServeApp self'.packages."danaswap-ui-dev";
       };
 
       checks = {

@@ -5,13 +5,13 @@
   "scripts": {
     "build-night-css": "node-sass --omit-source-map-url assets/styles/night.scss assets/styles/night.css",
     "build-light-css": "node-sass --omit-source-map-url assets/styles/light.scss assets/styles/light.css",
+    "build-dev": "npm run build-night-css && npm run build-light-css && IS_DEVELOPMENT=1 node build.js",
     "build": "npm run build-night-css && npm run build-light-css && node build.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@esbuilder/html": "^0.0.5",
     "autoprefixer": "^10.4.4",
     "bulma": "^0.9.4",
     "ejs": "^3.1.6",

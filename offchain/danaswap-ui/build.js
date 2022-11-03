@@ -2,7 +2,6 @@
 const esbuild = require("esbuild");
 
 const copyStaticFiles = require("esbuild-copy-static-files");
-const { html } = require("@esbuilder/html");
 
 const compileEJSToHTML = require("./plugins/compile-ejs-to-html");
 const processCSS = require("./plugins/process-css");
