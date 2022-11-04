@@ -12,13 +12,18 @@ import Plutarch.Prelude
 
 import Utils (closedTermToHexString, globalConfig, validatorToHexString)
 
-import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator, mkValidator)
+import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator, mkValidator, PTxOut (PTxOut), POutputDatum (POutputDatum))
 
-import Plutarch.Api.V1 (PTokenName, PValue (PValue))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V2.Tx (PTxOutRef)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Api.V1.Value
+import Plutarch.Extensions.Monad (pletFieldC)
+import Plutarch.Api.V2.Contexts (PTxInfo(..))
+import Plutarch.Api.V1 (PMap, PDatum (PDatum))
+import qualified Plutarch.Api.V1 as Value
+import qualified Plutarch.Api.V1.AssocMap as AssocMap
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))
@@ -129,3 +134,45 @@ standardNft = phoistAcyclic $
             #$ pfield @"txInfo" # sc
     pguardC "didn't spend out ref" $ pelem # outRef # inputs
     pure $ popaque $ pcon PUnit
+
+configValidator :: ClosedTerm (PData :--> PValidator)
+configValidator = phoistAcyclic $
+  plam $ \nftCs' inDatum' _ sc -> unTermCont $ do
+    PTxInfo info <- pmatchC $ pfield @"txInfo" # sc
+    outputs <- pletFieldC @"outputs" info
+    nftCs <- pletC $ pfromData $ ptryFromData nftCs'
+    PJust continuing <- pmatchC $
+        pfind
+          # plam
+            ( \output -> unTermCont $ do
+                PTxOut out <- pmatchC output
+                let val = pfield @"value" # out
+                pure $ isJustTn # (atCS # val # nftCs) # pconstant ""
+            )
+          # outputs
+    PTxOut outRec <- pmatchC continuing
+    outDatum1 <- pletFieldC @"datum" outRec
+    POutputDatum outDatum2 <- pmatchC outDatum1
+    outDatum3 <- pletFieldC @"outputDatum" outDatum2
+    PDatum outDatum4 <- pmatchC outDatum3
+    outDatum5 :: Term _ (PBuiltinList PData)  <- pletC $ pfromData $ ptryFromData outDatum4
+    PCons _ outDatumTail <- pmatchC outDatum5
+    inDatum <- pletC $ pfromData $ ptryFromData inDatum'
+    pguardC "no edit" $ outDatumTail #== inDatum
+    pure $ popaque $ pcon PUnit
+    -- TODO check signature
+
+
+isJustTn :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PBool)
+isJustTn = phoistAcyclic $ plam $ \m tn -> isJustTn' # m # tn # 1
+
+isJustTn' :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PInteger :--> PBool)
+isJustTn' = phoistAcyclic $ plam $ \m tn n -> m #== AssocMap.psingleton # tn # n
+
+atCS :: ClosedTerm (PValue s a :--> PCurrencySymbol :--> PMap s PTokenName PInteger)
+atCS = phoistAcyclic $
+  plam $ \val cs -> unTermCont $ do
+    PValue valMap <- pmatchC val
+    PJust subMap <- pmatchC $ AssocMap.plookup # cs # valMap
+    pure subMap
+
