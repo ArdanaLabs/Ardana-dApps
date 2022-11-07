@@ -1,16 +1,16 @@
 module Main (main) where
 
+import Dusd (configCBOR)
 import Hello
 import HelloDiscovery
-import Dusd(configCBOR)
 
 import Control.Monad (unless)
+import Data.Default (Default (def))
+import Plutarch (Config)
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
 import Utils (Cbor (..), toPureScript)
-import Plutarch(Config)
-import Data.Default (Default(def))
 
 {- | Main takes a directory as a comand line argument
   and creates a file CBOR.purs in that directory

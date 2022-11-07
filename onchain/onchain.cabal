@@ -99,18 +99,17 @@ executable dusd
   main-is:        GenCbor.hs
   hs-source-dirs: dusd
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-
   other-modules:  Dusd
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
     , plutarch
     , plutarch-extra
     , plutus-ledger-api
     , serialise
-    , data-default
 
 executable danaswap
   import:         lang
@@ -122,13 +121,13 @@ executable danaswap
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
     , plutarch
     , plutarch-extra
     , plutus-ledger-api
     , serialise
-    , data-default
 
 executable hello-world
   import:         lang
@@ -139,11 +138,11 @@ executable hello-world
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
-    , plutus-ledger-api
     , plutarch
-    , data-default
+    , plutus-ledger-api
     , serialise
 
 test-suite tests
@@ -161,6 +160,7 @@ test-suite tests
     , bytestring
     , containers
     , cryptonite
+    , data-default
     , hedgehog
     , lens
     , memory
@@ -176,4 +176,3 @@ test-suite tests
     , text
     , transformers
     , with-utf8
-    , data-default

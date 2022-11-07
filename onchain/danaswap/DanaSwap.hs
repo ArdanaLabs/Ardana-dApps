@@ -14,12 +14,12 @@ import Utils (closedTermToHexString)
 
 import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator)
 
+import Plutarch (Config)
 import Plutarch.Api.V1 (PTokenName, PValue (PValue))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V2.Tx (PTxOutRef)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch (Config)
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))

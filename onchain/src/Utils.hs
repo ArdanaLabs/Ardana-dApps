@@ -41,7 +41,7 @@ padToLen :: Int -> Char -> String -> String
 padToLen len c w = replicate (len - length w) c <> w
 
 trivialHexString :: Config -> Maybe String
-trivialHexString = closedTermToHexString  trivialValidator
+trivialHexString = closedTermToHexString trivialValidator
 
 trivialValidator :: ClosedTerm PValidator
 trivialValidator = plam $ \_ _ _ -> popaque $ pcon PUnit
