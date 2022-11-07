@@ -17,7 +17,7 @@
             cardano-transaction-lib
             ordered-collections
             aff-retry
-            self'.packages."offchain:danaswap-cbor"
+            self'.packages."offchain:dusd-cbor"
           ];
         test-dependencies =
           with ps-pkgs;

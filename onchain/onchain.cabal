@@ -120,6 +120,23 @@ library apropos-tx
     , text
     , transformers
 
+executable dusd
+  import:         lang
+  type:           exitcode-stdio-1.0
+  main-is:        GenCbor.hs
+  hs-source-dirs: danaswap
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
+  other-modules:  Dusd
+  build-depends:
+    , base
+    , bytestring
+    , directory
+    , onchain
+    , plutarch
+    , plutarch-extra
+    , plutus-ledger-api
+    , serialise
+
 executable danaswap
   import:         lang
   type:           exitcode-stdio-1.0

@@ -104,6 +104,11 @@
             pkgs.runCommand "onchain-scripts"
               { buildInputs = [ haskellNixFlake.packages."onchain:exe:scripts" ]; }
               ''mkdir -p $out && scripts $out'';
+          "onchain:dusd-cbor-purs" =
+            pkgs.runCommand "dusd-cbor-purs" { } ''
+              mkdir -p $out/src
+              ${haskellNixFlake.packages."onchain:exe:dusd"}/bin/dusd $out/src
+            '';
           "onchain:danaswap-cbor-purs" =
             pkgs.runCommand "danaswap-cbor-purs" { } ''
               mkdir -p $out/src
