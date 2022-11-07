@@ -55,6 +55,8 @@ waitForTx' d adr txid = do
         waitForTx' (fromDuration d <> fromDuration (negateDuration waitTime)) adr txid
     Just txin -> do
       logInfo' $ "found tx:" <> show txid
+      txOut <- getUtxo txin >>= liftContractM "tx in wasn't really ready?"
+      logInfo' $ "txout" <> show txOut
       pure $ Just txin
 
 buildBalanceSignAndSubmitTx

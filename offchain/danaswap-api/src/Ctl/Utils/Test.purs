@@ -129,7 +129,7 @@ getPlutipConfig = do
     [ p1, p2, p3, p4, p5 ] -> pure $
       { host: "127.0.0.1"
       , port: UInt.fromInt p1
-      , logLevel: Warn
+      , logLevel: Info
       -- Server configs are used to deploy the corresponding services.
       , ogmiosConfig:
           { port: UInt.fromInt p2

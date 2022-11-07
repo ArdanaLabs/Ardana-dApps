@@ -5,6 +5,7 @@ module Test.Main
 import Contract.Prelude
 
 import Contract.Address (scriptHashAddress)
+import Contract.Log (logError')
 import Contract.Monad (launchAff_)
 import Contract.PlutusData (Datum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
@@ -13,15 +14,14 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value (adaToken)
 import Contract.Value as Value
-import Ctl.Util (waitForTx)
-import Ctl.Utils (buildBalanceSignAndSubmitTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, waitForTx)
 import Ctl.Utils.Test (runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
 import DanaSwap.Api (mintNft)
 import DanaSwap.CborTyped (configAddressValidator)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Spec (describe, it, parallel, sequential)
+import Test.Spec (describe, it, itOnly, parallel, sequential)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -37,9 +37,11 @@ main = launchAff_ $ do
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
     describe "DUSD config test" $ maybePar do
-      it "can append" $ useRunnerSimple $ do
+      itOnly "can append" $ useRunnerSimple $ do
         cs <- mintNft
+        logError' "1"
         configVal <- configAddressValidator
+        logError' "2"
         firstConfig <- waitForTx (scriptHashAddress $ validatorHash configVal)
           =<< buildBalanceSignAndSubmitTx
           (Lookups.validator configVal)
@@ -49,6 +51,8 @@ main = launchAff_ $ do
             DatumInline
             (Value.singleton cs adaToken one)
           )
+        logError' "3"
+        logError' $ "firstConfig:" <> show firstConfig
         waitForTx (scriptHashAddress $ validatorHash configVal)
           =<< buildBalanceSignAndSubmitTx
           (Lookups.validator configVal)

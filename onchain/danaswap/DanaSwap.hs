@@ -6,6 +6,7 @@ module DanaSwap (
   configScriptCbor,
   nftCbor,
   liqudityTokenCBor,
+  configCBOR,
 ) where
 
 import Plutarch.Prelude
@@ -134,6 +135,9 @@ standardNft = phoistAcyclic $
             #$ pfield @"txInfo" # sc
     pguardC "didn't spend out ref" $ pelem # outRef # inputs
     pure $ popaque $ pcon PUnit
+
+configCBOR :: Maybe String
+configCBOR = closedTermToHexString configValidator
 
 configValidator :: ClosedTerm (PData :--> PValidator)
 configValidator = phoistAcyclic $
