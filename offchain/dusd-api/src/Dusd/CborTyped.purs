@@ -1,8 +1,5 @@
-module DanaSwap.CborTyped
-  ( poolAddressValidator
-  , poolIdTokenMintingPolicy
-  , liqudityTokenMintingPolicy
-  , simpleNft
+module Dusd.CborTyped
+  ( simpleNft
   , configAddressValidator
   ) where
 
@@ -23,32 +20,6 @@ import Effect.Exception (throw)
 - this way there is only one module that needs to be checked
 - for type errors between on and off chain code
 -}
-
--- | Placeholder
-poolAddressValidator :: CurrencySymbol -> CurrencySymbol -> Contract () Validator
-poolAddressValidator poolIdToken liquidityToken = do
-  logDebug' "creating pool address validator"
-  logDebug' $ "pool id:" <> show poolIdToken
-  logDebug' $ "liquidity token:" <> show liquidityToken
-  decodeCbor CBOR.trivial []
-    <#> Validator
-
--- | Placeholder
-poolIdTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
-poolIdTokenMintingPolicy configUtxoNftCS = do
-  logDebug' "creating pool id token minting policy"
-  logDebug' $ "nft cs:" <> show configUtxoNftCS
-  decodeCbor CBOR.trivial []
-    <#> PlutusMintingPolicy
-
--- | MintingPolicy for the pool liquidity tokens parametized by the
--- currency symbol of the poolId tokens
-liqudityTokenMintingPolicy :: CurrencySymbol -> Contract () MintingPolicy
-liqudityTokenMintingPolicy poolId = do
-  logDebug' "creating liquidity token minting policy"
-  logDebug' $ "pool id:" <> show poolId
-  decodeCbor CBOR.liqudityTokenMintingPolicy [ toData poolId ]
-    <#> PlutusMintingPolicy
 
 configAddressValidator :: Contract () Validator
 configAddressValidator = decodeCbor CBOR.configScript []
