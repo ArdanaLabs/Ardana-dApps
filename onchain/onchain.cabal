@@ -124,9 +124,9 @@ executable dusd
   import:         lang
   type:           exitcode-stdio-1.0
   main-is:        GenCbor.hs
-  hs-source-dirs: danaswap
+  hs-source-dirs: dusd
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-  other-modules:  Dusd
+  --other-modules:  Dusd
   build-depends:
     , base
     , bytestring

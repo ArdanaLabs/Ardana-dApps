@@ -27,7 +27,7 @@ main = do
               <>
           )
         =<< toPureScript cbors
-    _ -> die "usage: cabal run hello-world <file_path>"
+    _ -> die "usage: cabal run dusd <file_path>"
 
 cbors :: [Cbor]
 cbors =
