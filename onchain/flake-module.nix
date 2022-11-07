@@ -96,10 +96,6 @@
                 ${s.shellHook}
                 hoogle generate --database=$out --local
               '';
-          "onchain:scripts" =
-            pkgs.runCommand "onchain-scripts"
-              { buildInputs = [ haskellNixFlake.packages."onchain:exe:scripts" ]; }
-              ''mkdir -p $out && scripts $out'';
           "onchain:dusd-cbor-purs" =
             pkgs.runCommand "dusd-cbor-purs" { } ''
               mkdir -p $out/src
