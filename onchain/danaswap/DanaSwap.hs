@@ -10,15 +10,16 @@ module DanaSwap (
 
 import Plutarch.Prelude
 
-import Utils (closedTermToHexString, globalConfig, validatorToHexString)
+import Utils (closedTermToHexString)
 
-import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator, mkValidator)
+import Plutarch.Api.V2 (PMintingPolicy, PScriptPurpose (PMinting), PValidator)
 
 import Plutarch.Api.V1 (PTokenName, PValue (PValue))
 import Plutarch.Api.V1.AssocMap qualified as PMap
 import Plutarch.Api.V2.Tx (PTxOutRef)
 import Plutarch.Extensions.Data (parseData, ptryFromData)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch (Config)
 
 data LiquidityAction (s :: S)
   = Open (Term s (PDataRecord '[]))
@@ -47,25 +48,25 @@ instance DerivePlutusType LiquidityRedeemer where type DPTStrat _ = PlutusTypeNe
 instance PTryFrom PData (PAsData LiquidityRedeemer)
 instance PShow LiquidityRedeemer
 
-trivialCbor :: Maybe String
+trivialCbor :: Config -> Maybe String
 trivialCbor = closedTermToHexString trivial
 
 trivial :: ClosedTerm (PData :--> PValidator)
 trivial = plam $ \_ _ _ _ -> popaque $ pcon PUnit
 
-trivialFailCbor :: Maybe String
+trivialFailCbor :: Config -> Maybe String
 trivialFailCbor = closedTermToHexString trivialFail
 
 trivialFail :: ClosedTerm PValidator
 trivialFail = perror
 
-configScriptCbor :: String
-configScriptCbor = validatorToHexString $ mkValidator globalConfig configScript
+configScriptCbor :: Config -> Maybe String
+configScriptCbor = closedTermToHexString configScript
 
 configScript :: ClosedTerm PValidator
 configScript = perror
 
-liqudityTokenCBor :: Maybe String
+liqudityTokenCBor :: Config -> Maybe String
 liqudityTokenCBor = closedTermToHexString liqudityTokenMP
 
 liqudityTokenMP :: ClosedTerm (PData :--> PMintingPolicy)
@@ -116,7 +117,7 @@ liqudityTokenMP = phoistAcyclic $
                     PNothing -> pure $ pcon PFalse
                     PJust _ -> pure $ pcon PTrue
 
-nftCbor :: Maybe String
+nftCbor :: Config -> Maybe String
 nftCbor = closedTermToHexString standardNft
 
 standardNft :: ClosedTerm (PData :--> PMintingPolicy)

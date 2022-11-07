@@ -74,7 +74,6 @@ library
   exposed-modules:
     Hello
     HelloDiscovery
-    Onchain
     Plutarch.Extensions.Api
     Plutarch.Extensions.Data
     Plutarch.Extensions.List
@@ -94,32 +93,6 @@ library
     , pretty
     , serialise
 
-library apropos-tx
-  import:          lang
-  exposed-modules:
-    Apropos.ContextBuilder
-    Apropos.Script
-
-  hs-source-dirs:  apropos-tx
-  build-depends:
-    , apropos
-    , base
-    , containers
-    , free
-    , hedgehog
-    , lens
-    , minisat-solver
-    , mtl
-    , plutarch
-    , plutus-core
-    , plutus-ledger-api
-    , pretty
-    , pretty-show
-    , safe
-    , template-haskell
-    , text
-    , transformers
-
 executable dusd
   import:         lang
   type:           exitcode-stdio-1.0
@@ -127,7 +100,7 @@ executable dusd
   hs-source-dirs: dusd
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 
-  --other-modules:  Dusd
+  other-modules:  Dusd
   build-depends:
     , base
     , bytestring
@@ -137,6 +110,7 @@ executable dusd
     , plutarch-extra
     , plutus-ledger-api
     , serialise
+    , data-default
 
 executable danaswap
   import:         lang
@@ -154,6 +128,7 @@ executable danaswap
     , plutarch-extra
     , plutus-ledger-api
     , serialise
+    , data-default
 
 executable hello-world
   import:         lang
@@ -167,19 +142,8 @@ executable hello-world
     , directory
     , onchain
     , plutus-ledger-api
-    , serialise
-
-executable scripts
-  import:         lang
-  type:           exitcode-stdio-1.0
-  main-is:        Main.hs
-  hs-source-dirs: scripts
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-    , base
-    , bytestring
-    , onchain
-    , plutus-ledger-api
+    , plutarch
+    , data-default
     , serialise
 
 test-suite tests
@@ -189,15 +153,10 @@ test-suite tests
   hs-source-dirs: tests
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
   other-modules:
-    Apropos.Plutus.HelloValidator
-    Apropos.Plutus.SimpleNFT
-    Gen
     Goldens.Cbor
     Tests
 
   build-depends:
-    , apropos
-    , apropos-tx
     , base
     , bytestring
     , containers
@@ -217,3 +176,4 @@ test-suite tests
     , text
     , transformers
     , with-utf8
+    , data-default

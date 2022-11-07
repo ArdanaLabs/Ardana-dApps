@@ -28,8 +28,6 @@
           system
           compiler-nix-name
           [
-            "${self.inputs.apropos}"
-            "${self.inputs.digraph}"
             "${plutarch}"
             "${plutarch}/plutarch-extra"
           ];
@@ -48,8 +46,6 @@
 
           shell = commonPlutusShell // {
             additional = ps: [
-              ps.apropos
-              ps.digraph
               ps.plutarch
               ps.plutarch-extra
             ];
