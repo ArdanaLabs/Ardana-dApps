@@ -121,7 +121,7 @@ $subtitle-color: grey;
   background-size: cover;
 }
 
-.pools-table-header {
+.vaults-table-header {
   font-family: "Brandon Grotesque", sans-serif;
   font-style: normal;
   font-weight: 500;
@@ -130,15 +130,44 @@ $subtitle-color: grey;
   color: #72d2f3;
 }
 
-.pools-table-row {
+.vaults-table-row {
   box-sizing: border-box;
   border: 1px solid #0a5884;
   border-radius: 38px;
 }
 
-.pools-table-row-dropdown {
-  background: #0b0e2b;
-  border-radius: 5px;
+.link-a-coin {
+  background: linear-gradient(180deg, #3142a3 0%, rgba(49, 66, 163, 0) 118.48%);
+}
+
+.uni-a-coin {
+  background: linear-gradient(
+    180.2deg,
+    #627eff 0.17%,
+    rgba(77, 97, 210, 0) 116.51%
+  );
+}
+
+.gusd-a-coin {
+  background: linear-gradient(180deg, #71b5f3 0%, rgba(113, 206, 243, 0) 110%);
+}
+
+.dana-coin {
+  background: linear-gradient(
+    180.2deg,
+    #627eff 0.17%,
+    rgba(77, 97, 210, 0) 116.51%
+  );
+}
+
+.got-questions {
+  background: linear-gradient(180deg, #71b5f3 0%, rgba(113, 206, 243, 0) 110%);
+}
+
+.search-box {
+  mix-blend-mode: normal;
+  background: linear-gradient(0deg, #1e2769, #1e2769);
+  border: 1px solid rgba(96, 119, 255, 1);
 }
 
 @import "./common";

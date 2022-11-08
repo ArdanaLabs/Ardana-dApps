@@ -2,9 +2,8 @@ module DanaSwap.Browser.Home where
 
 import Contract.Prelude
 
-import DanaSwap.Browser.Types (Asset(..), Pool(..))
+import DanaSwap.Browser.Types (Vault)
 import Data.Array (concat)
-import Data.BigInt (fromInt, fromString, toString)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
 import Effect.Aff.Class (class MonadAff)
@@ -12,10 +11,9 @@ import Halogen as H
 import Halogen.Aff as HA
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties (ButtonType(..))
 import Halogen.HTML.Properties as HP
 import Halogen.HTML.Properties.ARIA (role)
-import Halogen.Svg.Attributes (Color(..), fill, height, href, width)
+import Halogen.Svg.Attributes (href)
 import Halogen.Svg.Elements as SE
 import Halogen.VDom.Driver (runUI)
 import Web.DOM.ParentNode (QuerySelector(..))
@@ -29,22 +27,19 @@ main = HA.runHalogenAff do
     Just elem -> void $ runUI component unit elem
 
 type State =
-  { pools :: Array Pool
-  , currentPool :: Maybe Pool
-  , activity :: Activity
+  { vaults :: Array Vault
+  , filter :: Filter
   }
 
-data Action
-  = SetCurrentPool Pool
-  | ResetCurrentPool
-  | SetActivity Activity
+data Action = SetFilter Filter
 
-data Activity
-  = Swap
-  | AddLiquidity
-  | WithdrawLiquidity
+data Filter
+  = PopularAssets
+  | AllAssets
+  | StableCoins
+  | LPToken
 
-derive instance eqActivity :: Eq Activity
+derive instance eqFilter :: Eq Filter
 
 component
   :: forall q i o m
@@ -53,14 +48,18 @@ component
 component =
   H.mkComponent
     { initialState: const
-        { pools:
-            [ Pool { assetA: Asset { name: "ADA", value: fromInt 1200 }, assetB: Asset { name: "DANA", value: fromInt 1000 }, fee: 4 }
-            , Pool { assetA: Asset { name: "ADA", value: fromInt 10000 }, assetB: Asset { name: "USDC", value: fromInt 4000 }, fee: 4 }
-            , Pool { assetA: Asset { name: "ADA", value: fromInt 120 }, assetB: Asset { name: "HOSKY", value: fromMaybe (fromInt 0) (fromString "3000000100") }, fee: 4 }
-            , Pool { assetA: Asset { name: "DADA", value: fromInt 3000 }, assetB: Asset { name: "USDC", value: fromInt 1000 }, fee: 4 }
+        { vaults:
+            [ { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
             ]
-        , currentPool: Nothing
-        , activity: Swap
+        , filter: PopularAssets
         }
     , render
     , eval: H.mkEval $ H.defaultEval
@@ -70,187 +69,249 @@ component =
   where
   handleAction :: forall slots. Action -> H.HalogenM State Action slots o m Unit
   handleAction = case _ of
-    ResetCurrentPool -> H.modify_ _ { currentPool = Nothing }
-    SetCurrentPool pool -> H.modify_ _ { currentPool = Just pool }
-    SetActivity activity -> H.modify_ _ { activity = activity }
+    SetFilter filter -> H.modify_ _ { filter = filter }
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { pools, currentPool, activity } =
+  render { vaults, filter } =
     HH.section
       [ mkClass "section my-6 pb-6" ]
       $
-        [ HH.div
+        [ HH.div [ mkClass "columns my-6" ]
+            [ HH.div [ mkClass "column coin link-a-coin mx-6" ]
+                [ HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.div []
+                                [ HH.p [ mkClass "heading" ] [ HH.text "new" ]
+                                , HH.p [ mkClass "title" ] [ HH.text "LINK-A" ]
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.figure [ mkClass "image" ]
+                                [ HH.img [ HP.src "/assets/images/link-a-coin.png", HP.width 174, HP.height 187 ]
+                                ]
+                            ]
+                        ]
+                    ]
+                , HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Stablity fee: 3.00%"
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Min Coll. Ratio: 165%"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            , HH.div [ mkClass "column coin uni-a-coin mx-6" ]
+                [ HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.div []
+                                [ HH.p [ mkClass "heading" ] [ HH.text "most popular" ]
+                                , HH.p [ mkClass "title" ] [ HH.text "UNI-A" ]
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.figure [ mkClass "image" ]
+                                [ HH.img [ HP.src "/assets/images/uni-a-coin.png", HP.width 174, HP.height 187 ]
+                                ]
+                            ]
+                        ]
+                    ]
+                , HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Stablity fee: 2.00%"
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Min Coll. Ratio: 145%"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            , HH.div [ mkClass "column coin gusd-a-coin mx-6" ]
+                [ HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.div []
+                                [ HH.p [ mkClass "heading" ] [ HH.text "cheapest" ]
+                                , HH.p [ mkClass "title" ] [ HH.text "GUSD-A" ]
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.figure [ mkClass "image" ]
+                                [ HH.img [ HP.src "/assets/images/gusd-a-coin.png", HP.width 174, HP.height 187 ]
+                                ]
+                            ]
+                        ]
+                    ]
+                , HH.div [ mkClass "level" ]
+                    [ HH.div [ mkClass "level-left" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Stablity fee: 0.00%"
+                                ]
+                            ]
+                        ]
+                    , HH.div [ mkClass "level-right" ]
+                        [ HH.div [ mkClass "level-item" ]
+                            [ HH.span [ mkClass "subtitle is-size-7" ]
+                                [ HH.text "Min Coll. Ratio: 101%"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        , HH.div [ mkClass "columns m-6 is-vcentered" ]
+            [ HH.div [ mkClass "column" ]
+                [ if filter == PopularAssets then
+                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Popular Assets" ] ]
+                  else
+                    HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter PopularAssets) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Popular Assets" ] ]
+                ]
+            , HH.div [ mkClass "column" ]
+                [ if filter == AllAssets then
+                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "All Assets" ] ]
+                  else
+                    HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter AllAssets) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "All Assets" ] ]
+                ]
+            , HH.div [ mkClass "column" ]
+                [ if filter == StableCoins then
+                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Stablecoins" ] ]
+                  else
+                    HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter StableCoins) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Stablecoins" ] ]
+                ]
+            , HH.div [ mkClass "column" ]
+                [ if filter == LPToken then
+                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "LP Token" ] ]
+                  else
+                    HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter LPToken) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "LP Token" ] ]
+                ]
+            , HH.div [ mkClass "column" ]
+                [ HH.form []
+                    [ HH.div [ mkClass "field" ]
+                        [ HH.div [ mkClass "control has-icons-left" ]
+                            [ HH.span [ mkClass "icon is-small is-left" ]
+                                [ HH.a [ HP.title "search" ]
+                                    [ SE.svg [ role "none" ]
+                                        [ SE.use [ href ("/assets/images/font-awesome-sprite-solid.svg#magnifying-glass") ]
+                                        ]
+                                    ]
+                                ]
+                            , HH.input [ mkClass "input is-rounded search-box" ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        , HH.div
             [ mkClass "columns is-mobile" ]
-            [ HH.div [ mkClass "pools-table-header column" ]
-                [ HH.div [ mkClass $ "columns" ]
-                    [ HH.div [ mkClass "column has-text-left" ] [ HH.text "Pool" ]
+            [ HH.div [ mkClass "vaults-table-header column has-text-centered" ]
+                [ HH.text "Asset" ]
+            , HH.div [ mkClass "vaults-table-header column has-text-centered" ]
+                [ HH.text "Type" ]
+            , HH.div [ mkClass "vaults-table-header column" ]
+                [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
+                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "dUSD Available" ]
+                    , HH.div [ mkClass "column is-narrow" ] [ mkIcon "angle-down" ]
                     ]
                 ]
-            , HH.div [ mkClass "pools-table-header column" ]
-                [ HH.div [ mkClass $ "columns" ]
-                    [ HH.div [ mkClass "column has-text-centered" ] [ HH.text "Value" ]
+            , HH.div [ mkClass "vaults-table-header column" ]
+                [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
+                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "Stabiliity Fee" ]
+                    , HH.div [ mkClass "column is-narrow" ] [ mkIcon "angle-down" ]
                     ]
                 ]
-            , HH.div [ mkClass "pools-table-header column" ]
-                [ HH.div [ mkClass $ "columns" ]
-                    [ HH.div [ mkClass "column has-text-centered" ] [ HH.text "Fee" ]
+            , HH.div [ mkClass "vaults-table-header column" ]
+                [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
+                    [ HH.div [ mkClass "column is-narrow" ] [ HH.text "Min Coll. Ratio" ]
+                    , HH.div [ mkClass "column is-narrow" ] [ mkIcon "angle-down" ]
                     ]
                 ]
-            , HH.div [ mkClass "column" ] [ HH.text " " ]
+            , HH.div [ mkClass "vaults-table-header column" ] [ HH.text " " ]
             ]
 
         ]
       <> concat
-        ( renderPool
-            <$> pools
+        ( renderVault
+            <$> vaults
         )
-    where
-    renderPool pool@(Pool p) =
-      [ HH.div
-          [ mkClass "pools-table-row columns is-mobile is-vcentered p-3 my-3"
-          , HE.onClick $ \_ ->
-              if currentPool == Just pool then
-                ResetCurrentPool
-              else
-                SetCurrentPool pool
-          ]
-
-          [ HH.div [ mkClass "column" ]
-              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-left" ] [ HH.text $ printPool pool ]
-              ]
-          , HH.div [ mkClass "column" ]
-              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ printAsset p.assetA <> " / " <> printAsset p.assetB ]
-              ]
-          , HH.div [ mkClass "column" ]
-              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show p.fee <> "ADA" ]
-              ]
-          , HH.div [ mkClass "column has-text-centered" ]
-              [ if currentPool == Just pool then mkIcon "angle-up" else mkIcon "angle-down"
-              ]
-          ]
-      ] <> renderPoolDropdown pool
-
-    renderPoolDropdown pool =
-      if currentPool == Just pool then
-        [ HH.div [ mkClass "pools-table-row-dropdown box my-6" ]
-            [ HH.div [ mkClass "columns is-mobile" ]
-                [ HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity Swap), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == Swap) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "swap" ]
-                    ]
-                , HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity AddLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == AddLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "add liquidity" ]
-                    ]
-                , HH.div [ mkClass "column is-narrow" ]
-                    [ HH.button [ HP.type_ ButtonButton, HE.onClick $ const (SetActivity WithdrawLiquidity), mkClass $ "button is-rounded is-medium is-responsive " <> if (activity == WithdrawLiquidity) then "danaswap-btn-has-background" else "danaswap-btn-has-border" ] [ HH.text "withdraw" ]
+      <>
+        [ HH.div [ mkClass "columns m-6" ]
+            [ HH.div [ mkClass "column" ]
+                [ HH.div [ mkClass "dana-coin info-card p-6" ]
+                    [ HH.div [ mkClass "columns is-mobile" ]
+                        [ HH.div [ mkClass "column" ]
+                            [ HH.p [ mkClass "title" ] [ HH.text "Dana Coin" ]
+                            , HH.p [ mkClass "subtitle is-size-7" ] [ HH.text "Buy, send and manage your Dana Coin all in one place. Grow your Dana, and access plenty of providers." ]
+                            ]
+                        , HH.div [ mkClass "column has-text-right" ]
+                            [ HH.div [ mkClass "pt-6" ] [ mkIcon "circle-arrow-right" ]
+                            ]
+                        ]
                     ]
                 ]
-            , case activity of
-                Swap -> renderSwapForm pool
-                AddLiquidity -> renderAddLiquidityForm pool
-                WithdrawLiquidity -> renderWithdrawLiquidityForm
+            , HH.div [ mkClass "column" ]
+                [ HH.div [ mkClass "got-questions info-card p-6" ]
+                    [ HH.div [ mkClass "columns is-mobile" ]
+                        [ HH.div [ mkClass "column" ]
+                            [ HH.p [ mkClass "title" ] [ HH.text "Got questions?" ]
+                            , HH.p [ mkClass "subtitle is-size-7" ] [ HH.text "Learn more about Dana Coin, Danaswap and Stablecoin Vaults by visiting our FAQs page." ]
+                            ]
+                        , HH.div [ mkClass "column has-text-right" ]
+                            [ HH.div [ mkClass "pt-6" ] [ mkIcon "circle-arrow-right" ]
+                            ]
+                        ]
+                    ]
+                ]
             ]
         ]
-      else []
+    where
+    renderVault v =
+      [ HH.div
+          [ mkClass "vaults-table-row columns is-mobile is-vcentered p-3 my-3" ]
 
-    renderSwapForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.form [ mkClass "mt-6" ]
-      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
-              [ HH.div [ mkClass "field" ]
-                  [ HH.div [ mkClass "control" ] [ HH.input [ HP.id "swap-asset-a", mkClass "input is-rounded" ] ]
+          [ HH.div [ mkClass "column" ]
+              [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
+                  [ HH.div [ mkClass "column is-narrow" ] [ HH.figure [ mkClass "image" ] [ HH.img [ HP.src "/assets/images/bitcoin.png" ] ] ]
+                  , HH.p [ mkClass "column is-narrow is-size-5-desktop is-size-7-touch" ] [ HH.text v.asset ]
                   ]
               ]
-          , HH.div [ mkClass "column is-1" ]
-              [ HH.label [ HP.for "swap-asset-a", mkClass "label is-normal" ] [ HH.text a.name ]
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text v.assetType ]
               ]
-          ]
-      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-offset-1-desktop is-offset-3-touch is-1 has-text-centered" ]
-              [ mkIcon "right-left"
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show v.dUsdAvailable <> "M" ]
               ]
-          ]
-      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
-              [ HH.div [ mkClass "field" ]
-                  [ HH.div [ mkClass "control" ] [ HH.input [ HP.id "swap-asset-b", mkClass "input is-rounded" ] ]
-                  ]
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show v.stablilityFee <> "%" ]
               ]
-          , HH.div [ mkClass "column is-1" ]
-              [ HH.label [ HP.for "swap-asset-b", mkClass "label is-normal" ] [ HH.text b.name ]
+          , HH.div [ mkClass "column" ]
+              [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show v.minCollRatio <> "%" ]
               ]
-          ]
-      , HH.p [ mkClass "subtitle is-6 my-0" ]
-          [ HH.text "Slippage: 4%"
-          ]
-      , HH.p [ mkClass "subtitle is-6" ]
-          [ HH.text "Fee: 2.3 ADA"
-          ]
-      , HH.div [ mkClass "columns" ]
-          [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
-              ]
-          ]
-      ]
-
-    renderAddLiquidityForm (Pool ({ assetA: (Asset a), assetB: (Asset b) })) = HH.form [ mkClass "mt-6" ]
-      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
-              [ HH.div [ mkClass "field" ]
-                  [ HH.div [ mkClass "control" ] [ HH.input [ HP.id "add-liquidity-asset-a", mkClass "input is-rounded" ] ]
-                  ]
-              ]
-          , HH.div [ mkClass "column is-1" ]
-              [ HH.label [ HP.for "add-liquidity-asset-a", mkClass "label is-normal" ] [ HH.text a.name ]
-              ]
-          ]
-      , HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
-              [ HH.div [ mkClass "field" ]
-                  [ HH.div [ mkClass "control" ] [ HH.input [ HP.id "add-liquidity-asset-b", mkClass "input is-rounded" ] ]
-                  ]
-              ]
-          , HH.div [ mkClass "column is-1" ]
-              [ HH.label [ HP.for "add-liquidity-asset-b", mkClass "label is-normal" ] [ HH.text b.name ]
-              ]
-          ]
-      , HH.p [ mkClass "subtitle is-6 my-0" ]
-          [ HH.text "Liquidity Tokens: 0"
-          ]
-      , HH.p [ mkClass "subtitle is-6" ]
-          [ HH.text "Fee: 2.3 ADA"
-          ]
-      , HH.div [ mkClass "columns" ]
-          [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
-              ]
-          ]
-      ]
-
-    renderWithdrawLiquidityForm = HH.form [ mkClass "mt-6" ]
-      [ HH.div [ mkClass "columns is-mobile is-vcentered" ]
-          [ HH.div [ mkClass "column is-8-touch is-3-desktop" ]
-              [ HH.div [ mkClass "field" ]
-                  [ HH.div [ mkClass "control" ] [ HH.input [ HP.id "withdraw-liquidity-tokens", mkClass "input is-rounded" ] ]
-                  ]
-              ]
-          , HH.div [ mkClass "column is-1" ]
-              [ HH.label [ HP.for "withdraw-liquidity-tokens", mkClass "label is-normal" ] [ HH.text "Liquidity Tokens" ]
-              ]
-          ]
-      , HH.p [ mkClass "subtitle is-6 my-0" ]
-          [ HH.text "ADA Payout: 0"
-          ]
-      , HH.p [ mkClass "subtitle is-6 my-0" ]
-          [ HH.text "DANA Payout: 0"
-          ]
-      , HH.p [ mkClass "subtitle is-6 my-0" ]
-          [ HH.text "Slippage: 4%"
-          ]
-      , HH.p [ mkClass "subtitle is-6" ]
-          [ HH.text "Fee: 2.3 ADA"
-          ]
-      , HH.div [ mkClass "columns" ]
-          [ HH.div [ mkClass "column is-narrow" ]
-              [ HH.button [ HP.type_ ButtonSubmit, mkClass $ "button is-rounded is-medium is-responsive danaswap-btn-has-border" ] [ HH.text "submit" ]
+          , HH.div [ mkClass "column has-text-centered" ]
+              [ HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "open vault" ] ]
               ]
           ]
       ]
@@ -267,9 +328,3 @@ mkIcon icon = HH.span
           ]
       ]
   ]
-
-printAsset :: Asset -> String
-printAsset (Asset { name, value }) = (toString value) <> " " <> name
-
-printPool :: Pool -> String
-printPool (Pool { assetA: (Asset a), assetB: (Asset b) }) = a.name <> " + " <> b.name

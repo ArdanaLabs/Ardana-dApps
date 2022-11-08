@@ -40,3 +40,25 @@ main {
 .NoScript a {
   text-decoration: revert;
 }
+
+.heading {
+  text-transform: uppercase;
+}
+
+.coin {
+  border-radius: 30px;
+}
+
+.coin figure {
+  margin-top: -6.75rem;
+}
+
+.info-card {
+  border-radius: 30px;
+}
+
+.info-card .icon svg {
+  fill: currentColor;
+  width: 2em;
+  height: 2em;
+}
