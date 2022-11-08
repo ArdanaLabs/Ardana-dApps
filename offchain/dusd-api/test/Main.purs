@@ -5,12 +5,13 @@ module Test.Main
 import Contract.Prelude
 
 import Contract.Monad (launchAff_)
-import Dusd.Api (initProtocol)
+import Contract.PlutusData (PlutusData(..))
+import Ctl.Utils.Test (runWithMode, useRunnerSimple)
+import Ctl.Utils.Test.Types (Mode(..))
+import Dusd.Api (initProtocolSimple, updateProtocl)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Spec (describe, it, parallel, sequential)
-import Ctl.Utils.Test (runWithMode, useRunnerSimple)
-import Ctl.Utils.Test.Types (Mode(..))
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -28,5 +29,8 @@ main = launchAff_ $ do
     describe "Protocol Initialization" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init protocol doesn't error" $ useRunnerSimple $ do
-        initProtocol
+        initProtocolSimple (Constr zero [])
+      it "Update protocol doesn't error" $ useRunnerSimple $ do
+        protocol <- initProtocolSimple (Constr zero [])
+        updateProtocl (Constr one []) protocol
 

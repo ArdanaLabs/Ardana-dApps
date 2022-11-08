@@ -6,12 +6,14 @@ module Dusd.CborTyped
 import Contract.Prelude
 
 import CBOR as CBOR
+import Contract.Address (PubKeyHash)
 import Contract.Log (logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
 import Contract.Transaction (TransactionInput, plutusV2Script)
+import Contract.Value (CurrencySymbol)
 import Effect.Exception (throw)
 
 {- This module should be the only place where CBOR is imported
@@ -20,9 +22,11 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
-configAddressValidator :: Contract () Validator
-configAddressValidator = decodeCbor CBOR.configScript []
-  <#> Validator
+configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
+configAddressValidator pkh cs =
+  do
+    decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
+    <#> Validator
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy

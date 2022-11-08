@@ -33,8 +33,8 @@
       dusd-cbor =
         purs-nix.build
           {
-            name = "danaswap-cbor";
-            src.path = self'.packages."onchain:danaswap-cbor-purs";
+            name = "dusd-cbor";
+            src.path = self'.packages."onchain:dusd-cbor-purs";
             info.dependencies = [ ];
             info.version = "0.0.1";
           };

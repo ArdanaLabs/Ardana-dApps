@@ -1,5 +1,6 @@
 module Dusd.Api
-  ( initProtocol
+  ( initProtocolSimple
+  , updateProtocl
   -- Types
   , Protocol(..)
   -- Testing
@@ -9,49 +10,88 @@ module Dusd.Api
 
 import Contract.Prelude
 
-import Contract.Address (getWalletAddress, getWalletCollateral, scriptHashAddress)
+import Contract.Address (PubKeyHash, getWalletAddress, getWalletCollateral, scriptHashAddress)
+import Contract.Credential (Credential(..))
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
-import Contract.PlutusData (Datum(..), PlutusData(..))
+import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
-import Contract.Scripts (validatorHash)
-import Contract.Transaction (TransactionInput)
+import Contract.Scripts (Validator, validatorHash)
+import Contract.Transaction (TransactionInput, TransactionOutput(..), TransactionOutputWithRefScript(..))
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
 import Contract.Value (CurrencySymbol, adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
+import Ctl.Internal.Plutus.Types.Address (Address(..))
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
-import Dusd.CborTyped (configAddressValidator, simpleNft)
+import Data.Array (cons)
 import Data.BigInt as BigInt
 import Data.List (head)
-import Data.Map (keys)
+import Data.Map (keys, singleton)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
+import Dusd.CborTyped (configAddressValidator, simpleNft)
+import Effect.Exception (throw)
 
-newtype Protocol = Protocol TransactionInput
+newtype Protocol = Protocol { datum :: PlutusData, utxo :: TransactionInput, nftCs :: CurrencySymbol, configVal :: Validator }
 
--- | Initializes the protocol returns a protocol
--- object which includes various values
--- which depend on the config utxo's NFT
--- and therefore differ per instantiation
-initProtocol :: Contract () Protocol
-initProtocol = do
+-- | Initializes the protocol with a given datum
+initProtocolSimple :: PlutusData -> Contract () Protocol
+initProtocolSimple datum = do
   logDebug' "starting protocol init"
   nftCs <- mintNft
-  configAdrVal <- configAddressValidator
+  pkh <- getWalletPubkeyhash
+  configVal <- configAddressValidator pkh nftCs
   txid <- buildBalanceSignAndSubmitTx
     (mempty)
     ( Constraints.mustPayToScript
-        (validatorHash configAdrVal)
-        (Datum $ List []) -- TODO real protocol datum
+        (validatorHash configVal)
+        (Datum $ List [ datum ]) -- TODO real protocol datum
         DatumInline
         (Value.singleton nftCs adaToken one)
     )
   logDebug' "config utxo submitted, waiting for confirmation"
-  configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
+  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal) txid
   logDebug' "protocol init complete"
-  pure $ Protocol configUtxo
+  pure $ Protocol { datum, utxo, nftCs, configVal }
+
+getWalletPubkeyhash :: Contract () PubKeyHash
+getWalletPubkeyhash = do
+  (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
+  case addressCredential of
+    PubKeyCredential pkh -> pure pkh
+    _ -> liftEffect $ throw "wallet was not a pubkey?"
+
+updateProtocl :: PlutusData -> Protocol -> Contract () Protocol
+updateProtocl new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
+  TransactionOutput { datum } <- getUtxo oldUtxo >>= liftContractM "lookup failed. Maybe config utxo was already spent"
+  old <- case datum of
+    (OutputDatum (Datum (List old))) -> pure old
+    _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
+  oldOut <- getUtxo oldUtxo >>= liftContractM "lookup failed"
+  pkh <- getWalletPubkeyhash
+  txid <- buildBalanceSignAndSubmitTx
+    ( Lookups.unspentOutputs
+        ( singleton oldUtxo
+            (TransactionOutputWithRefScript { output: oldOut, scriptRef: Nothing })
+        )
+        <> Lookups.validator configVal
+    )
+    ( Constraints.mustSpendScriptOutput
+        oldUtxo
+        (Redeemer $ toData unit)
+        <> Constraints.mustPayToScript
+          (validatorHash configVal)
+          (Datum $ List $ cons new old)
+          DatumInline
+          (Value.singleton nftCs adaToken one)
+        <> Constraints.mustBeSignedBy (wrap pkh)
+    )
+  logDebug' "config utxo submitted, waiting for confirmation"
+  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal) txid
+  logDebug' "protocol init complete"
+  pure $ Protocol { utxo, datum: new, nftCs, configVal }
 
 -- | Mints an nft where the txid is a parameter of the contract and returns the currency symbol
 mintNft :: Contract () CurrencySymbol

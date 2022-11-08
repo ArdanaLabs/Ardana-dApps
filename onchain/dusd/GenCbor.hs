@@ -1,12 +1,12 @@
 module Main (main) where
 
-import Dusd (configCBOR)
+import Dusd (configWithUpdatesCBOR)
 import Hello
 import HelloDiscovery
 
 import Control.Monad (unless)
 import Data.Default (Default (def))
-import Plutarch (Config)
+import Plutarch (Config (tracingMode), TracingMode (..))
 import System.Directory (doesDirectoryExist)
 import System.Environment (getArgs)
 import System.Exit (die)
@@ -33,12 +33,12 @@ main = do
     _ -> die "usage: cabal run dusd <file_path>"
 
 dusdConfig :: Config
-dusdConfig = def
+dusdConfig = def {tracingMode = DetTracing}
 
 cbors :: [Cbor]
 cbors =
   [ Cbor "trivial" trivialCbor
   , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
-  , Cbor "configScript" configCBOR
+  , Cbor "configWithUpdates" configWithUpdatesCBOR
   ]
