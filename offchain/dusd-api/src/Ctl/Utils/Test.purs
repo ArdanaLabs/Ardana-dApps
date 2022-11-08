@@ -181,7 +181,6 @@ expectScriptError
 expectScriptError =
   expectErrorPred (\err -> contains (Pattern "Script failure") (message err))
 
-
 expectErrorPred
   :: forall m t
    . MonadError Error m

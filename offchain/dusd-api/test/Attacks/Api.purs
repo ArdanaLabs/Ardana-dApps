@@ -1,8 +1,8 @@
 module Test.Attacks.Api
-  (updateProtoclAttack
-  ,UpdateAttack
-  ,defUpdate
-  )where
+  ( updateProtoclAttack
+  , UpdateAttack
+  , defUpdate
+  ) where
 
 import Contract.Prelude
 
@@ -28,16 +28,15 @@ import Effect.Exception (throw)
 -- ps-pkgs and we only need 2 lines of code from it anyway
 
 type UpdateAttack =
-  {noSignature :: Boolean
-  ,overwriteDatum :: Maybe PlutusData
+  { noSignature :: Boolean
+  , overwriteDatum :: Maybe PlutusData
   }
 
 defUpdate :: UpdateAttack
 defUpdate =
-  {noSignature : false
-  , overwriteDatum : Nothing
+  { noSignature: false
+  , overwriteDatum: Nothing
   }
-
 
 -- | technically not part of this version of the protocol
 updateProtoclAttack :: UpdateAttack -> PlutusData -> Protocol -> Contract () Protocol
