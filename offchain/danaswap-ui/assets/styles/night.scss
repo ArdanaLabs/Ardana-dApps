@@ -75,6 +75,7 @@ $navbar-item-hover-background-color: #080e42;
 $navbar-item-active-color: #73d6f1;
 $navbar-item-hover-color: #f5fcfe;
 $navbar-item-color: #f5fcfe;
+$subtitle-color: grey;
 
 @import "../../node_modules/bulma/bulma";
 
@@ -104,8 +105,20 @@ $navbar-item-color: #f5fcfe;
 .navbar-brand a.navbar-item {
   background-image: url(../images/logo_header_night.png);
   background-size: cover;
-  width: 117px;
-  height: 40px;
+  width: 65.92px;
+  height: 60px;
+}
+
+#lightmode-toggle-btn {
+  background-image: url(../images/lightmode_toggle_btn_night.png);
+  background-size: cover;
+  width: 96px;
+  height: 50px;
+}
+
+#home-static {
+  background-image: url(../images/home_static_night.png);
+  background-size: cover;
 }
 
 .pools-table-header {

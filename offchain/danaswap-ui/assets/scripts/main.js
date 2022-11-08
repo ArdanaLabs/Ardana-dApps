@@ -1,29 +1,24 @@
-// theme toggle
-const themeKey = "danaswap-ui-theme";
-const currentTheme = localStorage.getItem(themeKey);
-const themeCss = document.getElementById("theme-css");
-const themeToggleBtn = document.getElementById("theme-toggle-btn");
+const modeKey = "ardana-dapps-mode";
+const currentMode = localStorage.getItem(modeKey);
+const lightmodeCss = document.getElementById("lightmode-css");
+const lightmodeToggleBtn = document.getElementById("lightmode-toggle-btn");
 
-if (typeof currentTheme == "undefined" || currentTheme == "night") {
-  themeToggleBtn.firstChild.innerText = "light mode";
-  themeCss.href = "./assets/styles/night.css";
+if (typeof currentMode == "undefined" || currentMode == "night") {
+  lightmodeCss.href = "./assets/styles/night.css";
 } else {
-  themeToggleBtn.firstChild.innerText = "night mode";
-  themeCss.href = "./assets/styles/light.css";
+  lightmodeCss.href = "./assets/styles/light.css";
 }
 
-themeToggleBtn.addEventListener("click", function (e) {
-  const currentTheme = localStorage.getItem(themeKey);
+lightmodeToggleBtn.addEventListener("click", function (e) {
+  const currentMode = localStorage.getItem(modeKey);
 
-  if (typeof currentTheme == "undefined" || currentTheme == "night") {
-    themeToggleBtn.firstChild.innerText = "night mode";
-    themeCss.href = "./assets/styles/light.css";
-    localStorage.setItem(themeKey, "light");
-    themeToggleBtn.blur();
+  if (typeof currentMode == "undefined" || currentMode == "night") {
+    lightmodeCss.href = "./assets/styles/light.css";
+    localStorage.setItem(modeKey, "light");
+    lightmodeToggleBtn.blur();
   } else {
-    themeToggleBtn.firstChild.innerText = "light mode";
-    themeCss.href = "./assets/styles/night.css";
-    localStorage.setItem(themeKey, "night");
-    themeToggleBtn.blur();
+    lightmodeCss.href = "./assets/styles/night.css";
+    localStorage.setItem(modeKey, "night");
+    lightmodeToggleBtn.blur();
   }
 });

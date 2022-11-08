@@ -7,9 +7,70 @@
   <body>
     <%- include('../../components/nav.ejs', {currentUrl: '/' }); %>
 
-    <main id="home">
+    <section id="home-static" class="section">
+      <div class="columns is-vcentered">
+        <div class="column is-6-desktop">
+          <h1 class="title">
+            Collateral assets can be leveraged to mint Ardana Stablecoins.
+          </h1>
+          <h6 class="subtitle">
+            Open a Ardana Stablecoin Vault, deposit your collateral, and
+            generate dUSD against it.
+          </h6>
+          <div class="columns is-vcentered is-mobile">
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/bitcoin.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/usdt.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/ada.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/eth.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/bitcoin.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/usdt.png" />
+              </figure>
+            </div>
+            <div class="column is-narrow">
+              <figure class="image">
+                <img src="./assets/images/ada.png" />
+              </figure>
+            </div>
+          </div>
+          <button
+            class="button is-rounded is-responsive danaswap-btn-has-background"
+          >
+            <span>connect a wallet</span>
+          </button>
+        </div>
+        <div class="column is-offset-2-desktop is-4-desktop">
+          <figure class="image">
+            <img src="./assets/images/computer_screen.png" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="home">
       <%- include('../../components/noscript.ejs'); %>
-    </main>
+    </section>
 
     <%- include('../../components/footer.ejs'); %>
   </body>
