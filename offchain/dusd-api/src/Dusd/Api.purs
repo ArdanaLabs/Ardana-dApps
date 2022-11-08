@@ -4,6 +4,7 @@ module Dusd.Api
   -- Types
   , Protocol(..)
   -- Testing
+  , getWalletPubkeyhash
   , mintNft
   , seedTx
   ) where
@@ -56,13 +57,7 @@ initProtocolSimple datum = do
   logDebug' "protocol init complete"
   pure $ Protocol { datum, utxo, nftCs, configVal }
 
-getWalletPubkeyhash :: Contract () PubKeyHash
-getWalletPubkeyhash = do
-  (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
-  case addressCredential of
-    PubKeyCredential pkh -> pure pkh
-    _ -> liftEffect $ throw "wallet was not a pubkey?"
-
+-- | technically not part of this version of the protocol
 updateProtocl :: PlutusData -> Protocol -> Contract () Protocol
 updateProtocl new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
   TransactionOutput { datum } <- getUtxo oldUtxo >>= liftContractM "lookup failed. Maybe config utxo was already spent"
@@ -140,3 +135,11 @@ seedTx = do
   out <- liftContractM "no output" =<< getUtxo sending
   logInfo' $ "out: " <> show out
   pure sending
+
+getWalletPubkeyhash :: Contract () PubKeyHash
+getWalletPubkeyhash = do
+  (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
+  case addressCredential of
+    PubKeyCredential pkh -> pure pkh
+    _ -> liftEffect $ throw "wallet was not a pubkey?"
+

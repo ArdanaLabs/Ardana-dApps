@@ -6,11 +6,12 @@ import Contract.Prelude
 
 import Contract.Monad (launchAff_)
 import Contract.PlutusData (PlutusData(..))
-import Ctl.Utils.Test (runWithMode, useRunnerSimple)
+import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
 import Dusd.Api (initProtocolSimple, updateProtocl)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
+import Test.Attacks.Api (updateProtoclAttack,defUpdate)
 import Test.Spec (describe, it, parallel, sequential)
 
 main :: Effect Unit
@@ -33,4 +34,19 @@ main = launchAff_ $ do
       it "Update protocol doesn't error" $ useRunnerSimple $ do
         protocol <- initProtocolSimple (Constr zero [])
         updateProtocl (Constr one []) protocol
+      it "update with edit fails" $ useRunnerSimple $ do
+        protocol <- initProtocolSimple (Constr zero [])
+        expectScriptError $
+          updateProtoclAttack
+            (defUpdate{overwriteDatum = Just $ List [ Constr zero [] , Constr one [] ]})
+            (Constr one [])
+            protocol
+      it "update without signature fails" $ useRunnerSimple $ do
+        protocol <- initProtocolSimple (Constr zero [])
+        expectScriptError $
+          updateProtoclAttack
+            (defUpdate{noSignature = true})
+            (Constr one [])
+            protocol
+
 

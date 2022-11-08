@@ -2,6 +2,7 @@ module Ctl.Utils.Test
   ( runWithMode
   , useRunnerSimple
   , getPlutipConfig
+  , expectScriptError
   -- Types
   , EnvSpec
   , EnvRunner
@@ -14,16 +15,20 @@ import Contract.Monad (Contract, ContractEnv, withContractEnv)
 import Contract.Test.Plutip (PlutipConfig, runContractInEnv, withKeyWallet, withPlutipContractEnv)
 import Contract.Wallet (KeyWallet, privateKeysToKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFile)
+import Control.Monad.Error.Class (class MonadError, throwError, try)
 import Ctl.Internal.Plutip.PortCheck (isPortAvailable)
+import Ctl.Utils.Test.Types (Mode(..))
 import Data.BigInt as BigInt
 import Data.Identity (Identity)
 import Data.Log.Formatter.Pretty (prettyFormatter)
 import Data.Log.Message (Message)
-import Data.String (trim)
+import Data.String (Pattern(..), contains, trim)
 import Data.Time.Duration (Minutes(..), fromDuration)
 import Data.UInt as UInt
 import Data.Unfoldable (replicateA)
+import Effect.Aff (Error, error)
 import Effect.Aff.Retry (limitRetries, limitRetriesByCumulativeDelay, recovering)
+import Effect.Class (class MonadEffect)
 import Effect.Exception (message, throw)
 import Effect.Random (randomInt)
 import Node.Encoding (Encoding(..))
@@ -32,7 +37,6 @@ import Node.Process (lookupEnv)
 import Test.Spec (SpecT, before, sequential)
 import Test.Spec.Reporter (specReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
-import Ctl.Utils.Test.Types (Mode(..))
 
 type EnvRunner = (ContractEnv () -> KeyWallet -> Aff Unit) -> Aff Unit
 type EnvSpec = SpecT Aff EnvRunner Identity Unit
@@ -168,3 +172,26 @@ ourLogger path level msg = do
   when (msg.level >= level) $ log pretty
   appendTextFile UTF8 path ("\n" <> pretty)
 
+expectScriptError
+  :: forall m t
+   . MonadError Error m
+  => MonadEffect m
+  => m t
+  -> m Unit
+expectScriptError =
+  expectErrorPred (\err -> contains (Pattern "Script failure") (message err))
+
+
+expectErrorPred
+  :: forall m t
+   . MonadError Error m
+  => MonadEffect m
+  => (Error -> Boolean)
+  -> m t
+  -> m Unit
+expectErrorPred pred a =
+  try a >>= case _ of
+    Left err -> when (not $ pred err) $ do
+      liftEffect $ log $ "Threw an error but it didn't match predicate"
+      throwError err
+    Right _ -> throwError $ error "Expected error"
