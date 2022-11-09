@@ -472,17 +472,22 @@ Off-chain bot:
 
 Price module:
 \begin{itemize}
-  \item The on-chain code will be written in Plutarch
-  \item The off-chain code will be built as a PAB
-  \item The datum will contain a map from timestamps (in POSIX time) to price
-    values
-  \item The script address will be dependent on three admin public
-    keys\footnote{
-      These admin keys can only be updated when the protocol is updated.
-      This decision will be enforced by using the keys to determine the script
-      address, rather than putting them into the datum.
-    }
-\end{itemize}
+  \item The off-chain code will be built in CTL.
+  \item The on-chain code will be written in Plutarch.
+  \item The validator will validate the following:
+    \begin{itemize}
+      \item The UTxO is being spent by Admin.
+      \item The datum has a list of tuples containing USD Price of ADA and the slot number 
+        of when the price was observed.
+      \item The datum list does not exceed 48 entries.
+      \item The slot number of each item in the datum list is an hour apart.
+      \item There is a previous price oracle UTxO being spent.
+      \item The slot number previous price oracle UTxO is at least an hour behind the
+        transaction. 
+      \item The previous price oracle UTxO contains the Oracle NFT.
+      \item The Oracle NFT is being moved to the new Oracle UTxO.
+    \end{itemize}  
+  \end{itemize} 
 
 Note: The off-chain bot will combine the price feeds through two operations:
 \begin{enumerate}
