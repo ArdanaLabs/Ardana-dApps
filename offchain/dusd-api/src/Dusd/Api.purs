@@ -11,14 +11,16 @@ module Dusd.Api
 
 import Contract.Prelude
 
+import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
 import Contract.Address (PubKeyHash, getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Credential (Credential(..))
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
+import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (Validator, validatorHash)
-import Contract.Transaction (TransactionInput, TransactionOutput(..), TransactionOutputWithRefScript(..))
+import Contract.Transaction (TransactionHash(..), TransactionInput(..), TransactionOutput(..), TransactionOutputWithRefScript(..))
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
@@ -32,10 +34,44 @@ import Data.List (head)
 import Data.Map (keys, singleton)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
+import Data.UInt as UInt
 import Dusd.CborTyped (configAddressValidator, simpleNft)
 import Effect.Exception (throw)
 
 newtype Protocol = Protocol { datum :: PlutusData, utxo :: TransactionInput, nftCs :: CurrencySymbol, configVal :: Validator }
+
+derive instance Newtype Protocol _
+
+type ProtocolJson = {datum :: PlutusData , utxo :: TransactionInputJson , nftCs :: CurrencySymbol , configVal :: Validator}
+type TransactionInputJson = { index :: Int, transactionId :: String }
+
+jsonifyTxIn :: TransactionInput -> TransactionInputJson
+jsonifyTxIn (TransactionInput {index,transactionId})
+  = {index:UInt.toInt index
+    ,transactionId: byteArrayToHex $ unwrap transactionId
+    }
+
+unJsonifyTxIn :: TransactionInputJson -> TransactionInput
+unJsonifyTxIn {index,transactionId}
+  = TransactionInput
+    { index:UInt.fromInt index
+    ,transactionId:TransactionHash $ hexToByteArrayUnsafe transactionId
+    }
+
+jsonifyProtocol :: Protocol -> ProtocolJson
+jsonifyProtocol (Protocol {datum,utxo,nftCs,configVal})
+  = {datum,utxo:jsonifyTxIn utxo,nftCs,configVal}
+
+
+unJsonifyProtocol :: ProtocolJson -> Protocol
+unJsonifyProtocol {datum,utxo,nftCs,configVal}
+  = Protocol {datum,utxo:unJsonifyTxIn utxo,nftCs,configVal}
+
+instance EncodeAeson Protocol where
+  encodeAeson' = jsonifyProtocol >>> encodeAeson'
+
+instance DecodeAeson Protocol where
+  decodeAeson = (unJsonifyProtocol <$> _) <<< decodeAeson
 
 -- | Initializes the protocol with a given datum
 initProtocolSimple :: PlutusData -> Contract () Protocol
