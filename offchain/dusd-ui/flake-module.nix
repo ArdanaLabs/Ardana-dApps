@@ -6,25 +6,53 @@
       inherit (config) cat-lib dream2nix;
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
+
+      fa_sprite_util = pkgs.callPackage ./tools/fa_sprite_util/default.nix { };
+
+      iconsToKeep = [
+        # brands
+        "discord"
+        "linkedin"
+        "medium"
+        "reddit"
+        "telegram"
+        "twitter"
+
+        # solid
+        "angle-down"
+        "angle-up"
+        "right-left"
+        "sun"
+      ];
+
       font-awesome-sprites =
-        # TODO: figure out which icons we _need_, and strip the rest as almost
-        # all of these icons are unused dead weight
-        # NOTE: "--enable-comment-stripping" can’t be added due to licensing
-        # (CC BY 4.0 requires attribution). To enable, the license data
-        # should be moved to the proper metadata elements and namespaces (I’m
-        # unsure why Font Awesome didn’t do this to begin with)
+        let
+          inherit (pkgs.lib.strings) escapeShellArgs;
+
+          fontAwesomeVersion = "6.2.0";
+          fontAwesomeYear = "2022";
+          fontAwesomeFlags = escapeShellArgs ([
+            "--font-awesome-version=${fontAwesomeVersion}"
+            "--font-awesome-year=${fontAwesomeYear}"
+          ] ++ builtins.map (i: "--icon=${i}") iconsToKeep);
+
+          scourFlags = escapeShellArgs [
+            "--indent=none"
+            "--enable-comment-stripping"
+          ];
+        in
         pkgs.runCommand "get-font-awesome"
           {
-            nativeBuildInputs = with pkgs; [ parallel scour ];
+            nativeBuildInputs = with pkgs; [ fa_sprite_util parallel scour ];
           }
           ''
             set -euo pipefail
             mkdir -p $out
             filenames=("brands" "solid")
-            parallel scour \
-              -i ${self.inputs.font-awesome}/sprites/{}.svg \
-              -o "$out/font-awesome-sprite-{}.svg" \
-              --indent=none \
+            parallel ${escapeShellArgs [ 
+              "--will-cite"
+              "fa_sprite_util ${fontAwesomeFlags} < ${self.inputs.font-awesome}/sprites/{}.svg | scour -o \"$out/font-awesome-sprite-{}.svg\" ${scourFlags}"
+            ]} \
               ::: ''${filenames[@]}
           '';
     in
