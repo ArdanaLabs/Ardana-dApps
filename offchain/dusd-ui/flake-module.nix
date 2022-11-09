@@ -129,7 +129,7 @@
       {
         dusd-ui = mkWebsite
           "dusd-ui"
-          "a7219476-6e9c-438b-b43c-4b858051ecce";
+          "bf0167e5-b0c2-41b2-9141-3b9f10329c1d";
       };
   };
 }
