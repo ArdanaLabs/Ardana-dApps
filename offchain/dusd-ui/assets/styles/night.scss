@@ -3,37 +3,9 @@
 @import "../../node_modules/bulma/sass/utilities/initial-variables";
 
 @font-face {
-  font-family: "Museo Sans";
-  src: local("Museo Sans 300"), local("Museo-Sans-300"),
-    url(../fonts/Museo-Sans/MuseoSans_300.woff2) format("woff2");
-  font-weight: 300;
-}
-
-@font-face {
-  font-family: "Museo Sans";
-  src: local("Museo Sans 500"), local("Museo-Sans-500"),
-    url(../fonts/Museo-Sans/MuseoSans_500.woff2) format("woff2");
-  font-weight: 500;
-}
-
-@font-face {
-  font-family: "Museo Sans";
-  src: local("Museo Sans 700"), local("Museo-Sans-700"),
-    url(../fonts/Museo-Sans/MuseoSans_700.woff2) format("woff2");
-  font-weight: 700;
-}
-
-@font-face {
-  font-family: "Museo Sans";
-  src: local("Museo Sans 900"), local("Museo-Sans-900"),
-    url(../fonts/Museo-Sans/MuseoSans_900.woff2) format("woff2");
-  font-weight: 900;
-}
-
-@font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Light"), local("Brandon-Grotesque-Light"),
-    url(../fonts/Brandon-Grotesque-Font-Family/brandon-grotesque-light.woff2)
+    url(../fonts/Brandon-Grotesque/brandon-grotesque-light.woff2)
       format("woff2");
   font-weight: 300;
 }
@@ -41,7 +13,7 @@
 @font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Bold"), local("Brandon-Grotesque-Bold"),
-    url(../fonts/brandon-Grotesque-Font-Family/brandon-grotesque-bold-regular.woff2)
+    url(../fonts/Brandon-Grotesque/brandon-grotesque-bold-regular.woff2)
       format("woff2");
   font-weight: 700;
 }
@@ -49,33 +21,22 @@
 @font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Black"), local("Brandon-Grotesque-Black"),
-    url(../fonts/brandon-Grotesque-Font-Family/brandon-grotesque-black.woff2)
+    url(../fonts/Brandon-Grotesque/brandon-grotesque-black.woff2)
       format("woff2");
   font-weight: 900;
 }
 
 $scheme-main: #080e42;
+$scheme-invert: #f5fcfe;
 
-$family-primary: "Museo Sans", serif;
+$family-primary: "Brandon Grotesque", serif;
 
+$link: $scheme-invert;
+$text: $scheme-invert;
+$text-strong: $scheme-invert;
+$title-color: $scheme-invert;
+$subtitle-color: $grey-light;
 $button-border-width: 0;
-
-$table-cell-padding: 1.5em;
-
-$link: #f5fcfe;
-$text: #f5fcfe;
-$link-focus: #f5fcfe;
-$link-hover: #f5fcfe;
-$text-strong: #f5fcfe;
-$input-color: #f5fcfe;
-$title-color: #f5fcfe;
-$subtitle-color: #f5fcfe;
-$input-placeholder-color: #f5fcfe;
-$navbar-item-hover-background-color: #080e42;
-$navbar-item-active-color: #73d6f1;
-$navbar-item-hover-color: #f5fcfe;
-$navbar-item-color: #f5fcfe;
-$subtitle-color: grey;
 
 @import "../../node_modules/bulma/bulma";
 
@@ -121,19 +82,8 @@ $subtitle-color: grey;
   background-size: cover;
 }
 
-.vaults-table-header {
-  font-family: "Brandon Grotesque", sans-serif;
-  font-style: normal;
-  font-weight: 500;
-  line-height: 100%;
-
-  color: #72d2f3;
-}
-
 .vaults-table-row {
-  box-sizing: border-box;
-  border: 1px solid #0a5884;
-  border-radius: 38px;
+  border-bottom: 1px solid #72d2f3;
 }
 
 .link-a-coin {
@@ -164,7 +114,7 @@ $subtitle-color: grey;
   background: linear-gradient(180deg, #71b5f3 0%, rgba(113, 206, 243, 0) 110%);
 }
 
-.search-box {
+.search-input {
   mix-blend-mode: normal;
   background: linear-gradient(0deg, #1e2769, #1e2769);
   border: 1px solid rgba(96, 119, 255, 1);
