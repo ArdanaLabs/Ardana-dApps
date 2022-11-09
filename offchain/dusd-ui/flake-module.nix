@@ -21,8 +21,9 @@
         # solid
         "angle-down"
         "angle-up"
-        "right-left"
-        "sun"
+        "arrow-right"
+        "magnifying-glass"
+        "circle-arrow-right"
       ];
 
       font-awesome-sprites =
