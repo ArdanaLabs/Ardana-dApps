@@ -42,30 +42,26 @@ newtype Protocol = Protocol { datum :: PlutusData, utxo :: TransactionInput, nft
 
 derive instance Newtype Protocol _
 
-type ProtocolJson = {datum :: PlutusData , utxo :: TransactionInputJson , nftCs :: CurrencySymbol , configVal :: Validator}
+type ProtocolJson = { datum :: PlutusData, utxo :: TransactionInputJson, nftCs :: CurrencySymbol, configVal :: Validator }
 type TransactionInputJson = { index :: Int, transactionId :: String }
 
 jsonifyTxIn :: TransactionInput -> TransactionInputJson
-jsonifyTxIn (TransactionInput {index,transactionId})
-  = {index:UInt.toInt index
-    ,transactionId: byteArrayToHex $ unwrap transactionId
-    }
+jsonifyTxIn (TransactionInput { index, transactionId }) =
+  { index: UInt.toInt index
+  , transactionId: byteArrayToHex $ unwrap transactionId
+  }
 
 unJsonifyTxIn :: TransactionInputJson -> TransactionInput
-unJsonifyTxIn {index,transactionId}
-  = TransactionInput
-    { index:UInt.fromInt index
-    ,transactionId:TransactionHash $ hexToByteArrayUnsafe transactionId
-    }
+unJsonifyTxIn { index, transactionId } = TransactionInput
+  { index: UInt.fromInt index
+  , transactionId: TransactionHash $ hexToByteArrayUnsafe transactionId
+  }
 
 jsonifyProtocol :: Protocol -> ProtocolJson
-jsonifyProtocol (Protocol {datum,utxo,nftCs,configVal})
-  = {datum,utxo:jsonifyTxIn utxo,nftCs,configVal}
-
+jsonifyProtocol (Protocol { datum, utxo, nftCs, configVal }) = { datum, utxo: jsonifyTxIn utxo, nftCs, configVal }
 
 unJsonifyProtocol :: ProtocolJson -> Protocol
-unJsonifyProtocol {datum,utxo,nftCs,configVal}
-  = Protocol {datum,utxo:unJsonifyTxIn utxo,nftCs,configVal}
+unJsonifyProtocol { datum, utxo, nftCs, configVal } = Protocol { datum, utxo: unJsonifyTxIn utxo, nftCs, configVal }
 
 instance EncodeAeson Protocol where
   encodeAeson' = jsonifyProtocol >>> encodeAeson'
