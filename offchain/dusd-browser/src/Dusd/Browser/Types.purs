@@ -1,4 +1,4 @@
-module DanaSwap.Browser.Types where
+module Dusd.Browser.Types where
 
 type Vault =
   { asset :: String

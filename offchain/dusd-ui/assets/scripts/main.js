@@ -1,4 +1,4 @@
-const modeKey = "ardana-dapps-mode";
+const modeKey = "dusd-mode";
 const currentMode = localStorage.getItem(modeKey);
 const lightmodeCss = document.getElementById("lightmode-css");
 const lightmodeToggleBtn = document.getElementById("lightmode-toggle-btn");

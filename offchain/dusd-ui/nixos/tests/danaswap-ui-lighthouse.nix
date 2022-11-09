@@ -1,32 +1,32 @@
 { nixosTest
-, danaswap-ui # The danaswap-ui website
+, dusd-ui # The dusd-ui website
 , lighthouse # The lighthouse executable
 , categories ? { performance = 0.99; accessibility = 0.99; seo = 0.99; best-practices = 0.99; } # The minimal score that needs to be reached for each category
 }:
 let
-  name = "danaswap-ui-lighthouse";
-  danaswap-ui-server-port = "8000";
+  name = "dusd-ui-lighthouse";
+  dusd-ui-server-port = "8000";
 in
 nixosTest {
   inherit name;
 
   nodes = {
     server = { config, pkgs, ... }: {
-      users.users.danaswap-ui = {
-        name = "danaswap-ui";
-        group = "danaswap-ui";
+      users.users.dusd-ui = {
+        name = "dusd-ui";
+        group = "dusd-ui";
         isSystemUser = true;
       };
-      users.groups.danaswap-ui = { };
+      users.groups.dusd-ui = { };
 
-      systemd.services.danaswap-ui-server = {
+      systemd.services.dusd-ui-server = {
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
-        description = "danaswap-ui-server";
+        description = "dusd-ui-server";
         serviceConfig = {
-          User = "danaswap-ui";
-          Group = "danaswap-ui";
-          ExecStart = ''${pkgs.simple-http-server}/bin/simple-http-server -c=js,css,svg,html -i -p ${danaswap-ui-server-port} -- ${danaswap-ui}'';
+          User = "dusd-ui";
+          Group = "dusd-ui";
+          ExecStart = ''${pkgs.simple-http-server}/bin/simple-http-server -c=js,css,svg,html -i -p ${dusd-ui-server-port} -- ${dusd-ui}'';
         };
       };
     };
@@ -37,10 +37,10 @@ nixosTest {
 
     start_all()
     server.wait_for_unit("network.target")
-    server.wait_for_open_port(${danaswap-ui-server-port})
+    server.wait_for_open_port(${dusd-ui-server-port})
 
     report_path = "/tmp/lighthouse-report.json"
-    server.succeed("CI=1 ${lighthouse}/bin/lighthouse http://localhost:${danaswap-ui-server-port} --output json --output-path {} --only-categories accessibility,best-practices,performance,seo --skip-audits valid-source-maps --chrome-flags=\"--headless --no-sandbox\"".format(report_path))
+    server.succeed("CI=1 ${lighthouse}/bin/lighthouse http://localhost:${dusd-ui-server-port} --output json --output-path {} --only-categories accessibility,best-practices,performance,seo --skip-audits valid-source-maps --chrome-flags=\"--headless --no-sandbox\"".format(report_path))
     server.copy_from_vm(report_path)
 
     with open("{}/lighthouse-report.json".format(os.environ["out"]), "r") as f:

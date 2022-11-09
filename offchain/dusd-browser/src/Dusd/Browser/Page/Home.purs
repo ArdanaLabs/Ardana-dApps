@@ -1,8 +1,8 @@
-module DanaSwap.Browser.Home where
+module Dusd.Browser.Home where
 
 import Contract.Prelude
 
-import DanaSwap.Browser.Types (Vault)
+import Dusd.Browser.Types (Vault)
 import Data.Array (concat)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
@@ -23,7 +23,7 @@ main = HA.runHalogenAff do
   _ <- HA.awaitLoad
   mbHome <- HA.selectElement $ QuerySelector "#home"
   case mbHome of
-    Nothing -> throwError $ error "`#home` element to found. DanaSwap component unable to mount."
+    Nothing -> throwError $ error "`#home` element to found. Dusd component unable to mount."
     Just elem -> void $ runUI component unit elem
 
 type State =
@@ -186,25 +186,25 @@ component =
         , HH.div [ mkClass "columns m-6 is-vcentered" ]
             [ HH.div [ mkClass "column" ]
                 [ if filter == PopularAssets then
-                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Popular Assets" ] ]
+                    HH.button [ mkClass "button is-large is-rounded is-responsive dusd-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Popular Assets" ] ]
                   else
                     HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter PopularAssets) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Popular Assets" ] ]
                 ]
             , HH.div [ mkClass "column" ]
                 [ if filter == AllAssets then
-                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "All Assets" ] ]
+                    HH.button [ mkClass "button is-large is-rounded is-responsive dusd-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "All Assets" ] ]
                   else
                     HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter AllAssets) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "All Assets" ] ]
                 ]
             , HH.div [ mkClass "column" ]
                 [ if filter == StableCoins then
-                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Stablecoins" ] ]
+                    HH.button [ mkClass "button is-large is-rounded is-responsive dusd-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Stablecoins" ] ]
                   else
                     HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter StableCoins) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "Stablecoins" ] ]
                 ]
             , HH.div [ mkClass "column" ]
                 [ if filter == LPToken then
-                    HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "LP Token" ] ]
+                    HH.button [ mkClass "button is-large is-rounded is-responsive dusd-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "LP Token" ] ]
                   else
                     HH.button [ mkClass "button is-large is-rounded is-responsive", HE.onClick $ const (SetFilter LPToken) ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "LP Token" ] ]
                 ]
@@ -277,7 +277,7 @@ component =
                     [ HH.div [ mkClass "columns is-mobile" ]
                         [ HH.div [ mkClass "column" ]
                             [ HH.p [ mkClass "title" ] [ HH.text "Got questions?" ]
-                            , HH.p [ mkClass "subtitle is-size-7" ] [ HH.text "Learn more about Dana Coin, Danaswap and Stablecoin Vaults by visiting our FAQs page." ]
+                            , HH.p [ mkClass "subtitle is-size-7" ] [ HH.text "Learn more about Dana Coin, DanaSwap and Stablecoin Vaults by visiting our FAQs page." ]
                             ]
                         , HH.div [ mkClass "column has-text-right" ]
                             [ HH.div [ mkClass "pt-6" ] [ mkIcon "circle-arrow-right" ]
@@ -311,7 +311,7 @@ component =
               [ HH.p [ mkClass "is-size-5-desktop is-size-7-touch has-text-centered" ] [ HH.text $ show v.minCollRatio <> "%" ]
               ]
           , HH.div [ mkClass "column has-text-centered" ]
-              [ HH.button [ mkClass "button is-large is-rounded is-responsive danaswap-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "open vault" ] ]
+              [ HH.button [ mkClass "button is-large is-rounded is-responsive dusd-btn-has-background" ] [ HH.span [ mkClass "title is-size-4-desktop is-size-6-touch" ] [ HH.text "open vault" ] ]
               ]
           ]
       ]

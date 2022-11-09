@@ -5,7 +5,7 @@
       pkgs = inputs'.nixpkgs.legacyPackages;
       inherit (config) cat-lib dream2nix;
       ui =
-        (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.danaswap-ui;
+        (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
       font-awesome-sprites =
         # TODO: figure out which icons we _need_, and strip the rest as almost
         # all of these icons are unused dead weight
@@ -30,30 +30,30 @@
     in
     {
       packages = {
-        danaswap-ui =
-          pkgs.runCommand "build-danaswap-ui"
+        dusd-ui =
+          pkgs.runCommand "build-dusd-ui"
             { }
             ''
               mkdir -p $out/assets/{images,scripts}
-              cp -r ${ui}/lib/node_modules/danaswap-ui/build/* $out/
-              cp -r ${self'.packages."offchain:danaswap-browser"}/dist/* $out/assets/scripts
+              cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
+              cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
             '';
       };
 
       apps = {
-        "offchain:danaswap-ui:serve:testnet" =
-          cat-lib.makeServeApp self'.packages."danaswap-ui";
-        "offchain:danaswap-ui:serve:mainnet" =
-          cat-lib.makeServeApp self'.packages."danaswap-ui";
+        "offchain:dusd-ui:serve:testnet" =
+          cat-lib.makeServeApp self'.packages."dusd-ui";
+        "offchain:dusd-ui:serve:mainnet" =
+          cat-lib.makeServeApp self'.packages."dusd-ui";
       };
 
       checks = {
-        "danaswap-ui:lighthouse" =
-          pkgs.callPackage ./nixos/tests/danaswap-ui-lighthouse.nix {
+        "dusd-ui:lighthouse" =
+          pkgs.callPackage ./nixos/tests/dusd-ui-lighthouse.nix {
             lighthouse =
               (dream2nix.lib.makeOutputs { source = self.inputs.lighthouse-src; }).packages.lighthouse;
-            danaswap-ui = self'.packages."danaswap-ui";
+            dusd-ui = self'.packages."dusd-ui";
             # TODO these values need to be increased once the improvements were done
             categories = {
               performance = 0.1;
@@ -99,8 +99,8 @@
           };
       in
       {
-        danaswap-ui = mkWebsite
-          "danaswap-ui"
+        dusd-ui = mkWebsite
+          "dusd-ui"
           "a7219476-6e9c-438b-b43c-4b858051ecce";
       };
   };
