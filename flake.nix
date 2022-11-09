@@ -65,6 +65,7 @@
           ./docs
           ./nix/flake-modules
           ./ui
+          ./price-feeder
         ];
       }
     ).config.flake;
