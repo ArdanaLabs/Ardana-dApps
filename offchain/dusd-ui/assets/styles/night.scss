@@ -74,14 +74,24 @@ $button-border-width: 0;
 }
 
 #lightmode-toggle-btn {
-  background-image: url(../images/lightmode_toggle_btn_night.png);
+  background-image: url("../images/lightmode_toggle_btn_night.png");
+  background-image: image-set(
+    "../images/lightmode_toggle_btn_night.jxl" type("image/jxl"),
+    "../images/lightmode_toggle_btn_night.webp" type("image/webp"),
+    "../images/lightmode_toggle_btn_night.png" type("image/png")
+  );
   background-size: cover;
   width: 96px;
   height: 50px;
 }
 
 #home-static {
-  background-image: url(../images/home_static_night.png);
+  background-image: url("../images/home_static_night.png");
+  background-image: image-set(
+    "../images/home_static_night.jxl" type("image/jxl"),
+    "../images/home_static_night.webp" type("image/webp"),
+    "../images/home_static_night.png" type("image/png")
+  );
   background-size: cover;
 }
 
