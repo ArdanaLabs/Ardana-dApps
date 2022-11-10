@@ -1,7 +1,7 @@
-module Types (ProtocolParams(..)) where
+module Types (ProtocolParams (..)) where
 
-import Plutarch.Prelude
 import Plutarch.DataRepr (PDataFields)
+import Plutarch.Prelude
 
 newtype ProtocolParams (s :: S)
   = ProtocolParams

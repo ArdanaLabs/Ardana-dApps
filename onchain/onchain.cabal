@@ -103,6 +103,7 @@ executable dusd
     Dusd
     Lib
     Types
+
   build-depends:
     , base
     , bytestring
