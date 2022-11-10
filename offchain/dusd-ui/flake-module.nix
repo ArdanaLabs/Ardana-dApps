@@ -15,7 +15,7 @@
         in
           pkgs.runCommand "optimize-pngs"
             {
-              nativeBuildInputs = with pkgs; [ optipng parallel ];
+              nativeBuildInputs = with pkgs; [ libjxl parallel ];
             }
             ''
               set -euo pipefail
@@ -23,7 +23,7 @@
 
               parallel ${escapeShellArgs [ 
                 "--will-cite"
-                "optipng -o7 {} -dir \"$out\""
+                "cjxl --quality=100 --effort=9 {} $out/$(basename {})"
               ]} \
                 ::: `find ${imagesDir} -name "*.png"`
             '';
