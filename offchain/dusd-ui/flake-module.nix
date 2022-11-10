@@ -94,10 +94,7 @@
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
               cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
-
-              for i in `find ${optimized-images} -type f`; do
-                ln -sf $i $out/assets/images/$(basename $i)
-              done
+              cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
             '';
       };
 
