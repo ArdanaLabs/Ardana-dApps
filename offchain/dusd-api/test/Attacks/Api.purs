@@ -21,7 +21,7 @@ import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, waitForTx)
 import Data.Array (cons)
 import Data.Map (singleton)
-import Dusd.Api (Protocol(..), getWalletPubkeyhash)
+import DUsd.Api (Protocol(..), getWalletPubkeyhash)
 import Effect.Exception (throw)
 
 -- There's a package for this but it's not in
