@@ -7,15 +7,15 @@
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
 
-      optimized-pngs =
+      optimized-images =
         let
           inherit (pkgs.lib.strings) escapeShellArgs;
 
           imagesDir = "${ui}/lib/node_modules/dusd-ui/build/assets/images/";
         in
-        pkgs.runCommand "optimize-pngs"
+        pkgs.runCommand "optimize-and-transform-pngs"
           {
-            nativeBuildInputs = with pkgs; [ libjxl parallel ];
+            nativeBuildInputs = with pkgs; [ optipng libjxl libwebp parallel ];
           }
           ''
             set -euo pipefail
@@ -23,7 +23,13 @@
 
             parallel ${escapeShellArgs [ 
               "--will-cite"
-              "cjxl --quality=100 --effort=9 {} $out/$(basename {})"
+              # NOTE: AVIF files were often bigger, skipping
+              # TODO: there is a way to run these in parallel
+              ''
+                optipng -o9 {} $out/{/};
+                cwebp -lossless {} -o $out/{/.}.webp;
+                cjxl --quality=100 --effort=9 {} $out/{/.}.jxl;
+              ''
             ]} \
               ::: `find ${imagesDir} -name "*.png"`
           '';
@@ -88,7 +94,7 @@
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
               cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
-              cp -f ${optimized-pngs}/*.png $out/assets/images
+              cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
             '';
       };
 
