@@ -57,7 +57,11 @@ paramModuleAdr = ptrace "param module" $
       checkAdminSig adminPKHdata infoRec
       outDatum :: Term _ ProtocolParams <- getNextOutputByNft nftCs (pconstant "") infoRec scRec
       ProtocolParams outRec' <- pmatchC outDatum
-      outRec <- pletFieldsC @'["debtCeil", "debtFloor"] outRec'
-      pguardC "debtCeil >= 0" $ 0 #<= pfromData (getField @"debtCeil" outRec)
+      outRec <- pletFieldsC
+        @'["liquidationFee", "debtFloor", "liquidationDiscount", "liquidationRatio"]
+        outRec'
+      pguardC "liquidationFee >= 0" $ 0 #<= pfromData (getField @"liquidationFee" outRec)
+      pguardC "liquidationDiscount >= 0" $ 0 #<= pfromData (getField @"liquidationDiscount" outRec)
       pguardC "debtFloor >= 0" $ 0 #<= pfromData (getField @"debtFloor" outRec)
+      pguardC "liquidationRatio > 1" $ 1 #< pfromData (getField @"liquidationRatio" outRec)
       pure $ popaque $ pcon PUnit

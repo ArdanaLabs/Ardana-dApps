@@ -8,9 +8,11 @@ newtype ProtocolParams (s :: S)
       ( Term
           s
           ( PDataRecord
-              '[ "debtCeil" ':= PInteger
-               , "debtFloor" ':= PInteger
-               -- TODO other params
+              '[ "debtFloor" ':= PInteger
+               , "liquidationDiscount" ':= PRational
+               , "liquidationFee" ':= PInteger
+               , "liquidationRatio" ':=  PRational
+              -- TODO Are these types correct
                ]
           )
       )
@@ -19,3 +21,5 @@ newtype ProtocolParams (s :: S)
 
 instance DerivePlutusType ProtocolParams where type DPTStrat _ = PlutusTypeData
 instance PTryFrom PData (PAsData ProtocolParams)
+
+
