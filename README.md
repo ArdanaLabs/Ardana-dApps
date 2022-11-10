@@ -27,7 +27,7 @@ If you have Nix installed on a Linux system in a multi-user fashion (the default
 If you have Nix installed in a single-user fashion:
 
 1. Get Cachix: `nix shell nixpkgs#cachix`
-2. Sign into app.cachix.org with GitHub
+2. Sign into app.cachix.org
 3. Generate a personal auth token at https://app.cachix.org/personal-auth-tokens
 4. Put that token into this command and run it: `cachix authtoken <TheTokenYouJustCopied>`
 5. Run `cachix use private-ardanalabs`.
