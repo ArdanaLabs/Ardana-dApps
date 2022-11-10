@@ -1,4 +1,4 @@
-module Dusd.Api
+module DUsd.Api
   ( initProtocolSimple
   , updateProtocl
   -- Types
@@ -35,7 +35,7 @@ import Data.Map (keys, singleton)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
 import Data.UInt as UInt
-import Dusd.CborTyped (configAddressValidator, simpleNft)
+import DUsd.CborTyped (configAddressValidator, simpleNft)
 import Effect.Exception (throw)
 
 newtype Protocol = Protocol { datum :: PlutusData, utxo :: TransactionInput, nftCs :: CurrencySymbol, configVal :: Validator }

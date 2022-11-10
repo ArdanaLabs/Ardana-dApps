@@ -1,4 +1,4 @@
-module Dusd.CborTyped
+module DUsd.CborTyped
   ( simpleNft
   , configAddressValidator
   ) where
