@@ -7,6 +7,27 @@
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
 
+      optimized-pngs =
+        let
+          inherit (pkgs.lib.strings) escapeShellArgs;
+
+          imagesDir = "${ui}/lib/node_modules/dusd-ui/build/assets/images/";
+        in
+          pkgs.runCommand "optimize-pngs"
+            {
+              nativeBuildInputs = with pkgs; [ optipng parallel ];
+            }
+            ''
+              set -euo pipefail
+              mkdir -p $out
+
+              parallel ${escapeShellArgs [ 
+                "--will-cite"
+                "optipng -o7 {} -dir \"$out\""
+              ]} \
+                ::: `find ${imagesDir} -name "*.png"`
+            '';
+
       fa_sprite_util = pkgs.callPackage ./tools/fa_sprite_util/default.nix { };
 
       iconsToKeep = [
@@ -67,6 +88,7 @@
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
               cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
+              cp -f ${optimized-pngs}/*.png $out/assets/images
             '';
       };
 
