@@ -12,66 +12,23 @@
 
     <div class="column is-narrow">
       <div class="columns is-vcentered is-mobile">
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>Twitter</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#twitter"
-              />
-            </svg>
-          </span>
-        </div>
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>Discord</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#discord"
-              />
-            </svg>
-          </span>
-        </div>
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>Telegram</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#telegram"
-              />
-            </svg>
-          </span>
-        </div>
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>Medium</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#medium"
-              />
-            </svg>
-          </span>
-        </div>
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>Reddit</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#reddit"
-              />
-            </svg>
-          </span>
-        </div>
-        <div class="column">
-          <span class="icon">
-            <svg role="presentation" focusable="false" aria-labelledby="title">
-              <title>LinkedIn</title>
-              <use
-                href="/assets/images/font-awesome-sprite-brands.svg#linkedin"
-              />
-            </svg>
-          </span>
-        </div>
+		  <% [
+		      { brandIcon: "twitter", title: "Twitter" },
+		      { brandIcon: "discord", title: "Discord" },
+		      { brandIcon: "telegram", title: "Telegram" },
+		      { brandIcon: "medium", title: "Medium" },
+		      { brandIcon: "reddit", title: "Reddit" },
+		      { brandIcon: "linkedin", title: "LinkedIn" },
+		    ].forEach(social) { %>
+            <div class="column">
+              <span class="icon">
+                <svg role="presentation" focusable="false" aria-labelledby="title">
+                  <title><%= social.title %></title>
+                  <use href="/assets/images/font-awesome-sprite-brands.svg#<%= social.brandIcon %>" />
+                </svg>
+              </span>
+            </div>
+		  <% } %>
       </div>
     </div>
   </div>
