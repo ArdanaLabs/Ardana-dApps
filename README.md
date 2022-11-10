@@ -72,8 +72,8 @@ You can ensure that the Cachix is being used by trying to build one of the outpu
 `./docs/test-plan/hello-world.pdf` documents the hello world application. A simple test project to get you up and running. 
 
 When editing any documents within ./docs/test-plan you can set up a latex pdf rendering feedback loop by running
-```
-nix run .#docs:feedback-loop
+```console
+$ nix run ".#docs:feedback-loop"
 ```
 
 ## Development workflow
@@ -82,23 +82,23 @@ nix run .#docs:feedback-loop
 
 The onchain and offchain code have different dependencies, thus different dev shells. To launch a shell for onchain dev, run:
 
-```
-nix develop .#onchain
+```console
+$ nix develop ".#onchain"
 ```
 
 For various offchain components, run:
 
+```console
+$ nix develop ".#offchain:component"
 ```
-nix develop .#offchain:component
-```
-for example, for `hello-world-cli` this would be `nix develop .#offchain:hello-world-cli`.
+for example, for `hello-world-cli` this would be `nix develop ".#offchain:hello-world-cli"`.
 
 ### Formatting
 
 To auto-format the project tree, run:
 
-```sh-session
-nix run .#format
+```console
+$ nix run ".#format"
 ```
 
 If you are in nix-shell already, you can also just run `treefmt`.
@@ -108,10 +108,11 @@ If you are in nix-shell already, you can also just run `treefmt`.
 Although CI is run on every attribute of the `flake.nix` upon every commit of
 every branch, you may also some of the same checks locally as follows:
 
-```sh-session
-# -L is for displaying full logs, which includes test output.
-nix flake check -L
+```console
+$ nix flake check -L
 ```
+
+NOTE: `-L` is for displaying full logs, which includes test output.
 
 ### Making a new package (flake module)
 
@@ -124,7 +125,7 @@ following template, at its root. You can run `nix flake init -t .`
 anywhere in this repository, and a new `flake-module.nix` with the following
 skeleton template will be created in your current directory.
 
-```
+```nix
 { self, ... }:
 {
   perSystem = { config, self', inputs', system, ... }: {
