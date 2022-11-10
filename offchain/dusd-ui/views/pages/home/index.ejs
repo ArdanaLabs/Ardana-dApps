@@ -18,7 +18,8 @@
             generate dUSD against it.
           </h6>
           <div class="columns is-vcentered is-mobile">
-            <% [
+            <%
+              [
                 { fileBasename: "bitcoin", alt: "Bitcoin" },
                 { fileBasename: "usdt", alt: "USDT" },
                 { fileBasename: "ada", alt: "ADA" },
@@ -26,17 +27,26 @@
                 { fileBasename: "bitcoin", alt: "Bitcoin" },
                 { fileBasename: "usdt", alt: "USDT" },
                 { fileBasename: "ada", alt: "ADA" },
-					].forEach(asset) { %>
-					  <div class="column is-narrow">
-                   <figure class="image"> 
-                     <picture title="<%= asset.alt %>">
-                       <source src="./assets/images/<%= asset.fileBasename %>.jxl" type="image/jxl" />
-                       <source src="./assets/images/<%= asset.fileBasename %>.webp" type="image/webp" />
-                       <img src="./assets/images/<%= asset.fileBasename %>.png" alt="<%= asset.alt %>" />
-                     </picture>
-					    </figure>
-					  </div>
-		      <% } %>
+              ].forEach(function(asset) { %>
+              <div class="column is-narrow">
+                <figure class="image">
+                  <picture title="<%= asset.alt %>">
+                    <source
+                      src="./assets/images/<%= asset.fileBasename %>.jxl"
+                      type="image/jxl"
+                    />
+                    <source
+                      src="./assets/images/<%= asset.fileBasename %>.webp"
+                      type="image/webp"
+                    />
+                    <img
+                      src="./assets/images/<%= asset.fileBasename %>.png"
+                      alt="<%= asset.alt %>"
+                    />
+                  </picture>
+                </figure>
+              </div>
+            <% }) %>
           </div>
           <button
             class="button is-rounded is-responsive dusd-btn-has-background"
@@ -47,8 +57,14 @@
         <div class="column is-offset-2-desktop is-4-desktop">
           <figure class="image">
             <picture>
-              <source src="./assets/images/computer_screen.jxl" type="image/jxl" />
-              <source src="./assets/images/computer_screen.webp" type="image/webp" />
+              <source
+                src="./assets/images/computer_screen.jxl"
+                type="image/jxl"
+              />
+              <source
+                src="./assets/images/computer_screen.webp"
+                type="image/webp"
+              />
               <img src="./assets/images/computer_screen.png" alt="" />
             </picture>
           </figure>

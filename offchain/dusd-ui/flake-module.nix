@@ -26,9 +26,9 @@
               # NOTE: AVIF files were often bigger, skipping
               # TODO: there is a way to run these in parallel
               ''
-                optipng -o9 {} $out/{/};
-                cwebp -lossless {} -o $out/{/.}.webp;
-                cjxl --quality=100 --effort=9 {} $out/{/.}.jxl;
+                optipng -o9 {} -dir $out
+                cwebp -lossless {} -o $out/$(basename {} .png).webp
+                cjxl --quality=100 --effort=9 {} $out/$(basename {} .png).jxl
               ''
             ]} \
               ::: `find ${imagesDir} -name "*.png"`
@@ -94,7 +94,10 @@
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
               cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
-              cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
+
+              for i in `find ${optimized-images} -type f`; do
+                ln -sf $i $out/assets/images/$(basename $i)
+              done
             '';
       };
 
