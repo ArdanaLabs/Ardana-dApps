@@ -13,20 +13,20 @@
 
           imagesDir = "${ui}/lib/node_modules/dusd-ui/build/assets/images/";
         in
-          pkgs.runCommand "optimize-pngs"
-            {
-              nativeBuildInputs = with pkgs; [ libjxl parallel ];
-            }
-            ''
-              set -euo pipefail
-              mkdir -p $out
+        pkgs.runCommand "optimize-pngs"
+          {
+            nativeBuildInputs = with pkgs; [ libjxl parallel ];
+          }
+          ''
+            set -euo pipefail
+            mkdir -p $out
 
-              parallel ${escapeShellArgs [ 
-                "--will-cite"
-                "cjxl --quality=100 --effort=9 {} $out/$(basename {})"
-              ]} \
-                ::: `find ${imagesDir} -name "*.png"`
-            '';
+            parallel ${escapeShellArgs [ 
+              "--will-cite"
+              "cjxl --quality=100 --effort=9 {} $out/$(basename {})"
+            ]} \
+              ::: `find ${imagesDir} -name "*.png"`
+          '';
 
       fa_sprite_util = pkgs.callPackage ./tools/fa_sprite_util/default.nix { };
 
