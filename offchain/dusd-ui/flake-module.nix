@@ -10,8 +10,6 @@
       optimized-images =
         let
           inherit (pkgs.lib.strings) escapeShellArgs;
-
-          imagesDir = "${ui}/lib/node_modules/dusd-ui/build/assets/images/";
         in
         pkgs.runCommand "optimize-and-transform-pngs"
           {
@@ -20,18 +18,17 @@
           ''
             set -euo pipefail
             mkdir -p $out
-
-            parallel ${escapeShellArgs [ 
-              "--will-cite"
-              # NOTE: AVIF files were often bigger, skipping
-              # TODO: there is a way to run these in parallel
-              ''
-                optipng -o9 {} -dir $out
-                cwebp -lossless {} -o $out/$(basename {} .png).webp
-                cjxl --quality=100 --effort=9 {} $out/$(basename {} .png).jxl
-              ''
-            ]} \
-              ::: `find ${imagesDir} -name "*.png"`
+            find ${./assets/images} -name "*.png" \
+              | parallel ${escapeShellArgs [
+                "--will-cite"
+                # NOTE: AVIF files were often bigger, skipping
+                # TODO: there is a way to run these in parallel
+                ''
+                  optipng -o9 {} -dir $out
+                  cwebp -lossless {} -o $out/{/.}.webp
+                  cjxl --quality=100 --effort=9 {} $out/{/.}.jxl
+                ''
+              ]}
           '';
 
       fa_sprite_util = pkgs.callPackage ./tools/fa_sprite_util/default.nix { };
