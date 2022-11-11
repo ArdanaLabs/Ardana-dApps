@@ -5,7 +5,7 @@
 @font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Light"), local("Brandon-Grotesque-Light"),
-    url(../fonts/Brandon-Grotesque/brandon-grotesque-light.woff2)
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-light.woff2")
       format("woff2");
   font-weight: 300;
 }
@@ -13,7 +13,7 @@
 @font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Bold"), local("Brandon-Grotesque-Bold"),
-    url(../fonts/Brandon-Grotesque/brandon-grotesque-bold-regular.woff2)
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-bold-regular.woff2")
       format("woff2");
   font-weight: 700;
 }
@@ -21,7 +21,7 @@
 @font-face {
   font-family: "Brandon Grotesque";
   src: local("Brandon Grotesque Black"), local("Brandon-Grotesque-Black"),
-    url(../fonts/Brandon-Grotesque/brandon-grotesque-black.woff2)
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-black.woff2")
       format("woff2");
   font-weight: 900;
 }
@@ -69,11 +69,11 @@ $button-border-width: 0;
 }
 
 .navbar-brand a.navbar-item {
-  background-image: url("../images/logo_header_light.png");
+  background-image: url("/assets/images/logo_header_light.png");
   background-image: image-set(
-    "../images/logo_header_light.jxl" type("image/jxl"),
-    "../images/logo_header_light.webp" type("image/webp"),
-    "../images/logo_header_light.png" type("image/png")
+    "/assets/images/logo_header_light.jxl" type("image/jxl"),
+    "/assets/images/logo_header_light.webp" type("image/webp"),
+    "/assets/images/logo_header_light.png" type("image/png")
   );
   background-size: cover;
   width: 65.92px;
@@ -81,11 +81,11 @@ $button-border-width: 0;
 }
 
 #lightmode-toggle-btn {
-  background-image: url("../images/lightmode_toggle_btn_light.png");
+  background-image: url("/assets/images/lightmode_toggle_btn_light.png");
   background-image: image-set(
-    "../images/lightmode_toggle_btn_light.jxl" type("image/jxl"),
-    "../images/lightmode_toggle_btn_light.webp" type("image/webp"),
-    "../images/lightmode_toggle_btn_light.png" type("image/png")
+    "/assets/images/lightmode_toggle_btn_light.jxl" type("image/jxl"),
+    "/assets/images/lightmode_toggle_btn_light.webp" type("image/webp"),
+    "/assets/images/lightmode_toggle_btn_light.png" type("image/png")
   );
   background-size: cover;
   width: 96px;
@@ -93,11 +93,11 @@ $button-border-width: 0;
 }
 
 #home-static {
-  background-image: url("../images/home_static_light.png");
+  background-image: url("/assets/images/home_static_light.png");
   background-image: image-set(
-    "../images/home_static_light.jxl" type("image/jxl"),
-    "../images/home_static_light.webp" type("image/webp"),
-    "../images/home_static_light.png" type("image/png")
+    "/assets/images/home_static_light.jxl" type("image/jxl"),
+    "/assets/images/home_static_light.webp" type("image/webp"),
+    "/assets/images/home_static_light.png" type("image/png")
   );
   background-size: cover;
 }
