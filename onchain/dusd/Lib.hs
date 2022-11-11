@@ -21,20 +21,20 @@ import Plutarch.Api.V1 (PMap, PValue (PValue))
 import Plutarch.Api.V1 qualified as Value
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 
--- | a common pattern is to have a state represented by
--- a utxo with a consistant NFT and address
--- to help with that this function finds the output that
--- represents the same state by checking
--- that the address and NFT have remained the same
--- and then gets and decodes its datum as this is
--- usually also needed
-getNextOutputByNft
-  :: forall
-  (s :: S)
-  infoRec -- should be an HRec type returned by pletFieldsC on a txinfo
-  scRec -- should be an HRec type returned by pletFieldsC on a script context
-  datumType -- the type being represented by the datum
-  .
+{- | a common pattern is to have a state represented by
+ a utxo with a consistant NFT and address
+ to help with that this function finds the output that
+ represents the same state by checking
+ that the address and NFT have remained the same
+ and then gets and decodes its datum as this is
+ usually also needed
+-}
+getNextOutputByNft ::
+  forall
+    (s :: S)
+    infoRec -- should be an HRec type returned by pletFieldsC on a txinfo
+    scRec -- should be an HRec type returned by pletFieldsC on a script context
+    datumType. -- the type being represented by the datum
   ( HasField "outputs" infoRec (Term s (PBuiltinList PTxOut))
   , HasField "inputs" infoRec (Term s (PBuiltinList PTxInInfo))
   , HasField "purpose" scRec (Term s PScriptPurpose)
@@ -77,14 +77,17 @@ getNextOutputByNft cs tn infoRec scRec = do
   PDatum outDatum4 <- pmatchC outDatum3
   pletC $ pfromData $ ptryFromData outDatum4
 
--- | A common pattern is to take a
--- pubKeyHash as a parameter and check for
--- the signature this function does that
+{- | A common pattern is to take a
+ pubKeyHash as a parameter and check for
+ the signature this function does that
+-}
 checkAdminSig ::
   forall
-  infoRec -- should be an HRec returned by pletFieldsC on a txinfo
-  s.
-  HasField "signatories" infoRec
+    infoRec -- should be an HRec returned by pletFieldsC on a txinfo
+    s.
+  HasField
+    "signatories"
+    infoRec
     (Term s (PBuiltinList (PAsData PPubKeyHash))) =>
   Term s PData -> -- The admin key still as Data
   infoRec ->
