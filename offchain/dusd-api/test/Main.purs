@@ -35,10 +35,10 @@ main = launchAff_ $ do
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         initParams $
           Params
-            { debtFloor : BigInt.fromInt 1
-            , liquidationDiscount : threeHalves
-            , liquidationFee : BigInt.fromInt 3
-            , liquidationRatio : fiveThirds
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
             }
     describe "Protocol Initialization" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16

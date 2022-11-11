@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Dusd (configWithUpdatesCBOR,paramCbor)
+import Dusd (configWithUpdatesCBOR, paramCbor)
 import Hello
 import HelloDiscovery
 

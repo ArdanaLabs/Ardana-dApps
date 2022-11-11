@@ -30,17 +30,17 @@ newtype Params = Params
   }
 
 instance ToData Params where
-  toData (Params {debtFloor,liquidationDiscount,liquidationFee,liquidationRatio})
-    = List [ toData debtFloor
-           , toData liquidationDiscount
-           , toData liquidationFee
-           , toData liquidationRatio
-           ]
+  toData (Params { debtFloor, liquidationDiscount, liquidationFee, liquidationRatio }) = List
+    [ toData debtFloor
+    , toData liquidationDiscount
+    , toData liquidationFee
+    , toData liquidationRatio
+    ]
 
 instance FromData Params where
   fromData =
     case _ of
-      List [ df , ld , lf , lr] -> do
+      List [ df, ld, lf, lr ] -> do
         debtFloor <- fromData df
         liquidationDiscount <- fromData ld
         liquidationFee <- fromData lf

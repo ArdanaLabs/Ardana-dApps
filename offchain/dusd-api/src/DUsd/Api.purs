@@ -37,7 +37,7 @@ import Data.Map as Map
 import Data.Set (toUnfoldable)
 import Effect.Exception (throw)
 
-initParams :: Params -> Contract () { paramNftCS :: CurrencySymbol,paramVal :: Validator}
+initParams :: Params -> Contract () { paramNftCS :: CurrencySymbol, paramVal :: Validator }
 initParams params = do
   paramNftCS <- mintNft
   pkh <- getWalletPubkeyhash
@@ -45,13 +45,13 @@ initParams params = do
   _txid <- waitForTx (scriptHashAddress $ validatorHash paramAdrVal)
     =<< buildBalanceSignAndSubmitTx
       mempty
-      (Constraints.mustPayToScript
-        (validatorHash paramAdrVal)
-        (Datum $ toData params)
-        DatumInline
-        (Value.singleton paramNftCS adaToken one)
+      ( Constraints.mustPayToScript
+          (validatorHash paramAdrVal)
+          (Datum $ toData params)
+          DatumInline
+          (Value.singleton paramNftCS adaToken one)
       )
-  pure {paramNftCS,paramVal:paramAdrVal}
+  pure { paramNftCS, paramVal: paramAdrVal }
 
 -- | Initializes the protocol with a given datum
 initProtocolSimple :: PlutusData -> Contract () Protocol

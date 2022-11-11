@@ -32,8 +32,8 @@ configAddressValidator pkh cs =
 -- | Param address validator supports updates with some basic checks
 paramAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
 paramAddressValidator pkh cs =
-    decodeCbor CBOR.paramAdr [ toData pkh, toData cs ]
-      <#> Validator
+  decodeCbor CBOR.paramAdr [ toData pkh, toData cs ]
+    <#> Validator
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
