@@ -111,6 +111,62 @@ We also need to check whether all vault information is present when getting the 
  - If the withdrawal transaction fails, a descriptive error message is shown.
  - If the withdrawal transaction fails, the user is offered to retry or cancel.
  - Retrying will reuse the previously entered data.
+##### Non-Functional
+ - Entering modifying the collateral amount has immediate effects on the vaults information displayed.
+
+### Withdrawing dUSD (debt) from Vaults i.e. taking out a loan
+#### Offchain
+ - Withdrawing dUSD only succeeds if done by a user who is the owner of the vault. Test with non-owner.
+ - Withdrawing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`. On failure it should return a descriptive error message.
+ - Withdrawing a negative amount of dUSD should fail. Returning a descriptive error message.
+ - Withdrawing an amount of dUSD that leaves the collateralization ratio below the liquidation ratio should fail. TODO: this has contradictory specifications in the spec. in 2.2 we say only in the UI this should be forbidden in 3.2 there is a bullet saying that it does not work for both.
+ - Withdrawing dUSD from a non-undercollaterized vault should succeed.
+ - Withdrawing dUSD from an undercollaterized vault succeeds TODO: should the user be able to do this
+ - Successful withdrawing of dUSD should increase the amount of debt owed in the vault by the respective amount.
+ - Successful withdrawing dUSD should update the collateralization ratio.
+#### UI
+##### Functional
+ - Clicking the `Withdraw dUSD` button opens up a page/popup with a form guiding the user through the process for withdrawing dUSD from the vault.
+ - The "withdraw dUSD from vault" page/popup displays the current information about the vault the user wants to withdraw dUSD from.
+ - The "withdraw dUSD from vault" page/popup displays a textfield allowing the user to specify an amount of dUSD (debt) that should be withdrawn.
+ - Entering an invalid (negative, zero, too high) amount should prevent the user to continue with the withdraw process.
+ - Entering a valid amount shows the effects on the vaults information transparently. (e.g. use diff color)
+ - The "withdraw dUSD from vault" page/popup displays a button to cancel the process.
+ - Canceling the "withdraw dUSD from vault" process returns the user to his vault list.
+ - The "withdraw dUSD from vault" page/popup displays a button to submit the withdrawal.
+ - Submitting the withdrawal displays a Throbber while the transaction is being processed.
+ - If the withdrawal transaction fails, a descriptive error message is shown.
+ - If the withdrawal transaction fails, the user is offered to retry or cancel.
+ - Retrying will reuse the previously entered data.
+##### Non-Functional
+ - Entering modifying the dUSD amount has immediate effects on the vaults information displayed.
+
+### Depositing dUSD (debt) to Vaults i.e. paying back a loan
+#### Offchain
+ - Depositing dUSD only succeeds if done by a user who is the owner of the vault. Test with non-owner.
+ - Depositing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`. On failure it should return a descriptive error message.
+ - Depositing dUSD pays a stability fee to the buffer.
+ - Depositing a negative amount of dUSD should fail. Returning a descriptive error message.
+ - Depositing 0 should fail. Returning a descriptive error message.
+ - Depositing dUSD to a undercollaterized vault should succeed (TODO: only if the vault will result in not being in a undercollaterized state?)
+ - Successful depositing should lower the amount of debt owed in the vault by the respective amount.
+ - Successful depositing should update the collateralization ratio.
+#### UI
+##### Functional
+ - Clicking the `Deposit dUSD` button opens up a page/popup with a form guiding the user through the process for depositing dUSD to the vault.
+ - The "deposit dUSD to vault" page/popup displays the current information about the vault the user wants to deposit dUSD to.
+ - The "deposit dUSD to vault" page/popup displays a textfield allowing the user to specify an amount of dUSD (debt) that should be deposited.
+ - Entering an invalid (negative, zero) amount should prevent the user to continue with the deposit process.
+ - Entering a valid amount shows the effects on the vaults information transparently. (e.g. use diff color)
+ - The "deposit dUSD to vault" page/popup displays a button to cancel the process.
+ - Canceling the "deposit dUSD to vault" process returns the user to his vault list.
+ - The "deposit dUSD to vault" page/popup displays a button to submit the deposit.
+ - Submitting the deposit displays a Throbber while the transaction is being processed.
+ - If the deposit transaction fails, a descriptive error message is shown.
+ - If the deposit transaction fails, the user is offered to retry or cancel.
+ - Retrying will reuse the previously entered data.
+##### Non-Functional
+ - Entering modifying the dUSD amount has immediate effects on the vaults information displayed.
 
 ## Vault Integration Tests
 
