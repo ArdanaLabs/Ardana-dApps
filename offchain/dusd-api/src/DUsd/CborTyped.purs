@@ -1,6 +1,7 @@
 module DUsd.CborTyped
   ( simpleNft
   , configAddressValidator
+  , paramAddressValidator
   ) where
 
 import Contract.Prelude
@@ -22,11 +23,17 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
+-- | Config address validator supports prepend only updates
 configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
 configAddressValidator pkh cs =
-  do
-    decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
+  decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
     <#> Validator
+
+-- | Param address validator supports updates with some basic checks
+paramAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
+paramAddressValidator pkh cs =
+    decodeCbor CBOR.paramAdr [ toData pkh, toData cs ]
+      <#> Validator
 
 -- | Simple NFT minting policy parametized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy

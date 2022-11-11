@@ -4,11 +4,13 @@ module Test.Main
 
 import Contract.Prelude
 
-import Contract.Monad (launchAff_)
+import Contract.Monad (launchAff_, liftContractM)
+import Contract.Numeric.Rational ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DUsd.Api (initProtocolSimple, updateProtocl)
+import DUsd.Api (Params(..), initParams, initProtocolSimple, updateProtocl)
+import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Attacks.Api (updateProtoclAttack, defUpdate)
@@ -27,6 +29,17 @@ main = launchAff_ $ do
   log "about to start"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
+    describe "params" $ maybePar $ do
+      it "init prams doesn't error" $ useRunnerSimple $ do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        initParams $
+          Params
+            { debtFloor : BigInt.fromInt 1
+            , liquidationDiscount : threeHalves
+            , liquidationFee : BigInt.fromInt 3
+            , liquidationRatio : fiveThirds
+            }
     describe "Protocol Initialization" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init protocol doesn't error" $ useRunnerSimple $ do

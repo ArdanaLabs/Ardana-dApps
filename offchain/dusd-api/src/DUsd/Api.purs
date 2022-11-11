@@ -1,8 +1,9 @@
 module DUsd.Api
   ( initProtocolSimple
   , updateProtocl
+  , initParams
   -- Types
-  , Protocol(..)
+  , module DUsd.Types
   -- Testing
   , getWalletPubkeyhash
   , mintNft
@@ -11,16 +12,14 @@ module DUsd.Api
 
 import Contract.Prelude
 
-import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
 import Contract.Address (PubKeyHash, getWalletAddress, getWalletCollateral, scriptHashAddress)
 import Contract.Credential (Credential(..))
 import Contract.Log (logDebug', logInfo')
 import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
-import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (Validator, validatorHash)
-import Contract.Transaction (TransactionHash(..), TransactionInput(..), TransactionOutput(..), TransactionOutputWithRefScript(..))
+import Contract.Transaction (TransactionInput, TransactionOutput(..), TransactionOutputWithRefScript(..))
 import Contract.TxConstraints (DatumPresence(..), TxConstraints)
 import Contract.TxConstraints as Constraints
 import Contract.Utxos (getUtxo)
@@ -28,46 +27,31 @@ import Contract.Value (CurrencySymbol, adaToken, scriptCurrencySymbol)
 import Contract.Value as Value
 import Ctl.Internal.Plutus.Types.Address (Address(..))
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getUtxos, waitForTx)
+import DUsd.CborTyped (configAddressValidator, paramAddressValidator, simpleNft)
+import DUsd.Types (Params(..), Protocol(..))
 import Data.Array (cons)
 import Data.BigInt as BigInt
 import Data.List (head)
 import Data.Map (keys, singleton)
 import Data.Map as Map
 import Data.Set (toUnfoldable)
-import Data.UInt as UInt
-import DUsd.CborTyped (configAddressValidator, simpleNft)
 import Effect.Exception (throw)
 
-newtype Protocol = Protocol { datum :: PlutusData, utxo :: TransactionInput, nftCs :: CurrencySymbol, configVal :: Validator }
-
-derive instance Newtype Protocol _
-
-type ProtocolJson = { datum :: PlutusData, utxo :: TransactionInputJson, nftCs :: CurrencySymbol, configVal :: Validator }
-type TransactionInputJson = { index :: Int, transactionId :: String }
-
-jsonifyTxIn :: TransactionInput -> TransactionInputJson
-jsonifyTxIn (TransactionInput { index, transactionId }) =
-  { index: UInt.toInt index
-  , transactionId: byteArrayToHex $ unwrap transactionId
-  }
-
-unJsonifyTxIn :: TransactionInputJson -> TransactionInput
-unJsonifyTxIn { index, transactionId } = TransactionInput
-  { index: UInt.fromInt index
-  , transactionId: TransactionHash $ hexToByteArrayUnsafe transactionId
-  }
-
-jsonifyProtocol :: Protocol -> ProtocolJson
-jsonifyProtocol (Protocol { datum, utxo, nftCs, configVal }) = { datum, utxo: jsonifyTxIn utxo, nftCs, configVal }
-
-unJsonifyProtocol :: ProtocolJson -> Protocol
-unJsonifyProtocol { datum, utxo, nftCs, configVal } = Protocol { datum, utxo: unJsonifyTxIn utxo, nftCs, configVal }
-
-instance EncodeAeson Protocol where
-  encodeAeson' = jsonifyProtocol >>> encodeAeson'
-
-instance DecodeAeson Protocol where
-  decodeAeson = (unJsonifyProtocol <$> _) <<< decodeAeson
+initParams :: Params -> Contract () { paramNftCS :: CurrencySymbol,paramVal :: Validator}
+initParams params = do
+  paramNftCS <- mintNft
+  pkh <- getWalletPubkeyhash
+  paramAdrVal <- paramAddressValidator pkh paramNftCS
+  _txid <- waitForTx (scriptHashAddress $ validatorHash paramAdrVal)
+    =<< buildBalanceSignAndSubmitTx
+      mempty
+      (Constraints.mustPayToScript
+        (validatorHash paramAdrVal)
+        (Datum $ toData params)
+        DatumInline
+        (Value.singleton paramNftCS adaToken one)
+      )
+  pure {paramNftCS,paramVal:paramAdrVal}
 
 -- | Initializes the protocol with a given datum
 initProtocolSimple :: PlutusData -> Contract () Protocol
