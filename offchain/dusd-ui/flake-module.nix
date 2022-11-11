@@ -90,7 +90,9 @@
           pkgs.runCommand "build-dusd-ui"
             { }
             ''
+              set -euo pipefail
               mkdir -p $out/assets/{images,scripts}
+              cp ${./netlify.toml} $out/netlify.toml
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
               cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
