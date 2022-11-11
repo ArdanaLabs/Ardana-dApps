@@ -1,0 +1,11 @@
+[[headers]]
+	for = "*.avif"
+	[headers.values]
+		Content-Type = "image/avif"
+		Content-Disposition = "inline"
+
+[[headers]]
+	for = "*.jxl"
+	[headers.values]
+		Content-Type = "image/jxl"
+		Content-Disposition = "inline"
