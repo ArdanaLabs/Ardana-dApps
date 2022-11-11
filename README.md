@@ -1,6 +1,6 @@
-# Cardano App Template (CAT)
+# Ardana dApps
 
-A template for starting an application on Cardano.
+A repository to house Ardana projects and common dependencies.
 
 ## Using the Nix Binary Cache via Cachix
 
