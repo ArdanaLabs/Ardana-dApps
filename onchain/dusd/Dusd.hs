@@ -6,9 +6,10 @@ import Plutarch.Prelude
 import Lib (checkAdminSig, getNextOutputByNft)
 import Plutarch (Config)
 import Plutarch.Extensions.Data (ptryFromData)
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC)
 import Types (ProtocolParams (..))
 
+import Plutarch.Builtin (pforgetData)
 import Utils (closedTermToHexString)
 
 configWithUpdatesCBOR :: Config -> Maybe String
@@ -48,14 +49,29 @@ paramCbor = closedTermToHexString paramModuleAdr
 paramModuleAdr :: ClosedTerm (PData :--> PData :--> PValidator)
 paramModuleAdr = ptrace "param module" $
   phoistAcyclic $
-    plam $ \adminPKHdata nftCsData inDatum' _ sc -> unTermCont $ do
+    plam $ \adminPKHdata nftCsData _inDatum _red sc -> unTermCont $ do
       nftCs <- pletC $ pfromData $ ptryFromData nftCsData
-      _inDatum :: Term _ PData <- pletC $ pfromData $ ptryFromData inDatum'
       scRec <- pletFieldsC @'["txInfo", "purpose"] sc
       PTxInfo info <- pmatchC $ getField @"txInfo" scRec
       infoRec <- pletFieldsC @'["outputs", "inputs", "signatories"] info
       checkAdminSig adminPKHdata infoRec
-      outDatum :: Term _ ProtocolParams <- getNextOutputByNft nftCs (pconstant "") infoRec scRec
+      ptraceC $
+        pshow $
+          pforgetData $
+            pdata $
+              pcon $
+                ProtocolParams $
+                  pdcons # pdata 1
+                    #$ pdcons
+                    # pdata 2
+                    #$ pdcons
+                    # pdata 3
+                    #$ pdcons
+                    # pdata 4
+                    # pdnil
+      outDatum' :: Term _ PData <- getNextOutputByNft nftCs (pconstant "") infoRec scRec
+      ptraceC $ pshow $ pforgetData $ pdata outDatum'
+      outDatum <- pletC $ pfromData $ ptryFromData outDatum'
       ProtocolParams outRec' <- pmatchC outDatum
       outRec <-
         pletFieldsC

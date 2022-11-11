@@ -1,7 +1,6 @@
 module DUsd.Types
   ( Protocol(..)
   , Params(..)
-  , ParamsInfo
   , UtxoId(..)
   , AssetClass
   ) where
@@ -17,8 +16,6 @@ import Contract.Transaction (TransactionHash(..), TransactionInput(..))
 import Contract.Value (CurrencySymbol, TokenName)
 import Data.BigInt (BigInt)
 import Data.UInt as UInt
-
-type ParamsInfo = { paramNftCS :: CurrencySymbol, paramVal :: Validator }
 
 newtype Protocol = Protocol
   { configUtxo :: UtxoId

@@ -1,6 +1,5 @@
 module Types (ProtocolParams (..)) where
 
-import Plutarch.DataRepr (PDataFields)
 import Plutarch.Prelude
 
 newtype ProtocolParams (s :: S)
@@ -17,7 +16,7 @@ newtype ProtocolParams (s :: S)
           )
       )
   deriving stock (Generic)
-  deriving anyclass (PlutusType, PIsData, PDataFields, PEq, PShow)
+  deriving anyclass (PlutusType, PIsData, PEq, PShow)
 
-instance DerivePlutusType ProtocolParams where type DPTStrat _ = PlutusTypeData
+instance DerivePlutusType ProtocolParams where type DPTStrat _ = PlutusTypeNewtype
 instance PTryFrom PData (PAsData ProtocolParams)

@@ -9,8 +9,9 @@ import Contract.Numeric.Rational ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DUsd.Api (Params(..), initParams, mintNft, updateConfig)
+import DUsd.Api (Params(..), initParams, initProtocol, mintNft, updateConfig)
 import DUsd.Config (initConfigWith)
+import DUsd.Params (updateDebtFloor)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
@@ -30,8 +31,20 @@ main = launchAff_ $ do
   log "about to start"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
-    describe "params" $ maybePar $ do
-      it "init prams doesn't error" $ useRunnerSimple $ do
+    describe "Protocol" $ do
+      it "init protocol doesn't error" $ useRunnerSimple $ do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        initProtocol $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+
+    describe "Params utxo" $ maybePar $ do
+      it "Init prams doesn't error" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         initParams $
@@ -41,12 +54,24 @@ main = launchAff_ $ do
             , liquidationFee: BigInt.fromInt 3
             , liquidationRatio: fiveThirds
             }
+      it "Update params doesn't error" $ useRunnerSimple $ do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        updateDebtFloor paramsId (BigInt.fromInt 2)
+
     describe "Config utxo" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
-      it "Init protocol doesn't error" $ useRunnerSimple $ do
+      it "Init config doesn't error" $ useRunnerSimple $ do
         cs <- mintNft
         initConfigWith cs (Constr zero [])
-      it "Update protocol doesn't error" $ useRunnerSimple $ do
+      it "Update config doesn't error" $ useRunnerSimple $ do
         cs <- mintNft
         configUtxo <- initConfigWith cs (Constr zero [])
         updateConfig (Constr one []) configUtxo
