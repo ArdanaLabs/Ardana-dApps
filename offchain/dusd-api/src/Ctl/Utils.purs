@@ -5,12 +5,14 @@ module Ctl.Utils
   , getTxScanUrl
   , maxWait
   , getDatum
+  , getWalletPubkeyhash
   ) where
 
 import Contract.Prelude
 
 import Aeson (Aeson, getField, toArray, toObject)
-import Contract.Address (Address, NetworkId(..))
+import Contract.Address (NetworkId(..), PubKeyHash, getWalletAddress)
+import Contract.Credential (Credential(..))
 import Contract.Log (logDebug', logError', logInfo', logWarn')
 import Contract.Monad (Contract, liftContractM, liftedE)
 import Contract.PlutusData (Datum, PlutusData, getDatumByHash)
@@ -19,6 +21,7 @@ import Contract.ScriptLookups as Lookups
 import Contract.Transaction (OutputDatum(..), TransactionHash(TransactionHash), TransactionInput(..), TransactionOutputWithRefScript, balanceTx, signTransaction, submitE)
 import Contract.TxConstraints (TxConstraints)
 import Contract.Utxos (utxosAt, getUtxo)
+import Ctl.Internal.Plutus.Types.Address (Address(..))
 import Data.Array (toUnfoldable, fromFoldable, catMaybes)
 import Data.List (filterM, List)
 import Data.Map (Map)
@@ -174,4 +177,11 @@ getDatum = case _ of
 -- The time to wait between ogmios querries when retrying
 waitTime :: Seconds
 waitTime = Seconds 1.0
+
+getWalletPubkeyhash :: Contract () PubKeyHash
+getWalletPubkeyhash = do
+  (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
+  case addressCredential of
+    PubKeyCredential pkh -> pure pkh
+    _ -> liftEffect $ throw "wallet was not a pubkey?"
 

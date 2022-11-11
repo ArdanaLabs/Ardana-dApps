@@ -1,6 +1,9 @@
 module DUsd.Types
   ( Protocol(..)
   , Params(..)
+  , ParamsInfo
+  , UtxoId(..)
+  , AssetClass
   ) where
 
 import Contract.Prelude
@@ -11,16 +14,30 @@ import Contract.PlutusData (class FromData, class ToData, PlutusData(..), fromDa
 import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Contract.Scripts (Validator)
 import Contract.Transaction (TransactionHash(..), TransactionInput(..))
-import Contract.Value (CurrencySymbol)
+import Contract.Value (CurrencySymbol, TokenName)
 import Data.BigInt (BigInt)
 import Data.UInt as UInt
 
+type ParamsInfo = { paramNftCS :: CurrencySymbol, paramVal :: Validator }
+
 newtype Protocol = Protocol
-  { datum :: PlutusData
-  , utxo :: TransactionInput
-  , nftCs :: CurrencySymbol
-  , configVal :: Validator
+  { configUtxo :: UtxoId
+  , params :: UtxoId
   }
+
+-- | A common patern in protocol design
+-- is to identify a utxo by an nft
+-- and an address the optional
+-- guess can improve
+-- lookup performance if
+-- the utxo hasn't changed
+newtype UtxoId = UtxoId
+  { nft :: AssetClass
+  , script :: Validator
+  , guess :: Maybe TransactionInput
+  }
+
+type AssetClass = CurrencySymbol /\ TokenName
 
 newtype Params = Params
   { debtFloor :: BigInt
@@ -55,21 +72,24 @@ instance FromData Params where
 
 derive instance Newtype Protocol _
 
-instance EncodeAeson Protocol where
-  encodeAeson' = jsonifyProtocol >>> encodeAeson'
+instance EncodeAeson UtxoId where
+  encodeAeson' = jsonifyUtxoId >>> encodeAeson'
 
-instance DecodeAeson Protocol where
-  decodeAeson = (unJsonifyProtocol <$> _) <<< decodeAeson
+instance DecodeAeson UtxoId where
+  decodeAeson = decodeAeson >>> map unJsonifyUtxoId
 
-type ProtocolJson = { datum :: PlutusData, utxo :: TransactionInputJson, nftCs :: CurrencySymbol, configVal :: Validator }
+type UtxoIdJson =
+  { nft :: AssetClass
+  , script :: Validator
+  , guess :: Maybe TransactionInputJson
+  }
 
-jsonifyProtocol :: Protocol -> ProtocolJson
-jsonifyProtocol (Protocol { datum, utxo, nftCs, configVal }) = { datum, utxo: jsonifyTxIn utxo, nftCs, configVal }
+jsonifyUtxoId :: UtxoId -> UtxoIdJson
+jsonifyUtxoId (UtxoId { nft, script, guess }) = { nft, script, guess: jsonifyTxIn <$> guess }
 
-unJsonifyProtocol :: ProtocolJson -> Protocol
-unJsonifyProtocol { datum, utxo, nftCs, configVal } = Protocol { datum, utxo: unJsonifyTxIn utxo, nftCs, configVal }
+unJsonifyUtxoId :: UtxoIdJson -> UtxoId
+unJsonifyUtxoId { nft, script, guess } = UtxoId { nft, script, guess: unJsonifyTxIn <$> guess }
 
--- TODO maybe we should just upstream an AESON instance for this
 type TransactionInputJson = { index :: Int, transactionId :: String }
 
 jsonifyTxIn :: TransactionInput -> TransactionInputJson

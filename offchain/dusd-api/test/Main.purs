@@ -9,11 +9,12 @@ import Contract.Numeric.Rational ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DUsd.Api (Params(..), initParams, initProtocolSimple, updateProtocl)
+import DUsd.Api (Params(..), initParams, mintNft, updateConfig)
+import DUsd.Config (initConfigWith)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Attacks.Api (updateProtoclAttack, defUpdate)
+import Test.Attacks.Api (updateConfigAttack, defUpdate)
 import Test.Spec (describe, it, parallel, sequential)
 
 main :: Effect Unit
@@ -40,25 +41,29 @@ main = launchAff_ $ do
             , liquidationFee: BigInt.fromInt 3
             , liquidationRatio: fiveThirds
             }
-    describe "Protocol Initialization" $ maybePar $ do
+    describe "Config utxo" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init protocol doesn't error" $ useRunnerSimple $ do
-        initProtocolSimple (Constr zero [])
+        cs <- mintNft
+        initConfigWith cs (Constr zero [])
       it "Update protocol doesn't error" $ useRunnerSimple $ do
-        protocol <- initProtocolSimple (Constr zero [])
-        updateProtocl (Constr one []) protocol
+        cs <- mintNft
+        configUtxo <- initConfigWith cs (Constr zero [])
+        updateConfig (Constr one []) configUtxo
       it "update with edit fails" $ useRunnerSimple $ do
-        protocol <- initProtocolSimple (Constr zero [])
+        cs <- mintNft
+        configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
-          updateProtoclAttack
+          updateConfigAttack
             (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
-            protocol
+            configUtxo
       it "update without signature fails" $ useRunnerSimple $ do
-        protocol <- initProtocolSimple (Constr zero [])
+        cs <- mintNft
+        configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
-          updateProtoclAttack
+          updateConfigAttack
             (defUpdate { noSignature = true })
             (Constr one [])
-            protocol
+            configUtxo
 
