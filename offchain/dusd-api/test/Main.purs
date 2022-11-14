@@ -34,7 +34,7 @@ main = launchAff_ $ do
       it "Update protocol doesn't error" $ useRunnerSimple $ do
         protocol <- initProtocolSimple (Constr zero [])
         updateProtocl (Constr one []) protocol
-      it "update with edit fails" $ useRunnerSimple $ do
+      it "Update with edit fails validation" $ useRunnerSimple $ do
         protocol <- initProtocolSimple (Constr zero [])
         expectScriptError $
           updateProtoclAttack
