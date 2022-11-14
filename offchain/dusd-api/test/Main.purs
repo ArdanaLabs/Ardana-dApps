@@ -78,8 +78,8 @@ main = launchAff_ $ do
             , liquidationRatio: fiveThirds
             }
         expectScriptError $
-            updateParamsAtack
-            (defParamUpdate{noSignature=true})
+          updateParamsAtack
+            (defParamUpdate { noSignature = true })
             paramsId
             (\x -> x)
 
@@ -95,8 +95,8 @@ main = launchAff_ $ do
             }
         expectScriptError $
           updateDebtFloor
-          paramsId
-          (BigInt.fromInt $ negate 2)
+            paramsId
+            (BigInt.fromInt $ negate 2)
 
     describe "Config utxo" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16

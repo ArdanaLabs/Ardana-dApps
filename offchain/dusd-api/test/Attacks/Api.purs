@@ -73,13 +73,12 @@ updateConfigAttack
   logDebug' "protocol init complete"
   pure $ UtxoId rec { guess = Just utxo }
 
-
 type UpdateParamAttack =
   { noSignature :: Boolean
   }
 
 defParamUpdate :: UpdateParamAttack
-defParamUpdate = { noSignature : false}
+defParamUpdate = { noSignature: false }
 
 updateParamsAtack :: UpdateParamAttack -> UtxoId -> (Params -> Params) -> Contract () UtxoId
 updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
@@ -100,8 +99,7 @@ updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdat
       ( Constraints.mustSpendScriptOutput txIn
           (Redeemer $ toData unit)
           <>
-            (if atack.noSignature
-              then mempty
+            ( if atack.noSignature then mempty
               else Constraints.mustBeSignedBy (PaymentPubKeyHash pkh)
             )
           <>
