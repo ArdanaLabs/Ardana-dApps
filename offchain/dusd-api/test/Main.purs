@@ -41,7 +41,7 @@ main = launchAff_ $ do
             (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
             protocol
-      it "update without signature fails" $ useRunnerSimple $ do
+      it "Update without signature fails validation" $ useRunnerSimple $ do
         protocol <- initProtocolSimple (Constr zero [])
         expectScriptError $
           updateProtoclAttack
