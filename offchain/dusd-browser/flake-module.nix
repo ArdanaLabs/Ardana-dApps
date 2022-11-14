@@ -22,7 +22,7 @@
                   cardano-transaction-lib
                   # self'.packages."offchain:dusd-api"
                 ];
-              dir = ./ui-components;
+              dir = ./.;
             };
         package =
           let
@@ -37,7 +37,7 @@
             ''
               export BROWSER_RUNTIME=1
               cp -r ${dusd-ui-components.ps.modules."DUsd.UI.Components.Home".output { }} homeOutput
-              cp ${./ui-components/home.js} home.js
+              cp ${./home.js} home.js
               cp -r ${nodeModules}/* .
               export NODE_PATH="node_modules"
               export PATH="bin:$PATH"
