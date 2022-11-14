@@ -65,6 +65,6 @@ updateProtocolAttack attack new (Protocol { utxo: oldUtxo, nftCs, configVal }) =
         <> (if attack.noSignature then mempty else Constraints.mustBeSignedBy (wrap pkh))
     )
   logDebug' "config utxo submitted, waiting for confirmation"
-  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal) txid
+  utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing) txid
   logDebug' "protocol init complete"
   pure $ Protocol { utxo, datum: new, nftCs, configVal }

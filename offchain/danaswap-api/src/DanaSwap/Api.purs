@@ -92,7 +92,7 @@ type PoolId = TokenName
 -- | Given a protocol object returns a map of transaction inputs and outputs for all valid pools
 getAllPools :: Protocol -> Contract () (Map TransactionInput TransactionOutputWithRefScript)
 getAllPools protocol@(Protocol { poolAdrVal }) =
-  getUtxos (scriptHashAddress $ validatorHash poolAdrVal)
+  getUtxos (scriptHashAddress (validatorHash poolAdrVal) Nothing)
     <#> Map.filter (hasNft protocol)
 
 -- TODO it may be nesecary to replace this with a a call to the Stats enpoint
@@ -121,7 +121,7 @@ depositLiquidity protocol@(Protocol { poolAdrVal, liquidityMP, poolIdMP }) poolI
   (poolIn /\ poolOut) <- getPoolById protocol poolID
   poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   let idNft = Value.singleton poolIdCS poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
@@ -152,7 +152,7 @@ openPool (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) = do
   poolIdCS <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMPH
   let idNft = Value.singleton poolIdCS poolID one
   configVal <- configAddressValidator
-  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  configAdrUtxos <- getUtxos (scriptHashAddress (validatorHash configVal) Nothing)
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
@@ -177,7 +177,7 @@ openPool (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo }) = do
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) txid
   pure poolID
 
 -- | Initializes the protocol returns a protocol
@@ -200,7 +200,7 @@ initProtocol = do
     $ mintingPolicyHash liquidityMP
   poolAdrVal <- poolAddressValidator poolIdCS liquidityCS
   let poolVH = validatorHash poolAdrVal
-  let poolAdr = scriptHashAddress poolVH
+  let poolAdr = scriptHashAddress poolVH Nothing
   configAdrVal <- configAddressValidator
   logDebug' "about to submit config utxo"
   txid <- buildBalanceSignAndSubmitTx
@@ -214,7 +214,7 @@ initProtocol = do
         (Value.singleton nftCs adaToken one)
     )
   logDebug' "config utxo submitted, waiting for confirmation"
-  configUtxo <- waitForTx (scriptHashAddress $ validatorHash configAdrVal) txid
+  configUtxo <- waitForTx (scriptHashAddress (validatorHash configAdrVal) Nothing) txid
   logDebug' "protocol init complete"
   pure $ Protocol
     { configUtxo

@@ -33,7 +33,7 @@ openPoolWrongTokenWrongRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, c
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol poolIdMph
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
-  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  configAdrUtxos <- getUtxos (scriptHashAddress (validatorHash configVal) Nothing)
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
@@ -58,7 +58,7 @@ openPoolWrongTokenWrongRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, c
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) txid
   pure poolID
 
 openPoolWrongTokenRightRedeemer :: Protocol -> Contract () PoolId
@@ -70,7 +70,7 @@ openPoolWrongTokenRightRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, c
   --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
-  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  configAdrUtxos <- getUtxos (scriptHashAddress (validatorHash configVal) Nothing)
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
@@ -95,7 +95,7 @@ openPoolWrongTokenRightRedeemer (Protocol { poolAdrVal, liquidityMP, poolIdMP, c
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) txid
   pure poolID
 
 -- TODO rework this when the real open pool gets updated
@@ -108,7 +108,7 @@ openPoolMultipleTokens (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo
   --liquidityMPH <- liftContractM "failed to hash mp" $ mintingPolicyHash liq
   let idNft = Value.singleton poolIdCs poolID one
   configVal <- configAddressValidator
-  configAdrUtxos <- getUtxos (scriptHashAddress $ validatorHash configVal)
+  configAdrUtxos <- getUtxos (scriptHashAddress (validatorHash configVal) Nothing)
   txid <- buildBalanceSignAndSubmitTx
     ( Lookups.mintingPolicy poolIdMP
         <> Lookups.mintingPolicy liquidityMP
@@ -139,7 +139,7 @@ openPoolMultipleTokens (Protocol { poolAdrVal, liquidityMP, poolIdMP, configUtxo
           DatumInline
           idNft
     )
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) txid
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) txid
   pure poolID
 
 -- TODO rework with real depositLiquidity
@@ -149,7 +149,7 @@ depositLiquidityWrongTokenRightRedeemer protocol@(Protocol { poolAdrVal, liquidi
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
@@ -176,7 +176,7 @@ depositLiquidityWrongTokenWrongRedeemer protocol@(Protocol { poolAdrVal, liquidi
   poolIdCs <- liftContractM "hash was bad hex string" $ mpsSymbol $ mintingPolicyHash poolIdMP
   wrongID <- liftContractM "failed to make token name" $ mkTokenName =<< hexToByteArray "aabb"
   let idNft = Value.singleton poolIdCs poolID one
-  void $ waitForTx (scriptHashAddress $ validatorHash poolAdrVal) =<<
+  void $ waitForTx (scriptHashAddress (validatorHash poolAdrVal) Nothing) =<<
     buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs (Map.singleton poolIn poolOut)
           <> Lookups.mintingPolicy liquidityMP
