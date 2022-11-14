@@ -6,7 +6,7 @@
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     cardano-node.url = "github:input-output-hk/cardano-node?rev=73f9a746362695dc2cb63ba757fbcabb81733d23";
-    cardano-transaction-lib.url = "github:Plutonomicon/cardano-transaction-lib/ccb328d43a14b336728bfdad94aa909261bbdec0";
+    cardano-transaction-lib.url = "github:Plutonomicon/cardano-transaction-lib/bc92bef61f6a319df9c9f09e3d6784aa369d9759";
     cardano-ogmios.url = "github:input-output-hk/cardano-ogmios";
     mlabs-ogmios.follows = "cardano-transaction-lib/ogmios";
     ogmios-datum-cache.follows = "cardano-transaction-lib/ogmios-datum-cache";
@@ -16,14 +16,6 @@
     };
     plutarch = {
       url = "github:Plutonomicon/plutarch-plutus";
-    };
-    apropos = {
-      url = "github:mlabs-haskell/apropos?rev=9dbe96f1a1108b453aaf65ade4d6280cc92cccea";
-      flake = false;
-    };
-    digraph = {
-      url = "github:mlabs-haskell/digraph?rev=d4dfec22f6a6eb646dcfa9591eaca0a9be88d260";
-      flake = false;
     };
     lint-utils = {
       type = "git";
@@ -55,6 +47,10 @@
       url = "github:jquery/jquery/3.6.0";
       flake = false;
     };
+    font-awesome = {
+      url = "github:FortAwesome/Font-Awesome/6.2.0";
+      flake = false;
+    };
     treefmt-flake.url = "github:srid/treefmt-flake";
     yubihsm.url = "github:ArdanaLabs/yubihsm-ed-sign?rev=6fc4b462fc400cc2058df81f760228c2088db8d4";
     hercules-ci-effects.url = "github:hercules-ci/hercules-ci-effects";
@@ -72,7 +68,6 @@
           ./onchain
           ./docs
           ./nix/flake-modules
-          ./ui
           ./price-feeder
         ];
       }

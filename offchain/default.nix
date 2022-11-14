@@ -3,7 +3,8 @@
     ./flake-module.nix
     ./nix/flake-modules/default.nix
     ./danaswap-api/flake-module.nix
+    ./dusd-api/flake-module.nix
     ./danaswap-cli
-    ./danaswap-browser/flake-module.nix
+    ./dusd-browser/flake-module.nix
   ];
 }

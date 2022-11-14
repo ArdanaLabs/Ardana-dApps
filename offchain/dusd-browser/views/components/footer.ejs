@@ -1,0 +1,38 @@
+<footer class="footer p-6">
+  <div class="columns is-vcentered is-mobile">
+    <div class="column">
+      <a href="/">
+        <picture title="Ardana">
+          <source srcset="/assets/images/logo_footer.jxl" type="type/jxl" />
+          <source srcset="/assets/images/logo_footer.webp" type="type/webp" />
+          <img src="/assets/images/logo_footer.png" alt="Ardana" loading="lazy" />
+        </picture>
+      </a>
+    </div>
+
+    <div class="column is-narrow">
+      <div class="columns is-vcentered is-mobile">
+        <%
+          [
+            { brandIcon: "twitter", title: "Twitter" },
+            { brandIcon: "discord", title: "Discord" },
+            { brandIcon: "telegram", title: "Telegram" },
+            { brandIcon: "medium", title: "Medium" },
+            { brandIcon: "reddit", title:"Reddit" },
+            { brandIcon: "linkedin", title: "LinkedIn" },
+          ].forEach(function(social) { %>
+          <div class="column">
+            <span class="icon">
+              <svg role="presentation" focusable="false" aria-labelledby="title">
+                <title><%= social.title %></title>
+                <use
+                  href="/assets/images/font-awesome-sprite-brands.svg#<%= social.brandIcon %>"
+                />
+              </svg>
+            </span>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</footer>

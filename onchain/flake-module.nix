@@ -28,8 +28,6 @@
           system
           compiler-nix-name
           [
-            "${self.inputs.apropos}"
-            "${self.inputs.digraph}"
             "${plutarch}"
             "${plutarch}/plutarch-extra"
           ];
@@ -48,8 +46,6 @@
 
           shell = commonPlutusShell // {
             additional = ps: [
-              ps.apropos
-              ps.digraph
               ps.plutarch
               ps.plutarch-extra
             ];
@@ -100,10 +96,11 @@
                 ${s.shellHook}
                 hoogle generate --database=$out --local
               '';
-          "onchain:scripts" =
-            pkgs.runCommand "onchain-scripts"
-              { buildInputs = [ haskellNixFlake.packages."onchain:exe:scripts" ]; }
-              ''mkdir -p $out && scripts $out'';
+          "onchain:dusd-cbor-purs" =
+            pkgs.runCommand "dusd-cbor-purs" { } ''
+              mkdir -p $out/src
+              ${haskellNixFlake.packages."onchain:exe:dusd"}/bin/dusd $out/src
+            '';
           "onchain:danaswap-cbor-purs" =
             pkgs.runCommand "danaswap-cbor-purs" { } ''
               mkdir -p $out/src
