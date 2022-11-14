@@ -79,7 +79,7 @@ main = launchAff_ $ do
         cs <- mintNft
         configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
-            (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
+          (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
             configUtxo
       it "Update without signature fails validation" $ useRunnerSimple $ do

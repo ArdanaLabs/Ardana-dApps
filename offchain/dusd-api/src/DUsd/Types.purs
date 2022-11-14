@@ -14,7 +14,7 @@ import Contract.Scripts (Validator)
 import Contract.Transaction (TransactionHash(..), TransactionInput(..))
 import Contract.Value (CurrencySymbol, TokenName)
 import Data.BigInt (BigInt)
-import Contract.Plutarch.Types(PRational)
+import Contract.Plutarch.Types (PRational)
 import Data.UInt as UInt
 
 newtype Protocol = Protocol
