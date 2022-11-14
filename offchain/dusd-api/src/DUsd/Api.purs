@@ -1,6 +1,6 @@
 module DUsd.Api
   ( initProtocolSimple
-  , updateProtocl
+  , updateProtocol
   -- Types
   , Protocol(..)
   -- Testing
@@ -90,8 +90,8 @@ initProtocolSimple datum = do
   pure $ Protocol { datum, utxo, nftCs, configVal }
 
 -- | technically not part of this version of the protocol
-updateProtocl :: PlutusData -> Protocol -> Contract () Protocol
-updateProtocl new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
+updateProtocol :: PlutusData -> Protocol -> Contract () Protocol
+updateProtocol new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
   TransactionOutput { datum } <- getUtxo oldUtxo >>= liftContractM "lookup failed. Maybe config utxo was already spent"
   old <- case datum of
     (OutputDatum (Datum (List old))) -> pure old

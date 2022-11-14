@@ -1,5 +1,5 @@
 module Test.Attacks.Api
-  ( updateProtoclAttack
+  ( updateProtocolAttack
   , UpdateAttack
   , defUpdate
   ) where
@@ -39,8 +39,8 @@ defUpdate =
   }
 
 -- | technically not part of this version of the protocol
-updateProtoclAttack :: UpdateAttack -> PlutusData -> Protocol -> Contract () Protocol
-updateProtoclAttack attack new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
+updateProtocolAttack :: UpdateAttack -> PlutusData -> Protocol -> Contract () Protocol
+updateProtocolAttack attack new (Protocol { utxo: oldUtxo, nftCs, configVal }) = do
   TransactionOutput { datum } <- getUtxo oldUtxo >>= liftContractM "lookup failed. Maybe config utxo was already spent"
   old <- case datum of
     (OutputDatum (Datum (List old))) -> pure old

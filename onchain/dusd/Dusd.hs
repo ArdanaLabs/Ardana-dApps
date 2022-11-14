@@ -23,6 +23,9 @@ import Plutarch.Api.V1.AssocMap qualified as AssocMap
 configWithUpdatesCBOR :: Config -> Maybe String
 configWithUpdatesCBOR = closedTermToHexString configWithUpdatesValidator
 
+{- | The validator for the config utxo address
+ parametized by the admin key and the currency symbol of its nft
+-}
 configWithUpdatesValidator :: ClosedTerm (PData :--> PData :--> PValidator)
 configWithUpdatesValidator = ptrace "config validator" $
   phoistAcyclic $
@@ -56,15 +59,17 @@ configWithUpdatesValidator = ptrace "config validator" $
       pguardC "admin signed" $ pelem # ptryFromData adminPKHdata # sigs
       pure $ popaque $ pcon PUnit
 
--- TODO check signature
-
 -- TODO I think this is repeated put them somewhere better
+
+-- | Checks that a currency symbol entry of a value is exactly one token of a given name
 isJustTn :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PBool)
 isJustTn = phoistAcyclic $ plam $ \m tn -> isJustTn' # m # tn # 1
 
+-- | Check that a currency symbol entry of a value is exactly some number of tokens of a given name
 isJustTn' :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PInteger :--> PBool)
 isJustTn' = phoistAcyclic $ plam $ \m tn n -> m #== AssocMap.psingleton # tn # n
 
+-- | Get a currency symbol entry from a value
 atCS :: ClosedTerm (PValue s a :--> PCurrencySymbol :--> PMap s PTokenName PInteger)
 atCS = phoistAcyclic $
   plam $ \val cs -> unTermCont $ do

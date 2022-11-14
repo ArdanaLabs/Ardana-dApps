@@ -22,6 +22,8 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
+-- | The address validator for the config utxo
+-- patametized by the admin key and the currency symbol of the config NFT
 configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
 configAddressValidator pkh cs =
   do
