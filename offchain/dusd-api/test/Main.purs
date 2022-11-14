@@ -32,7 +32,7 @@ main = launchAff_ $ do
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
     describe "Protocol" $ do
-      it "init protocol doesn't error" $ useRunnerSimple $ do
+      it "Init protocol doesn't error" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         initProtocol $
@@ -75,15 +75,14 @@ main = launchAff_ $ do
         cs <- mintNft
         configUtxo <- initConfigWith cs (Constr zero [])
         updateConfig (Constr one []) configUtxo
-      it "update with edit fails" $ useRunnerSimple $ do
+      it "Update with edit fails validation" $ useRunnerSimple $ do
         cs <- mintNft
         configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
-          updateConfigAttack
             (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
             configUtxo
-      it "update without signature fails" $ useRunnerSimple $ do
+      it "Update without signature fails validation" $ useRunnerSimple $ do
         cs <- mintNft
         configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $

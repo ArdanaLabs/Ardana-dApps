@@ -23,7 +23,8 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
--- | Config address validator supports prepend only updates
+-- | The address validator for the config utxo
+-- patametized by the admin key and the currency symbol of the config NFT
 configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
 configAddressValidator pkh cs =
   decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
