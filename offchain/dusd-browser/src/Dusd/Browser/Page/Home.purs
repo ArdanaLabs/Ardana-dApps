@@ -90,7 +90,18 @@ component =
                     , HH.div [ mkClass "level-right" ]
                         [ HH.div [ mkClass "level-item" ]
                             [ HH.figure [ mkClass "image" ]
-                                [ HH.img [ HP.src "/assets/images/link-a-coin.png", HP.width 174, HP.height 187 ]
+                                [ HH.element (HH.ElemName "picture") []
+                                    [ HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/link-a-coin.jxl", HP.attr (HH.AttrName "type") "image/jxl" ]
+                                    , HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/link-a-coin.webp", HP.attr (HH.AttrName "type") "image/webp" ]
+                                    , HH.img
+                                        [ HP.src "/assets/images/link-a-coin.png"
+                                        , HP.width 174
+                                        , HP.height 187
+                                        , HP.alt ""
+                                        , HP.attr (HH.AttrName "loading") "lazy"
+                                        , HP.attr (HH.AttrName "decoding") "async"
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
@@ -125,7 +136,18 @@ component =
                     , HH.div [ mkClass "level-right" ]
                         [ HH.div [ mkClass "level-item" ]
                             [ HH.figure [ mkClass "image" ]
-                                [ HH.img [ HP.src "/assets/images/uni-a-coin.png", HP.width 174, HP.height 187 ]
+                                [ HH.element (HH.ElemName "picture") []
+                                    [ HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/uni-a-coin.jxl", HP.attr (HH.AttrName "type") "image/jxl" ]
+                                    , HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/uni-a-coin.webp", HP.attr (HH.AttrName "type") "image/webp" ]
+                                    , HH.img
+                                        [ HP.src "/assets/images/uni-a-coin.png"
+                                        , HP.width 174
+                                        , HP.height 187
+                                        , HP.alt ""
+                                        , HP.attr (HH.AttrName "loading") "lazy"
+                                        , HP.attr (HH.AttrName "decoding") "async"
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
@@ -160,7 +182,18 @@ component =
                     , HH.div [ mkClass "level-right" ]
                         [ HH.div [ mkClass "level-item" ]
                             [ HH.figure [ mkClass "image" ]
-                                [ HH.img [ HP.src "/assets/images/gusd-a-coin.png", HP.width 174, HP.height 187 ]
+                                [ HH.element (HH.ElemName "picture") []
+                                    [ HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/gusd-a-coin.jxl", HP.attr (HH.AttrName "type") "image/jxl" ]
+                                    , HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/gusd-a-coin.webp", HP.attr (HH.AttrName "type") "image/webp" ]
+                                    , HH.img
+                                        [ HP.src "/assets/images/gusd-a-coin.png"
+                                        , HP.width 174
+                                        , HP.height 187
+                                        , HP.alt ""
+                                        , HP.attr (HH.AttrName "loading") "lazy"
+                                        , HP.attr (HH.AttrName "decoding") "async"
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
@@ -294,7 +327,18 @@ component =
 
           [ HH.div [ mkClass "column" ]
               [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
-                  [ HH.div [ mkClass "column is-narrow" ] [ HH.figure [ mkClass "image" ] [ HH.img [ HP.src "/assets/images/bitcoin.png" ] ] ]
+                  [ HH.div [ mkClass "column is-narrow" ]
+                      [ HH.figure [ mkClass "image" ]
+                          [ HH.element (HH.ElemName "picture")
+                              [ HP.title "Bitcoin"
+                              , role "presentation"
+                              ]
+                              [ HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/bitcoin.jxl", HP.attr (HH.AttrName "type") "image/jxl" ]
+                              , HH.source [ HP.attr (HH.AttrName "srcset") "/assets/images/bitcoin.webp", HP.attr (HH.AttrName "type") "image/webp" ]
+                              , HH.img [ HP.src "/assets/images/bitcoin.png", HP.alt "" ]
+                              ]
+                          ]
+                      ]
                   , HH.p [ mkClass "column is-narrow is-size-5-desktop is-size-7-touch" ] [ HH.text $ unwrap v.asset ]
                   ]
               ]
