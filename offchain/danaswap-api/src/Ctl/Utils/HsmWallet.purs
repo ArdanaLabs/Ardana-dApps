@@ -50,7 +50,7 @@ makeHsmWallet = do
     { address
     , selectCollateral
     , signTx: hsmSignTx plutusPubKey
-    , signData : \_ _ -> unsafeCoerce "I didn't implement sign data for yubihsm, it probably isn't that hard" -- TODO implement this?
+    , signData: \_ _ -> unsafeCoerce "I didn't implement sign data for yubihsm, it probably isn't that hard" -- TODO implement this?
     , paymentKey: PrivatePaymentKey $ unsafeCoerce "tried to use the private key of a yubikey"
     , stakeKey: Nothing
     }
