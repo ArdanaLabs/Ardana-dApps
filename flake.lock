@@ -5373,6 +5373,23 @@
         "type": "github"
       }
     },
+    "font-awesome": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1661979763,
+        "narHash": "sha256-XXHGcwmnKuNZ4FJvuz+1x/NdaEkTG4UpG97zekI8ps8=",
+        "owner": "FortAwesome",
+        "repo": "Font-Awesome",
+        "rev": "d3a7818c253fcbafff9ebd1d4abb2866c192e1d7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "FortAwesome",
+        "ref": "6.2.0",
+        "repo": "Font-Awesome",
+        "type": "github"
+      }
+    },
     "get-flake": {
       "locked": {
         "lastModified": 1644686428,
@@ -15106,6 +15123,7 @@
         "cardano-transaction-lib": "cardano-transaction-lib",
         "dream2nix": "dream2nix",
         "flake-parts": "flake-parts_2",
+        "font-awesome": "font-awesome",
         "haskell-nix": "haskell-nix_5",
         "hercules-ci-effects": "hercules-ci-effects",
         "jquery": "jquery",
