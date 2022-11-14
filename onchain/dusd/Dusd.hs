@@ -6,10 +6,9 @@ import Plutarch.Prelude
 import Lib (checkAdminSig, getNextOutputByNft)
 import Plutarch (Config)
 import Plutarch.Extensions.Data (ptryFromData)
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Types (ProtocolParams (..))
 
-import Plutarch.Builtin (pforgetData)
 import Utils (closedTermToHexString)
 
 configWithUpdatesCBOR :: Config -> Maybe String
@@ -55,23 +54,7 @@ paramModuleAdr = ptrace "param module" $
       PTxInfo info <- pmatchC $ getField @"txInfo" scRec
       infoRec <- pletFieldsC @'["outputs", "inputs", "signatories"] info
       checkAdminSig adminPKHdata infoRec
-      ptraceC $
-        pshow $
-          pforgetData $
-            pdata $
-              pcon $
-                ProtocolParams $
-                  pdcons # pdata 1
-                    #$ pdcons
-                    # pdata 2
-                    #$ pdcons
-                    # pdata 3
-                    #$ pdcons
-                    # pdata 4
-                    # pdnil
-      outDatum' :: Term _ PData <- getNextOutputByNft nftCs (pconstant "") infoRec scRec
-      ptraceC $ pshow $ pforgetData $ pdata outDatum'
-      outDatum <- pletC $ pfromData $ ptryFromData outDatum'
+      outDatum :: Term _ ProtocolParams <- getNextOutputByNft nftCs (pconstant "") infoRec scRec
       ProtocolParams outRec' <- pmatchC outDatum
       outRec <-
         pletFieldsC

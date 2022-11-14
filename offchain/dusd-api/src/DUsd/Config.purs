@@ -24,7 +24,7 @@ import Data.Array (cons)
 import Data.Map (singleton)
 import Effect.Exception (throw)
 
--- | Initializes the protocol with a given datum
+-- | Initializes the config utxo with a given datum
 initConfigWith :: CurrencySymbol -> PlutusData -> Contract () UtxoId
 initConfigWith nftCs datum = do
   logDebug' "start config utxo init"
@@ -47,6 +47,7 @@ initConfigWith nftCs datum = do
     }
 
 -- | technically not part of this version of the protocol
+-- but pushes a new datum onto the config utxo
 updateConfig :: PlutusData -> UtxoId -> Contract () UtxoId
 updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
   oldIn /\ oldOut@(TransactionOutput { datum }) <- lookupUtxo utxoId
