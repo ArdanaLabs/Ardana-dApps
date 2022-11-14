@@ -153,7 +153,7 @@
           pkgs.callPackage ./nixos/tests/dusd-ui-lighthouse.nix {
             lighthouse =
               (dream2nix.lib.makeOutputs { source = self.inputs.lighthouse-src; }).packages.lighthouse;
-            dusd-ui = self'.packages."dusd-ui";
+            dusd-ui = self'.packages."offchain:dusd-ui";
             # TODO these values need to be increased once the improvements were done
             categories = {
               performance = 0.1;
