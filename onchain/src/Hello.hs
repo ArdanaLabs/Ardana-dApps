@@ -1,10 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Hello (
-  helloValidator,
-  helloLogic,
-  helloValidatorHash,
-  helloAddress,
   helloWorldCbor,
   paramHelloCbor,
   trivialCbor,
@@ -13,21 +9,16 @@ module Hello (
   HelloRedemer (..),
 ) where
 
-import Utils (closedTermToHexString, globalConfig, validatorToHexString)
-
-import PlutusLedgerApi.V2 (Validator, ValidatorHash)
-
-import PlutusLedgerApi.V1.Address (Address (..))
-import PlutusLedgerApi.V1.Credential (Credential (..))
-
 import Plutarch.Prelude
 
-import Plutarch.Api.V2 (PScriptContext, PValidator, mkValidator, validatorHash)
+import Plutarch (Config)
+import Plutarch.Api.V2 (PScriptContext, PValidator)
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Extensions.Api (passert, pgetContinuingDatum)
+import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Unsafe (punsafeCoerce)
 
-import Plutarch.Extra.TermCont (pmatchC)
+import Utils (closedTermToHexString)
 
 data HelloRedemer (s :: S)
   = Inc (Term s (PDataRecord '[]))
@@ -37,29 +28,20 @@ data HelloRedemer (s :: S)
 
 instance DerivePlutusType HelloRedemer where type DPTStrat _ = PlutusTypeData
 
-helloWorldCbor :: String
-helloWorldCbor = validatorToHexString helloValidator
+helloWorldCbor :: Config -> Maybe String
+helloWorldCbor = closedTermToHexString (paramValidator #$ pforgetData (pdata (1 :: Term _ PInteger)))
 
-paramHelloCbor :: Maybe String
+paramHelloCbor :: Config -> Maybe String
 paramHelloCbor = closedTermToHexString paramValidator
 
-trivialCbor :: Maybe String
+trivialCbor :: Config -> Maybe String
 trivialCbor = closedTermToHexString trivial
 
-trivialFailCbor :: Maybe String
+trivialFailCbor :: Config -> Maybe String
 trivialFailCbor = closedTermToHexString trivialFail
 
-trivialSerialise :: Maybe String
+trivialSerialise :: Config -> Maybe String
 trivialSerialise = closedTermToHexString $ plam $ \a _ _ -> pserialiseData # a
-
-helloValidator :: Validator
-helloValidator = mkValidator globalConfig (paramValidator #$ pforgetData (pdata (1 :: Term _ PInteger)))
-
-helloValidatorHash :: ValidatorHash
-helloValidatorHash = validatorHash helloValidator
-
-helloAddress :: Address
-helloAddress = Address (ScriptCredential helloValidatorHash) Nothing
 
 trivialFail :: ClosedTerm PValidator
 trivialFail = perror
