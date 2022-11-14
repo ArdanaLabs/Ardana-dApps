@@ -3,9 +3,48 @@
   perSystem = { config, self', inputs', system, ... }:
     let
       pkgs = inputs'.nixpkgs.legacyPackages;
-      inherit (config) cat-lib dream2nix;
+      purs-nix = config.ps.purs-nix;
+      inherit (purs-nix) ps-pkgs;
+      inherit (config) cat-lib dream2nix offchain-lib;
       ui =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
+
+      components = {
+        ps =
+          purs-nix.purs
+            {
+              dependencies =
+                with ps-pkgs;
+                [
+                  halogen
+                  halogen-store
+                  halogen-svg-elems
+                  cardano-transaction-lib
+                  # self'.packages."offchain:dusd-api"
+                ];
+              dir = ./components;
+            };
+        package =
+          let
+            nodeModules = pkgs.symlinkJoin {
+              name = "ctl-node-modules";
+              paths = [
+                config.ctl.nodeModules
+              ];
+            };
+          in
+          pkgs.runCommand "build-components" { }
+            ''
+              export BROWSER_RUNTIME=1
+              cp -r ${components.ps.modules."DUsd.UI.Components.Home".output { }} homeOutput
+              cp ${./components/home.js} home.js
+              cp -r ${nodeModules}/* .
+              export NODE_PATH="node_modules"
+              export PATH="bin:$PATH"
+              mkdir -p $out/dist
+              webpack --mode=production -c ${../webpack.config.js} -o $out/dist/home --entry ./home.js
+            '';
+      };
 
       optimized-images =
         let
@@ -83,7 +122,7 @@
     in
     {
       packages = {
-        dusd-ui =
+        "offchain:dusd-ui" =
           pkgs.runCommand "build-dusd-ui"
             { }
             ''
@@ -91,7 +130,7 @@
               mkdir -p $out/assets/{images,scripts}
               cp ${./netlify.toml} $out/netlify.toml
               cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
-              cp -r ${self'.packages."offchain:dusd-browser"}/dist/* $out/assets/scripts
+              cp -r ${components.package}/dist/* $out/assets/scripts
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
               cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
             '';
@@ -99,9 +138,14 @@
 
       apps = {
         "offchain:dusd-ui:serve:testnet" =
-          cat-lib.makeServeApp self'.packages."dusd-ui";
+          cat-lib.makeServeApp self'.packages."offchain:dusd-ui";
         "offchain:dusd-ui:serve:mainnet" =
-          cat-lib.makeServeApp self'.packages."dusd-ui";
+          cat-lib.makeServeApp self'.packages."offchain:dusd-ui";
+      };
+
+      devShells = {
+        "offchain:dusd-ui" =
+          offchain-lib.makeProjectShell { project = components; };
       };
 
       checks = {

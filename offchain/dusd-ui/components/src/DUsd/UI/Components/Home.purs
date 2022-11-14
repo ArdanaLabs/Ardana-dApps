@@ -1,8 +1,8 @@
-module Dusd.Browser.Home where
+module DUsd.UI.Components.Home where
 
 import Contract.Prelude
 
-import Dusd.Browser.Types (Vault, Asset(..))
+import DUsd.UI.Types (Vault, Asset(..))
 import Data.Array (concat)
 import Effect (Effect)
 import Effect.Aff (error, throwError)

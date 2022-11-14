@@ -1,4 +1,4 @@
-module Dusd.Browser.Types where
+module DUsd.UI.Types where
 
 import Data.Newtype (class Newtype)
 
