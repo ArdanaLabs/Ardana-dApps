@@ -36,6 +36,7 @@ common lang
     HexFloatLiterals
     ImplicitPrelude
     ImportQualifiedPost
+    ImpredicativeTypes
     InstanceSigs
     KindSignatures
     LambdaCase

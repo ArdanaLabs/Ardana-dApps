@@ -1,7 +1,6 @@
 module HelloDiscovery (
   configScriptCbor,
   nftCbor,
-  standardNftMp,
   authTokenCbor,
   vaultScriptCbor,
 ) where
@@ -18,7 +17,6 @@ import Plutarch.Api.V2 (
   PTxInInfo,
   PTxOutRef,
   PValidator,
-  mkMintingPolicy,
   mkValidator,
   validatorHash,
  )
@@ -33,7 +31,7 @@ import Plutarch.Api.V1 (
 
 import Utils (closedTermToHexString)
 
-import PlutusLedgerApi.V2 (MintingPolicy, TxOutRef, adaToken)
+import PlutusLedgerApi.V2 (adaToken)
 
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.Value qualified as Value
@@ -59,7 +57,7 @@ authTokenCbor :: Config -> Maybe String
 authTokenCbor = closedTermToHexString authTokenMP
 
 vaultScriptCbor :: Config -> Maybe String
-vaultScriptCbor conf = closedTermToHexString (vaultAdrValidator conf) conf
+vaultScriptCbor = closedTermToHexString =<< vaultAdrValidator
 
 {- | The config validator
  since read only spends don't trigger the validator
@@ -68,16 +66,6 @@ vaultScriptCbor conf = closedTermToHexString (vaultAdrValidator conf) conf
 -}
 configScript :: ClosedTerm PValidator
 configScript = perror
-
-{- | The standard NFT minting policy
- parametized by a txid
- to mint:
- the txid must be spent as an input
--}
-standardNftMp :: Config -> TxOutRef -> MintingPolicy
-standardNftMp conf outRef =
-  mkMintingPolicy conf $
-    standardNft # pforgetData (pdata (pconstant outRef))
 
 standardNft :: ClosedTerm (PData :--> PMintingPolicy)
 standardNft = phoistAcyclic $
