@@ -15,7 +15,7 @@ import DUsd.Params (updateDebtFloor)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Attacks.Api (updateConfigAttack, defUpdate)
+import Test.Attacks.Api (defConfUpdate, defParamUpdate, updateConfigAttack, updateParamsAtack)
 import Test.Spec (describe, it, parallel, sequential)
 
 main :: Effect Unit
@@ -66,6 +66,38 @@ main = launchAff_ $ do
             }
         updateDebtFloor paramsId (BigInt.fromInt 2)
 
+    describe "Params utxo Attacks" $ maybePar $ do
+      it "Update params without signature fails validation" $ useRunnerSimple $ do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        expectScriptError $
+            updateParamsAtack
+            (defParamUpdate{noSignature=true})
+            paramsId
+            (\x -> x)
+
+      it "Can't set debt floor to negative" $ useRunnerSimple do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        expectScriptError $
+          updateDebtFloor
+          paramsId
+          (BigInt.fromInt $ negate 2)
+
     describe "Config utxo" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init config doesn't error" $ useRunnerSimple $ do
@@ -80,7 +112,7 @@ main = launchAff_ $ do
         configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
           updateConfigAttack
-            (defUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
+            (defConfUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
             configUtxo
       it "Update without signature fails validation" $ useRunnerSimple $ do
@@ -88,7 +120,7 @@ main = launchAff_ $ do
         configUtxo <- initConfigWith cs (Constr zero [])
         expectScriptError $
           updateConfigAttack
-            (defUpdate { noSignature = true })
+            (defConfUpdate { noSignature = true })
             (Constr one [])
             configUtxo
 

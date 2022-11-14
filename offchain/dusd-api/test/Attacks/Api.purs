@@ -1,15 +1,17 @@
 module Test.Attacks.Api
   ( updateConfigAttack
-  , UpdateAttack
-  , defUpdate
+  , UpdateConfAttack
+  , defConfUpdate
+  , updateParamsAtack
+  , defParamUpdate
   ) where
 
 import Contract.Prelude
 
-import Contract.Address (scriptHashAddress)
+import Contract.Address (PaymentPubKeyHash(..), scriptHashAddress)
 import Contract.Log (logDebug')
-import Contract.Monad (Contract)
-import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
+import Contract.Monad (Contract, liftContractM)
+import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (validatorHash)
 import Contract.Transaction (TransactionOutput(..), TransactionOutputWithRefScript(..))
@@ -17,6 +19,7 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
+import DUsd.Api (Params)
 import DUsd.Nft (lookupUtxo)
 import DUsd.Types (UtxoId(..))
 import Data.Array (cons)
@@ -26,19 +29,19 @@ import Effect.Exception (throw)
 -- There's a package for this but it's not in
 -- ps-pkgs and we only need 2 lines of code from it anyway
 
-type UpdateAttack =
+type UpdateConfAttack =
   { noSignature :: Boolean
   , overwriteDatum :: Maybe PlutusData
   }
 
-defUpdate :: UpdateAttack
-defUpdate =
+defConfUpdate :: UpdateConfAttack
+defConfUpdate =
   { noSignature: false
   , overwriteDatum: Nothing
   }
 
 -- | technically not part of this version of the protocol
-updateConfigAttack :: UpdateAttack -> PlutusData -> UtxoId -> Contract () UtxoId
+updateConfigAttack :: UpdateConfAttack -> PlutusData -> UtxoId -> Contract () UtxoId
 updateConfigAttack
   atack
   newDatum
@@ -68,4 +71,44 @@ updateConfigAttack
       )
   logDebug' "config utxo submitted, waiting for confirmation"
   logDebug' "protocol init complete"
+  pure $ UtxoId rec { guess = Just utxo }
+
+
+type UpdateParamAttack =
+  { noSignature :: Boolean
+  }
+
+defParamUpdate :: UpdateParamAttack
+defParamUpdate = { noSignature : false}
+
+updateParamsAtack :: UpdateParamAttack -> UtxoId -> (Params -> Params) -> Contract () UtxoId
+updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
+  txIn /\ oldOut@(TransactionOutput { datum: outDatum }) <- lookupUtxo utxoid
+  Datum datum <- case outDatum of
+    OutputDatum datum -> pure datum
+    _ -> liftEffect $ throw "no datum or datum was datum hash"
+  oldParams :: Params <- fromData datum # liftContractM "old datum didn't parse"
+  pkh <- getWalletPubkeyhash
+  utxo <- waitForTx (scriptHashAddress (validatorHash script) Nothing)
+    =<< buildBalanceSignAndSubmitTx
+      ( Lookups.validator script
+          <> Lookups.unspentOutputs
+            ( singleton txIn
+                (TransactionOutputWithRefScript { output: oldOut, scriptRef: Nothing })
+            )
+      )
+      ( Constraints.mustSpendScriptOutput txIn
+          (Redeemer $ toData unit)
+          <>
+            (if atack.noSignature
+              then mempty
+              else Constraints.mustBeSignedBy (PaymentPubKeyHash pkh)
+            )
+          <>
+            Constraints.mustPayToScript
+              (validatorHash script)
+              (Datum $ toData $ paramUpdate oldParams)
+              DatumInline
+              (Value.singleton cs tn one)
+      )
   pure $ UtxoId rec { guess = Just utxo }
