@@ -144,7 +144,7 @@
       src.git =
         {
           repo = "https://github.com/Plutonomicon/cardano-transaction-lib.git";
-          ref = "develop";
+          ref = "brian/prational";
           rev = ctl-rev;
         };
 
