@@ -30,7 +30,7 @@ initConfigWith nftCs datum = do
   logDebug' "start config utxo init"
   pkh <- getWalletPubkeyhash
   configVal <- configAddressValidator pkh nftCs
-  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal)
+  utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       (mempty)
       ( Constraints.mustPayToScript
@@ -54,7 +54,7 @@ updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVa
     (OutputDatum (Datum (List old))) -> pure old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   pkh <- getWalletPubkeyhash
-  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal)
+  utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
           ( singleton oldIn

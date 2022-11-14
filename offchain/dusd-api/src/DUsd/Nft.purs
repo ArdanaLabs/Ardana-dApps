@@ -40,7 +40,7 @@ lookupUtxo (UtxoId { nft: (cs /\ tn), script, guess }) =
     Nothing -> fallback
   where
   fallback =
-    getUtxos (scriptHashAddress $ validatorHash script)
+    getUtxos (scriptHashAddress (validatorHash script) Nothing)
       <#> Map.filter
         ( \utxo ->
             valueOf (unwrap (unwrap utxo).output).amount cs tn

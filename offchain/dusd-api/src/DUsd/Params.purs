@@ -11,7 +11,7 @@ import Contract.Prelude
 
 import Contract.Address (PaymentPubKeyHash(..), scriptHashAddress)
 import Contract.Monad (Contract, liftContractM)
-import Contract.Numeric.Rational (Rational)
+import Contract.Plutarch.Types (PRational)
 import Contract.PlutusData (Datum(..), OutputDatum(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (validatorHash)
@@ -33,7 +33,7 @@ initParams params = do
   paramNftCS <- mintNft
   pkh <- getWalletPubkeyhash
   paramAdrVal <- paramAddressValidator pkh paramNftCS
-  utxo <- waitForTx (scriptHashAddress $ validatorHash paramAdrVal)
+  utxo <- waitForTx (scriptHashAddress (validatorHash paramAdrVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       mempty
       ( Constraints.mustPayToScript
@@ -56,7 +56,7 @@ updateParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
     _ -> liftEffect $ throw "no datum or datum was datum hash"
   oldParams :: Params <- fromData datum # liftContractM "old datum didn't parse"
   pkh <- getWalletPubkeyhash
-  utxo <- waitForTx (scriptHashAddress $ validatorHash script)
+  utxo <- waitForTx (scriptHashAddress (validatorHash script) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.validator script
           <> Lookups.unspentOutputs
@@ -81,7 +81,7 @@ updateDebtFloor :: UtxoId -> BigInt -> Contract () UtxoId
 updateDebtFloor utxoid new = updateParams utxoid
   (\(Params p) -> Params $ p { debtFloor = new })
 
-updateLiquidationDiscount :: UtxoId -> Rational -> Contract () UtxoId
+updateLiquidationDiscount :: UtxoId -> PRational -> Contract () UtxoId
 updateLiquidationDiscount utxoid new = updateParams utxoid
   (\(Params p) -> Params $ p { liquidationDiscount = new })
 
@@ -89,6 +89,6 @@ updateLiquidationFee :: UtxoId -> BigInt -> Contract () UtxoId
 updateLiquidationFee utxoid new = updateParams utxoid
   (\(Params p) -> Params $ p { liquidationFee = new })
 
-updateLiquidationRatio :: UtxoId -> Rational -> Contract () UtxoId
+updateLiquidationRatio :: UtxoId -> PRational -> Contract () UtxoId
 updateLiquidationRatio utxoid new = updateParams utxoid
   (\(Params p) -> Params $ p { liquidationRatio = new })

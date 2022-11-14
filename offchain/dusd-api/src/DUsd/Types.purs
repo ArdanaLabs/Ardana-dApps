@@ -8,13 +8,13 @@ module DUsd.Types
 import Contract.Prelude
 
 import Aeson (class DecodeAeson, class EncodeAeson, decodeAeson, encodeAeson')
-import Contract.Numeric.Rational (Rational)
 import Contract.PlutusData (class FromData, class ToData, PlutusData(..), fromData, toData)
 import Contract.Prim.ByteArray (byteArrayToHex, hexToByteArrayUnsafe)
 import Contract.Scripts (Validator)
 import Contract.Transaction (TransactionHash(..), TransactionInput(..))
 import Contract.Value (CurrencySymbol, TokenName)
 import Data.BigInt (BigInt)
+import Contract.Plutarch.Types(PRational)
 import Data.UInt as UInt
 
 newtype Protocol = Protocol
@@ -38,9 +38,9 @@ type AssetClass = CurrencySymbol /\ TokenName
 
 newtype Params = Params
   { debtFloor :: BigInt
-  , liquidationDiscount :: Rational
+  , liquidationDiscount :: PRational
   , liquidationFee :: BigInt
-  , liquidationRatio :: Rational
+  , liquidationRatio :: PRational
   }
 
 instance ToData Params where

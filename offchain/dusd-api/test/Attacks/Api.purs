@@ -48,7 +48,7 @@ updateConfigAttack
     (OutputDatum (Datum (List old))) -> pure old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   pkh <- getWalletPubkeyhash
-  utxo <- waitForTx (scriptHashAddress $ validatorHash configVal)
+  utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
           ( singleton oldIn

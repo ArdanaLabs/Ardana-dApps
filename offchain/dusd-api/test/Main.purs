@@ -5,7 +5,7 @@ module Test.Main
 import Contract.Prelude
 
 import Contract.Monad (launchAff_, liftContractM)
-import Contract.Numeric.Rational ((%))
+import Contract.Plutarch.Types ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
