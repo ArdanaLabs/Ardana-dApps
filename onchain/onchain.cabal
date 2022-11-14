@@ -74,7 +74,6 @@ library
   exposed-modules:
     Hello
     HelloDiscovery
-    Onchain
     Plutarch.Extensions.Api
     Plutarch.Extensions.Data
     Plutarch.Extensions.List
@@ -94,31 +93,23 @@ library
     , pretty
     , serialise
 
-library apropos-tx
-  import:          lang
-  exposed-modules:
-    Apropos.ContextBuilder
-    Apropos.Script
-
-  hs-source-dirs:  apropos-tx
+executable dusd
+  import:         lang
+  type:           exitcode-stdio-1.0
+  main-is:        GenCbor.hs
+  hs-source-dirs: dusd
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
+  other-modules:  Dusd
   build-depends:
-    , apropos
     , base
-    , containers
-    , free
-    , hedgehog
-    , lens
-    , minisat-solver
-    , mtl
+    , bytestring
+    , data-default
+    , directory
+    , onchain
     , plutarch
-    , plutus-core
+    , plutarch-extra
     , plutus-ledger-api
-    , pretty
-    , pretty-show
-    , safe
-    , template-haskell
-    , text
-    , transformers
+    , serialise
 
 executable danaswap
   import:         lang
@@ -130,6 +121,7 @@ executable danaswap
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
     , plutarch
@@ -146,21 +138,10 @@ executable hello-world
   build-depends:
     , base
     , bytestring
+    , data-default
     , directory
     , onchain
-    , plutus-ledger-api
-    , serialise
-
-executable scripts
-  import:         lang
-  type:           exitcode-stdio-1.0
-  main-is:        Main.hs
-  hs-source-dirs: scripts
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-    , base
-    , bytestring
-    , onchain
+    , plutarch
     , plutus-ledger-api
     , serialise
 
@@ -171,19 +152,15 @@ test-suite tests
   hs-source-dirs: tests
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
   other-modules:
-    Apropos.Plutus.HelloValidator
-    Apropos.Plutus.SimpleNFT
-    Gen
     Goldens.Cbor
     Tests
 
   build-depends:
-    , apropos
-    , apropos-tx
     , base
     , bytestring
     , containers
     , cryptonite
+    , data-default
     , hedgehog
     , lens
     , memory

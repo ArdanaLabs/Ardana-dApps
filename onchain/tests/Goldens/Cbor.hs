@@ -1,5 +1,6 @@
 module Goldens.Cbor (spec) where
 
+import Data.Default (Default (def))
 import Data.List (intercalate)
 import Data.Text (unpack)
 import Hello (helloWorldCbor, paramHelloCbor, trivialCbor)
@@ -9,9 +10,9 @@ spec :: FilePath -> Spec
 spec dir =
   modifyRunSettings (\tde -> tde {testRunSettingGoldenStart = testRunSettingGoldenReset tde}) $
     describe "cbor" $ do
-      defaultGolden dir "trivial" trivialCbor
-      defaultGolden dir "hello" helloWorldCbor
-      defaultGolden dir "param-hello" paramHelloCbor
+      defaultGolden dir "trivial" $ trivialCbor def
+      defaultGolden dir "hello" $ helloWorldCbor def
+      defaultGolden dir "param-hello" $ paramHelloCbor def
 
 -- If we add more goldens this should probably be moved somewhere more central ie. a new Goldens.hs
 defaultGolden :: Show a => FilePath -> String -> a -> _
