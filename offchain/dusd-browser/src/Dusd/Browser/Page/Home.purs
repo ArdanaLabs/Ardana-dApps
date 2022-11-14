@@ -2,7 +2,7 @@ module Dusd.Browser.Home where
 
 import Contract.Prelude
 
-import Dusd.Browser.Types (Vault)
+import Dusd.Browser.Types (Vault, Asset(..))
 import Data.Array (concat)
 import Effect (Effect)
 import Effect.Aff (error, throwError)
@@ -49,15 +49,15 @@ component =
   H.mkComponent
     { initialState: const
         { vaults:
-            [ { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
-            , { asset: "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            [ { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
+            , { asset: Asset "Wrapped Bitcoin", assetType: "WBTC-A", dUsdAvailable: 29.36, stablilityFee: 2.00, minCollRatio: 160.0 }
             ]
         , filter: PopularAssets
         }
@@ -295,7 +295,7 @@ component =
           [ HH.div [ mkClass "column" ]
               [ HH.div [ mkClass "columns is-mobile is-centered is-vcentered" ]
                   [ HH.div [ mkClass "column is-narrow" ] [ HH.figure [ mkClass "image" ] [ HH.img [ HP.src "/assets/images/bitcoin.png" ] ] ]
-                  , HH.p [ mkClass "column is-narrow is-size-5-desktop is-size-7-touch" ] [ HH.text v.asset ]
+                  , HH.p [ mkClass "column is-narrow is-size-5-desktop is-size-7-touch" ] [ HH.text $ unwrap v.asset ]
                   ]
               ]
           , HH.div [ mkClass "column" ]

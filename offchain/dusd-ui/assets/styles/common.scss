@@ -27,7 +27,6 @@ main {
 }
 
 .footer .icon svg {
-  fill: currentColor;
   width: 2em;
   height: 2em;
 }
@@ -35,6 +34,7 @@ main {
 .NoScript {
   max-width: 55ch;
   margin: auto;
+  padding: 1em;
 }
 
 .NoScript a {

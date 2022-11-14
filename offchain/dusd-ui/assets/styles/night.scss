@@ -48,7 +48,8 @@ $button-border-width: 0;
 }
 
 .dusd-btn-has-background {
-  background: linear-gradient(89.62deg, #72d2f2 0.3%, #6077ff 99.64%);
+  background-color: #72d2f2;
+  background-image: linear-gradient(89.62deg, #72d2f2 0.3%, #6077ff 99.64%);
   font-style: normal;
   font-weight: 700;
   line-height: 115%;
@@ -100,11 +101,17 @@ $button-border-width: 0;
 }
 
 .link-a-coin {
-  background: linear-gradient(180deg, #3142a3 0%, rgba(49, 66, 163, 0) 118.48%);
+  background-color: #3142a3;
+  background-image: linear-gradient(
+    180deg,
+    #3142a3 0%,
+    rgba(49, 66, 163, 0) 118.48%
+  );
 }
 
 .uni-a-coin {
-  background: linear-gradient(
+  background-color: #627eff;
+  background-image: linear-gradient(
     180.2deg,
     #627eff 0.17%,
     rgba(77, 97, 210, 0) 116.51%
@@ -112,11 +119,17 @@ $button-border-width: 0;
 }
 
 .gusd-a-coin {
-  background: linear-gradient(180deg, #71b5f3 0%, rgba(113, 206, 243, 0) 110%);
+  background-color: #71b5f3;
+  background-image: linear-gradient(
+    180deg,
+    #71b5f3 0%,
+    rgba(113, 206, 243, 0) 110%
+  );
 }
 
 .dana-coin {
-  background: linear-gradient(
+  background-color: #627eff;
+  background-image: linear-gradient(
     180.2deg,
     #627eff 0.17%,
     rgba(77, 97, 210, 0) 116.51%
@@ -124,12 +137,18 @@ $button-border-width: 0;
 }
 
 .got-questions {
-  background: linear-gradient(180deg, #71b5f3 0%, rgba(113, 206, 243, 0) 110%);
+  background-color: #71b5f3;
+  background-image: linear-gradient(
+    180deg,
+    #71b5f3 0%,
+    rgba(113, 206, 243, 0) 110%
+  );
 }
 
 .search-input {
   mix-blend-mode: normal;
-  background: linear-gradient(0deg, #1e2769, #1e2769);
+  background-color: #1e2769;
+  background-image: linear-gradient(0deg, #1e2769, #1e2769);
   border: 1px solid rgba(96, 119, 255, 1);
 }
 
