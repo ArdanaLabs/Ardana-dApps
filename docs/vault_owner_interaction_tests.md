@@ -1,7 +1,30 @@
-Questions that need to be resolved:
- - Is the collateralization rate stored in the datum? We can compute it using other information, should that computation be done by the frontend?
- - Can a user deposit an amount collateral even if that amount is not sufficient to bring the vault in a healthy state?
+## General criticizm:
+- what purpose do sections "Interactions" and "Acceptance Criteria" serve?
+ IMO: Acceptance criteras are basically analogous to the tests section. The sections "acceptance criteria" and "tests" can be combined into a section "requirements", if requirements are written in a way that they can be translated into a test-case, which is always the case. The "interactions" can then serve as an introduction to those requirements.
+- Right now these sections just scatter information through the whole document sometimes with different terminology and contradictory statements.
+
+## Questions that need to be resolved:
+### Querying vaults:
+ - What static data do we store about a vault in the datum, what will be computed?
+   - What is the the vaults health score? e.g. `liquidationRatio - collateralizationRatio` normalized?
+     - Answer: not part of the MVP
+   - What vault data is of interest to the user?
+   - What data should be visible in the vault overview list?
+   - What data should be presented when opening up a detailed view of that vault?
+   - Is the collateralization rate stored in the datum? We can compute it using other information, should that computation be done by the frontend?
+
+### Vault initialization:
+ - Should vault initialization be impossible if the price-oracle didn't update the price data for more than two hours?
+ - Should vault initialization be impossible if a user has an undercollateralized vault?
+ - Is initialization the point where the owner of the vault specifies the liquidation ratio/leverage he/she wants? Who defines the liquidation ratio, where is it stored? (please augment the dusd-whitepaper)
+ - What data should be configurable by the user on vault initialization? the collateralization, collateralization ratio, liquidation ratio?
  - Can a user during initialization configure the amount of collateral he/she wants, the amount of dUSD he/she wants, the collateralization rate or all three? Since the equation can be restrucured for any of these, we should decide what we want.
+ - Does vault initialization require to payout dUSD/debt immediately. If not, how do we compute the collateralization ratio?
+
+### Depositing collateral
+ - Can a user deposit an amount of collateral even if that amount is not sufficient to bring the vault into a healthy state?
+ - Liquidation fee is mentioned with no explanation when it will be charged, to whom it will be payed, and where it will be stored. (please improve the dusd-whitepaper)
+ - How does the payout (red highlight in the example) effect the collateralization ratio?
 
 # Tests
 ## Vault
@@ -16,6 +39,7 @@ We also need to check whether all vault information is present when getting the 
  - the amount of dUSD (debt/credit)
  - the collateralization ratio
  - the vaults health score, TODO: what is this score? e.g. `liquidationRatio - collateralizationRatio` normalized?
+ - whether the vault follows the current protocol version
 
 #### UI
 ##### Functional
@@ -24,6 +48,8 @@ We also need to check whether all vault information is present when getting the 
  - Selecting a sort method on the list of owned vaults, like amount of collateral, debt, collateralization ratio, and vault health state, sorts the list accordingly.
  - Clicking on one of the enlisted vaults, shows more details about respective valut (TODO: what information are of interest) in form of a TODO popup/seperate page?
  - Unhealthy vaults should be visually highlighted (e.g. using a color like red).
+ - Vaults which don't follow the recent protocol version should be visually highlighted (e.g. using a color like yellow).
+ - Vaults which don't follow the recent protocol version should be displayed with an "update button".
  - While waiting for the vault list to be fetched a [Throbber](https://en.wikipedia.org/wiki/Throbber) should be displayed
  - If no vaults are available a respective informative text should be displayed
  - If no vaults are available the user should be offered to initialize his/her first vault
@@ -31,16 +57,17 @@ We also need to check whether all vault information is present when getting the 
  - Applying a filter has immediate effect on the displayed list.
  - Applying a sort method has immediate effect on the displayed list.
  - The list should respond immediately to interactions.
+ - Changing the browser-window size adjusts the content accordingly, supporting any window sizes responsively.
 
 ### Initializing Vaults
 #### Offchain
  - Initializing a vault if the last update time of the price-oracle was more than two hours ago should fail. Returning a descriptive message.
- - Initializing a vault given the provided collateral and collateralization ratio, succeeds only if the minimal amount of dUSD (debt) that is going to be minted is greater or equal the configured `Debt Floor` (i.e. min. amount of dUSD that is minted) which  is configured by the protocol. The opposite case if that criteria is not met should fail.
- - Initializing a vault given the provided collateral and desired amount of dUSD (debt) succeeds only if the minimal amount of dUSD that is going to be minted is greater or equal the configured `Debt Floor` (i.e. min. amount of dUSD that is minted) which  is configured by the protocol. The opposite case if that criteria is not met should fail.
- - Initializing a vault even though owning an undercollaterized vault should succeed, if the above `Debt Floor` criteria is met.
- - Initializing multiple vaults should succeed if the above `Debt Floor` criteria is met.
- - Successful initialization when setting the collateral amount and collateralization ratio should set compute the minted dUSD (debt) correctly.
- - Successful initialization when setting the collateral amount the desired dUSD (debt) should compute the collateralization ratio correctly.
+ - Initializing a vault given the provided **collateral** and **collateralization ratio**, succeeds only if the minimal amount of dUSD (debt) that is going to be minted is greater or equal the configured `Debt Floor` or smaller than or equal the configured `Debt Ceiling`. The opposite case if that criteria is not met should fail.
+ - Initializing a vault given the provided **collateral** and desired **amount of dUSD (debt)** succeeds only if the minimal amount of dUSD that is going to be minted is greater or equal the configured `Debt Floor` or smaller than or equal the configured `Debt Ceiling`. The opposite case if that criteria is not met should fail.
+ - Initializing a vault even though owning an undercollaterized vault should succeed, if the above `Debt Floor` and `Debt Ceiling` criteria is met.
+ - Initializing multiple vaults should succeed if the above `Debt Floor` and `Debt Ceiling` criteria is satisfied.
+ - Successful initialization when setting the collateral amount and collateralization ratio should compute the minted dUSD (debt) according to the formula.
+ - Successful initialization when setting the collateral amount the desired dUSD (debt) should compute the collateralization ratio according to the formula.
  - Successful initialization associates that vault with the user who initialized it.
  - Successful initialization makes the protocol aware of that vault.
 #### UI
@@ -60,7 +87,8 @@ We also need to check whether all vault information is present when getting the 
 
 ### Depositing Collateral to Vaults
 #### Offchain
- - Depositing only succeeds if done by a user who is the owner of the vault. Test with non-owner.
+ - Depositing only succeeds if done by an user who is the owner of the vault.
+ - Depositing fails if done by an user who is not the owner of the vault.
  - Depositing a positive amount of collateral to the vault succeeds.
  - Depositing a negative amount should fail. Returning a descriptive error message.
  - Depositing 0 should fail. Returning a descriptive error message.
@@ -86,7 +114,8 @@ We also need to check whether all vault information is present when getting the 
 
 ### Withdrawing Collateral from Vaults
 #### Offchain
- - Withdrawing only succeeds if done by a user who is the owner of the vault. Test with non-owner.
+ - Withdrawing only succeeds if done by an user who is the owner of the vault.
+ - Withdrawing fails if done by an user who is not the owner of the vault.
  - Withdrawing a positive amount of collateral from the vault succeeds.
  - Withdrawing an amount of collateral that leaves the amount of collateral in the vault <= 0 fails.
  - Withdrawing an amount of collateral that leaves the collateralization ratio below the liquidation ratio should fail. TODO: this has contradictory specifications in the spec. in 2.2 we say only in the UI this should be forbidden in 3.2 there is a bullet saying that it does not work for both.
@@ -116,8 +145,9 @@ We also need to check whether all vault information is present when getting the 
 
 ### Withdrawing dUSD (debt) from Vaults i.e. taking out a loan
 #### Offchain
- - Withdrawing dUSD only succeeds if done by a user who is the owner of the vault. Test with non-owner.
- - Withdrawing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`. On failure it should return a descriptive error message.
+ - Withdrawing dUSD only succeeds if done by a user who is the owner of the vault.
+ - Withdrawing dUSD fails if done by a user who is not the owner of the vault.
+ - Withdrawing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`, `<0` or `>= Debt Ceiling`. On failure it should return a descriptive error message.
  - Withdrawing a negative amount of dUSD should fail. Returning a descriptive error message.
  - Withdrawing an amount of dUSD that leaves the collateralization ratio below the liquidation ratio should fail. TODO: this has contradictory specifications in the spec. in 2.2 we say only in the UI this should be forbidden in 3.2 there is a bullet saying that it does not work for both.
  - Withdrawing dUSD from a non-undercollaterized vault should succeed.
@@ -143,8 +173,9 @@ We also need to check whether all vault information is present when getting the 
 
 ### Depositing dUSD (debt) to Vaults i.e. paying back a loan
 #### Offchain
- - Depositing dUSD only succeeds if done by a user who is the owner of the vault. Test with non-owner.
- - Depositing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`. On failure it should return a descriptive error message.
+ - Depositing dUSD only succeeds if done by a user who is the owner of the vault.
+ - Depositing dUSD fails if done by a user who is not the owner of the vault.
+ - Depositing dUSD from a vault only succeeds if the resulting debt amount in the vault is not element of `[0, Debt Foor]`, `<0` or `>= Debt Ceiling`. On failure it should return a descriptive error message.
  - Depositing dUSD pays a stability fee to the buffer.
  - Depositing a negative amount of dUSD should fail. Returning a descriptive error message.
  - Depositing 0 should fail. Returning a descriptive error message.
