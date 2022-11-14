@@ -1,0 +1,4 @@
+(executable
+(name fa_sprite_util)
+	(public_name fa_sprite_util)
+	(libraries getopt lambdasoup markup))

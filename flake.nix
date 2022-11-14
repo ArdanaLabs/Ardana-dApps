@@ -47,6 +47,10 @@
       url = "github:jquery/jquery/3.6.0";
       flake = false;
     };
+    font-awesome = {
+      url = "github:FortAwesome/Font-Awesome/6.2.0";
+      flake = false;
+    };
     treefmt-flake.url = "github:srid/treefmt-flake";
     yubihsm.url = "github:ArdanaLabs/yubihsm-ed-sign?rev=6fc4b462fc400cc2058df81f760228c2088db8d4";
     hercules-ci-effects.url = "github:hercules-ci/hercules-ci-effects";
@@ -64,7 +68,6 @@
           ./onchain
           ./docs
           ./nix/flake-modules
-          ./ui
           ./price-feeder
         ];
       }

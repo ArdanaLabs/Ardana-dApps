@@ -1,0 +1,155 @@
+@charset "utf-8";
+
+@import "../../node_modules/bulma/sass/utilities/initial-variables";
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Light"), local("Brandon-Grotesque-Light"),
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-light.woff2")
+      format("woff2");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Bold"), local("Brandon-Grotesque-Bold"),
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-bold-regular.woff2")
+      format("woff2");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Brandon Grotesque";
+  src: local("Brandon Grotesque Black"), local("Brandon-Grotesque-Black"),
+    url("/assets/fonts/Brandon-Grotesque/brandon-grotesque-black.woff2")
+      format("woff2");
+  font-weight: 900;
+}
+
+$scheme-main: #080e42;
+$scheme-invert: #f5fcfe;
+
+$family-primary: "Brandon Grotesque", serif;
+
+$link: $scheme-invert;
+$text: $scheme-invert;
+$link-focus: $scheme-invert;
+$link-hover: $scheme-invert;
+$input-color: $scheme-invert;
+$text-strong: $scheme-invert;
+$title-color: $scheme-invert;
+$subtitle-color: $grey-light;
+$button-border-width: 0;
+
+@import "../../node_modules/bulma/bulma";
+
+.navbar-item.is-active {
+  border-bottom: 3px solid #73d6f1;
+}
+
+.dusd-btn-has-background {
+  background-color: #72d2f2;
+  background-image: linear-gradient(89.62deg, #72d2f2 0.3%, #6077ff 99.64%);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 115%;
+  text-align: center;
+  color: #f5fcfe;
+}
+
+.dusd-btn-has-border {
+  border: 3px solid rgba(45, 59, 160, 1);
+  box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 1);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 100%;
+  text-align: center;
+  color: #f5fcfe;
+}
+
+.navbar-brand a.navbar-item {
+  background-image: url("/assets/images/logo_header_night.png");
+  background-size: cover;
+  width: 65.92px;
+  height: 60px;
+}
+
+#lightmode-toggle-btn {
+  background-image: url("/assets/images/lightmode_toggle_btn_night.png");
+  background-image: image-set(
+    "/assets/images/lightmode_toggle_btn_night.jxl" type("image/jxl"),
+    "/assets/images/lightmode_toggle_btn_night.webp" type("image/webp"),
+    "/assets/images/lightmode_toggle_btn_night.png" type("image/png")
+  );
+  background-size: cover;
+  width: 96px;
+  height: 50px;
+}
+
+#home-static {
+  background-image: url("/assets/images/home_static_night.png");
+  background-image: image-set(
+    "/assets/images/home_static_night.jxl" type("image/jxl"),
+    "/assets/images/home_static_night.webp" type("image/webp"),
+    "/assets/images/home_static_night.png" type("image/png")
+  );
+  background-size: cover;
+}
+
+.vaults-table-row {
+  border-bottom: 1px solid #72d2f3;
+}
+
+.link-a-coin {
+  background-color: #3142a3;
+  background-image: linear-gradient(
+    180deg,
+    #3142a3 0%,
+    rgba(49, 66, 163, 0) 118.48%
+  );
+}
+
+.uni-a-coin {
+  background-color: #627eff;
+  background-image: linear-gradient(
+    180.2deg,
+    #627eff 0.17%,
+    rgba(77, 97, 210, 0) 116.51%
+  );
+}
+
+.gusd-a-coin {
+  background-color: #71b5f3;
+  background-image: linear-gradient(
+    180deg,
+    #71b5f3 0%,
+    rgba(113, 206, 243, 0) 110%
+  );
+}
+
+.dana-coin {
+  background-color: #627eff;
+  background-image: linear-gradient(
+    180.2deg,
+    #627eff 0.17%,
+    rgba(77, 97, 210, 0) 116.51%
+  );
+}
+
+.got-questions {
+  background-color: #71b5f3;
+  background-image: linear-gradient(
+    180deg,
+    #71b5f3 0%,
+    rgba(113, 206, 243, 0) 110%
+  );
+}
+
+.search-input {
+  mix-blend-mode: normal;
+  background-color: #1e2769;
+  background-image: linear-gradient(0deg, #1e2769, #1e2769);
+  border: 1px solid rgba(96, 119, 255, 1);
+}
+
+@import "./common";
