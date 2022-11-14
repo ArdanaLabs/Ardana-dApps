@@ -6,10 +6,10 @@
       purs-nix = config.ps.purs-nix;
       inherit (purs-nix) ps-pkgs;
       inherit (config) cat-lib dream2nix offchain-lib;
-      ui =
-        (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-ui;
+      dusd-browser =
+        (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-browser;
 
-      components = {
+      dusd-ui-components = {
         ps =
           purs-nix.purs
             {
@@ -22,7 +22,7 @@
                   cardano-transaction-lib
                   # self'.packages."offchain:dusd-api"
                 ];
-              dir = ./components;
+              dir = ./ui-components;
             };
         package =
           let
@@ -33,11 +33,11 @@
               ];
             };
           in
-          pkgs.runCommand "build-components" { }
+          pkgs.runCommand "build-dusd-ui-components" { }
             ''
               export BROWSER_RUNTIME=1
-              cp -r ${components.ps.modules."DUsd.UI.Components.Home".output { }} homeOutput
-              cp ${./components/home.js} home.js
+              cp -r ${dusd-ui-components.ps.modules."DUsd.UI.Components.Home".output { }} homeOutput
+              cp ${./ui-components/home.js} home.js
               cp -r ${nodeModules}/* .
               export NODE_PATH="node_modules"
               export PATH="bin:$PATH"
@@ -122,38 +122,38 @@
     in
     {
       packages = {
-        "offchain:dusd-ui" =
-          pkgs.runCommand "build-dusd-ui"
+        "offchain:dusd-browser" =
+          pkgs.runCommand "build-dusd-browser"
             { }
             ''
               set -euo pipefail
               mkdir -p $out/assets/{images,scripts}
               cp ${./netlify.toml} $out/netlify.toml
-              cp -r ${ui}/lib/node_modules/dusd-ui/build/* $out/
-              cp -r ${components.package}/dist/* $out/assets/scripts
+              cp -r ${dusd-browser}/lib/node_modules/dusd-browser/build/* $out/
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
               cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
+              cp -r ${dusd-ui-components.package}/dist/* $out/assets/scripts
             '';
       };
 
       apps = {
-        "offchain:dusd-ui:serve:testnet" =
-          cat-lib.makeServeApp self'.packages."offchain:dusd-ui";
-        "offchain:dusd-ui:serve:mainnet" =
-          cat-lib.makeServeApp self'.packages."offchain:dusd-ui";
+        "offchain:dusd-browser:serve:testnet" =
+          cat-lib.makeServeApp self'.packages."offchain:dusd-browser";
+        "offchain:dusd-browser:serve:mainnet" =
+          cat-lib.makeServeApp self'.packages."offchain:dusd-browser";
       };
 
       devShells = {
-        "offchain:dusd-ui" =
-          offchain-lib.makeProjectShell { project = components; };
+        "offchain:dusd-browser" =
+          offchain-lib.makeProjectShell { project = dusd-ui-components; };
       };
 
       checks = {
-        "dusd-ui:lighthouse" =
-          pkgs.callPackage ./nixos/tests/dusd-ui-lighthouse.nix {
+        "dusd-browser:lighthouse" =
+          pkgs.callPackage ./nixos/tests/dusd-browser-lighthouse.nix {
             lighthouse =
               (dream2nix.lib.makeOutputs { source = self.inputs.lighthouse-src; }).packages.lighthouse;
-            dusd-ui = self'.packages."offchain:dusd-ui";
+            dusd-browser = self'.packages."offchain:dusd-browser";
             # TODO these values need to be increased once the improvements were done
             categories = {
               performance = 0.1;
@@ -182,7 +182,7 @@
           in
           hci-effects.netlifyDeploy {
             productionDeployment = (branch == "main");
-            content = "${self.packages.${system}.${projectName}}";
+            content = "${self.packages.${system}."offchain:${projectName}"}";
             secretName = "default-netlify";
             secretField = "authToken";
             siteId = siteId;
@@ -199,9 +199,9 @@
           };
       in
       {
-        dusd-ui = mkWebsite
-          "dusd-ui"
-          "bf0167e5-b0c2-41b2-9141-3b9f10329c1d";
+        dusd-browser = mkWebsite
+          "dusd-browser"
+          "8a80e71e-e8e8-4330-96e1-6b435aa1d543";
       };
   };
 }

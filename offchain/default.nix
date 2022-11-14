@@ -5,6 +5,6 @@
     ./danaswap-api/flake-module.nix
     ./dusd-api/flake-module.nix
     ./danaswap-cli
-    ./dusd-ui/flake-module.nix
+    ./dusd-browser/flake-module.nix
   ];
 }
