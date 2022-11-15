@@ -6,7 +6,7 @@
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     cardano-node.url = "github:input-output-hk/cardano-node?rev=73f9a746362695dc2cb63ba757fbcabb81733d23";
-    cardano-transaction-lib.url = "github:Plutonomicon/cardano-transaction-lib/bfcca2a16654a0a4a315bb93017aa9dd9c24bffa";
+    cardano-transaction-lib.url = "github:Plutonomicon/cardano-transaction-lib/176bb044723cf8bc0210f040211a29a2cd686030";
     cardano-ogmios.url = "github:input-output-hk/cardano-ogmios";
     mlabs-ogmios.follows = "cardano-transaction-lib/ogmios";
     ogmios-datum-cache.follows = "cardano-transaction-lib/ogmios-datum-cache";
