@@ -1,0 +1,11 @@
+{ "debtFloor" : 10
+, "liquidationDiscount" :
+  {"denominator":2
+  ,"numerator":3
+  }
+, "liquidationFee" : 10
+, "liquidationRatio" :
+    {"denominator":3
+    ,"numerator":2
+    }
+}

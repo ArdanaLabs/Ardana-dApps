@@ -46,6 +46,9 @@ newtype Params = Params
   , liquidationRatio :: PRational
   }
 
+derive newtype instance EncodeAeson Params
+derive newtype instance DecodeAeson Params
+
 instance ToData Params where
   toData (Params { debtFloor, liquidationDiscount, liquidationFee, liquidationRatio }) = List
     [ toData debtFloor
