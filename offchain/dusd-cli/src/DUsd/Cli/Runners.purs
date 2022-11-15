@@ -12,7 +12,7 @@ import Contract.PlutusData (PlutusData(..))
 import Contract.Wallet (KeyWallet, privateKeysToKeyWallet, withKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFile)
 import Ctl.Utils.HsmWallet (makeHsmWallet)
-import DUsd.Api (Protocol, initProtocolSimple)
+import DUsd.Api (Params(..), Protocol, initProtocol)
 import DUsd.Cli.Types (Command(..), Options(..), WalletConf(..))
 import Data.UInt as U
 import Effect.Exception (throw)
@@ -38,7 +38,7 @@ runCli (Options { command, protocolFilePath, walletConfigFilePath, networkId, ct
       stateExists <- liftEffect $ exists realProtocolFilePath
       when stateExists $ do
         void $ liftEffect $ throw "Can't use initialize when state file already exists"
-      protocolParameters <- runContract configParams $ withKeyWallet wallet $ initProtocolSimple (Constr zero [])
+      protocolParameters <- runContract configParams $ withKeyWallet wallet $ initProtocol (Params undefined)
       writeTextFile UTF8 realProtocolFilePath $ show $ encodeAeson protocolParameters
       log $ "created protocol configuration file: " <> realProtocolFilePath
       log "initialized protocol"

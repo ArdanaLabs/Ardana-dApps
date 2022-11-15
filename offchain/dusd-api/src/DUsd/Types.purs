@@ -22,6 +22,9 @@ newtype Protocol = Protocol
   , params :: UtxoId
   }
 
+derive newtype instance EncodeAeson Protocol
+derive newtype instance DecodeAeson Protocol
+
 -- | A common patern in protocol design
 -- is to identify a utxo by an nft
 -- and an address the optional
