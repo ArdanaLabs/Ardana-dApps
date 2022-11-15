@@ -11,7 +11,7 @@ import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
 import DUsd.Api (Params(..), initParams, initProtocol, mintNft, updateConfig)
 import DUsd.Config (initConfigWith)
-import DUsd.Params (updateDebtFloor)
+import DUsd.Params (updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
@@ -97,6 +97,53 @@ main = launchAff_ $ do
           updateDebtFloor
             paramsId
             (BigInt.fromInt $ negate 2)
+
+      it "Can't set liquidation fee to negative" $ useRunnerSimple do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        expectScriptError $
+          updateLiquidationFee
+            paramsId
+            (BigInt.fromInt $ negate 2)
+
+      it "Can't set liquidationDiscount to negative" $ useRunnerSimple do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        negTwo <- liftContractM "1==0" $ (negate 2) % 1
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        expectScriptError $
+          updateLiquidationDiscount
+            paramsId
+            negTwo
+
+      it "Can't set liquidationRatio to bellow 1" $ useRunnerSimple do
+        threeHalves <- liftContractM "2==0" $ 3 % 2
+        fiveThirds <- liftContractM "3==0" $ 5 % 3
+        half <- liftContractM "2==0" $ 1 % 2
+        paramsId <- initParams $
+          Params
+            { debtFloor: BigInt.fromInt 1
+            , liquidationDiscount: threeHalves
+            , liquidationFee: BigInt.fromInt 3
+            , liquidationRatio: fiveThirds
+            }
+        expectScriptError $
+          updateLiquidationRatio
+            paramsId
+            half
 
     describe "Config utxo" $ maybePar $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
