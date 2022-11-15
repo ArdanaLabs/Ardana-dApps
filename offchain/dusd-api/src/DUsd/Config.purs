@@ -7,17 +7,17 @@ import Contract.Prelude
 
 import Contract.Address (scriptHashAddress)
 import Contract.Log (logDebug')
-import Contract.Monad (Contract)
+import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
-import Contract.Scripts (validatorHash)
+import Contract.Scripts (mintingPolicyHash, validatorHash)
 import Contract.Transaction (TransactionOutput(..), TransactionOutputWithRefScript(..))
 import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
-import Contract.Value (CurrencySymbol, adaToken)
+import Contract.Value (CurrencySymbol, adaToken, mpsSymbol)
 import Contract.Value as Value
 import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
-import DUsd.CborTyped (configAddressValidator)
+import DUsd.CborTyped (adminUpdatePolciy, configAddressValidator)
 import DUsd.Nft (lookupUtxo)
 import DUsd.Types (UtxoId(..))
 import Data.Array (cons)
@@ -29,13 +29,15 @@ initConfigWith :: CurrencySymbol -> PlutusData -> Contract () UtxoId
 initConfigWith nftCs datum = do
   logDebug' "start config utxo init"
   pkh <- getWalletPubkeyhash
-  configVal <- configAddressValidator pkh nftCs
+  updateMP <- adminUpdatePolciy pkh
+  updateCS <- mpsSymbol (mintingPolicyHash updateMP) # liftContractM "failed to make update policy"
+  configVal <- configAddressValidator nftCs
   utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       (mempty)
       ( Constraints.mustPayToScript
           (validatorHash configVal)
-          (Datum $ List [ datum ]) -- TODO real protocol datum
+          (Datum $ List [ toData updateCS , List [ datum ]]) -- TODO real protocol datum
           DatumInline
           (Value.singleton nftCs adaToken one)
       )
@@ -51,8 +53,8 @@ initConfigWith nftCs datum = do
 updateConfig :: PlutusData -> UtxoId -> Contract () UtxoId
 updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
   oldIn /\ oldOut@(TransactionOutput { datum }) <- lookupUtxo utxoId
-  old <- case datum of
-    (OutputDatum (Datum (List old))) -> pure old
+  oldPolicy /\ old <- case datum of
+    (OutputDatum (Datum (List [ oldPolicy , List old]))) -> pure $ oldPolicy /\ old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   pkh <- getWalletPubkeyhash
   utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
@@ -68,7 +70,7 @@ updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVa
           (Redeemer $ toData unit)
           <> Constraints.mustPayToScript
             (validatorHash configVal)
-            (Datum $ List $ cons newDatum old)
+            (Datum $ List [ oldPolicy , List $ cons newDatum old])
             DatumInline
             (Value.singleton nftCs nftTn one)
           <> Constraints.mustBeSignedBy (wrap pkh)
@@ -76,3 +78,5 @@ updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVa
   logDebug' "config utxo submitted, waiting for confirmation"
   logDebug' "protocol init complete"
   pure $ UtxoId rec { guess = Just utxo }
+
+-- TODO add support for updating policy with and without version update

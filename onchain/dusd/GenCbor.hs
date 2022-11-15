@@ -1,6 +1,10 @@
 module Main (main) where
 
-import Dusd (configWithUpdatesCBOR, paramCbor)
+import Dusd
+    ( configWithUpdatesCBOR
+    , paramCbor
+    , adminUpdatePolicyCBOR
+    )
 import Hello
 import HelloDiscovery
 
@@ -41,5 +45,6 @@ cbors =
   , Cbor "trivialFail" trivialFailCbor
   , Cbor "nft" nftCbor
   , Cbor "configWithUpdates" configWithUpdatesCBOR
+  , Cbor "adminUpdatePolicy" adminUpdatePolicyCBOR
   , Cbor "paramAdr" paramCbor
   ]

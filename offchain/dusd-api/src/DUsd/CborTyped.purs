@@ -2,6 +2,7 @@ module DUsd.CborTyped
   ( simpleNft
   , configAddressValidator
   , paramAddressValidator
+  , adminUpdatePolciy
   ) where
 
 import Contract.Prelude
@@ -25,10 +26,15 @@ import Effect.Exception (throw)
 
 -- | The address validator for the config utxo
 -- patametized by the admin key and the currency symbol of the config NFT
-configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
-configAddressValidator pkh cs =
-  decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
+configAddressValidator :: CurrencySymbol -> Contract () Validator
+configAddressValidator cs =
+  decodeCbor CBOR.configWithUpdates [ toData cs ]
     <#> Validator
+
+adminUpdatePolciy :: PubKeyHash -> Contract () MintingPolicy
+adminUpdatePolciy pkh =
+  decodeCbor CBOR.adminUpdatePolicy [toData pkh ]
+    <#> PlutusMintingPolicy
 
 -- | Param address validator supports updates with some basic checks
 paramAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator

@@ -1,4 +1,8 @@
-module Lib (getNextOutputByNft, checkAdminSig) where
+module Lib
+  (getNextOutputByNft
+  , checkAdminSig
+  , checkMintsNft
+  ) where
 
 import Plutarch.Api.V2 (
   PDatum (PDatum),
@@ -10,7 +14,13 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Prelude
 
-import Plutarch.Api.V1.Value (PCurrencySymbol, PTokenName, PValue)
+import Plutarch.Api.V1.Value
+  (PCurrencySymbol
+  , PTokenName
+  , PValue
+  ,KeyGuarantees(Sorted)
+  ,AmountGuarantees(NoGuarantees)
+  )
 
 import Plutarch.Extensions.Data (ptryFromData)
 import Plutarch.Extensions.Monad (pletFieldC)
@@ -97,6 +107,19 @@ checkAdminSig adminKeyData infoRec = do
     pelem
       # ptryFromData adminKeyData
       # getField @"signatories" infoRec
+
+checkMintsNft ::
+  forall
+  infoRec
+  s.
+  HasField "mint" infoRec (Term s (PValue 'Sorted 'NoGuarantees))
+  => infoRec
+  -> Term s PCurrencySymbol
+  -> Term s PTokenName
+  -> TermCont s ()
+checkMintsNft infoRec cs tn= do
+  pguardC "mints expected token"
+    $ isJustTn # (atCS # getField @"mint" infoRec # cs) # tn
 
 -- | Checks that a currency symbol entry of a value is exactly one token of a given name
 isJustTn :: ClosedTerm (PMap 'Value.Sorted PTokenName PInteger :--> PTokenName :--> PBool)
