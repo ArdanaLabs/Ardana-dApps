@@ -194,6 +194,7 @@
             node-fs-aff
             node-path
             node-process
+            node-readline
             node-streams
             nonempty
             optparse
