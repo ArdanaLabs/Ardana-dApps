@@ -1,0 +1,13 @@
+opam-version: "2.0"
+name: "fa-utils"
+authors: "kai.dao <kai.dao@platonic.systems>"
+build: [
+	["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+	"ocaml" {>= "4.08"}
+	"dune" {>= "2.0.0"}
+	"getopt" {>= "20120615"}
+	"lambdasoup" {>= "0.7.3"}
+	"markup" {>= "1.0.2"}
+]
