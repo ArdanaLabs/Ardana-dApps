@@ -7,13 +7,11 @@ const getPathByDir = (dir) => {
   return routes.find((route) => dir.endsWith(route.dir))?.path
 }
 
-module.exports = (options = {}) => ({
+module.exports = ({ dest, data = {}, options = {} }) => ({
   name: "compile-ejs-to-html",
   setup(build) {
-    const dest = options.dest
-
     build.onResolve({ filter: /.ejs/ }, (args) => {
-      ejs.renderFile(args.path, {}, {}, async function (err, str) {
+      ejs.renderFile(args.path, data, options, async function (err, str) {
         const outdir = dest + getPathByDir(args.path);
         if (err) console.error(err);
         try {
