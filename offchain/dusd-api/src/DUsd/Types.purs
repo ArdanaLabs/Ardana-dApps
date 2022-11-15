@@ -22,6 +22,9 @@ newtype Protocol = Protocol
   , params :: UtxoId
   }
 
+derive newtype instance EncodeAeson Protocol
+derive newtype instance DecodeAeson Protocol
+
 -- | A common patern in protocol design
 -- is to identify a utxo by an nft
 -- and an address the optional
@@ -42,6 +45,9 @@ newtype Params = Params
   , liquidationFee :: BigInt
   , liquidationRatio :: PRational
   }
+
+derive newtype instance EncodeAeson Params
+derive newtype instance DecodeAeson Params
 
 instance ToData Params where
   toData (Params { debtFloor, liquidationDiscount, liquidationFee, liquidationRatio }) = List
