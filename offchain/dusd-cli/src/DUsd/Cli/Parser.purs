@@ -5,11 +5,12 @@ module DUsd.Cli.Parser
 import Prelude
 
 import Contract.Address (NetworkId(..))
+import Contract.Prelude (undefined)
 import Control.Alt ((<|>))
 import DUsd.Cli.Types (Options(..), Command(..))
 import Data.UInt (UInt, fromInt)
 import Node.Path (FilePath)
-import Options.Applicative (CommandFields, Mod, Parser, ParserInfo, command, commandGroup, fullDesc, header, help, helper, hsubparser, info, int, long, metavar, option, progDesc, short, strOption, flag')
+import Options.Applicative (CommandFields, Mod, Parser, ParserInfo, command, commandGroup, flag', fullDesc, header, help, helper, hsubparser, info, int, long, metavar, option, progDesc, short, str, strArgument, strOption)
 import Options.Applicative.Types (optional)
 
 parser :: ParserInfo Options
@@ -82,5 +83,10 @@ command' = hsubparser $
     <> initializeProtocol
 
 initializeProtocol :: Mod CommandFields Command
-initializeProtocol = command "init" (info (pure InitializeProtocol) (progDesc "Initialize the dUSD protocol"))
+initializeProtocol =
+  command "init"
+    ( info
+        (InitializeProtocol <<< { paramsPath: _ } <$> strOption (long "init-params" <> short 'i' <> metavar "InitialParamsFile" <> help "the path to the params file"))
+        (progDesc "Initialize the dUSD protocol")
+    )
 

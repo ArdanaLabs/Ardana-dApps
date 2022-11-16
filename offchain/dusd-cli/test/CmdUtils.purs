@@ -83,11 +83,11 @@ failsSaying cmd errMsg = do
     Just _ ->
       unless (contains (Pattern errMsg) output)
         $ fail
-        $ "The execution of: "
+        $ "The execution of:\n"
         <> cmd
-        <> " did not return the execpected error message: "
+        <> "\ndid not return the execpected error message:\n"
         <> errMsg
-        <> " output was: "
+        <> "\noutput was:\n"
         <> output
 
 spawnAff :: String -> Aff (Maybe Error /\ String)

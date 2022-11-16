@@ -8,7 +8,6 @@ import Aeson (decodeAeson, parseJsonStringToAeson, encodeAeson)
 import Contract.Address (NetworkId)
 import Contract.Config (testnetConfig)
 import Contract.Monad (ConfigParams, runContract)
-import Contract.PlutusData (PlutusData(..))
 import Contract.Wallet (KeyWallet, privateKeysToKeyWallet, withKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFile)
 import Ctl.Utils.HsmWallet (makeHsmWallet)
@@ -34,14 +33,20 @@ runCli (Options { command, protocolFilePath, walletConfigFilePath, networkId, ct
     Just path -> pure path
 
   case command of
-    InitializeProtocol -> do
+    (InitializeProtocol { paramsPath }) -> do
       stateExists <- liftEffect $ exists realProtocolFilePath
       when stateExists $ do
         void $ liftEffect $ throw "Can't use initialize when state file already exists"
-      protocolParameters <- runContract configParams $ withKeyWallet wallet $ initProtocol (Params undefined)
+      params <- parseParamsFromFile paramsPath
+      protocolParameters <- runContract configParams $ withKeyWallet wallet $ initProtocol params
       writeTextFile UTF8 realProtocolFilePath $ show $ encodeAeson protocolParameters
       log $ "created protocol configuration file: " <> realProtocolFilePath
       log "initialized protocol"
+
+parseParamsFromFile :: FilePath -> Aff Params
+parseParamsFromFile path = do
+  rawText <- readTextFile UTF8 path
+  throwE =<< decodeAeson <$> throwE (parseJsonStringToAeson rawText)
 
 parseWalletFromConfigFile :: FilePath -> Aff KeyWallet
 parseWalletFromConfigFile walletConfigFilePath = do
