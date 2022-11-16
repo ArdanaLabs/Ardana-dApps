@@ -48,10 +48,11 @@ startPriceOracle = do
     , guess : Just utxo
     }
 
-pushPriceOracle :: Protocol -> Contract () Unit
+pushPriceOracle :: Protocol -> Contract () Protocol
 pushPriceOracle
   (Protocol
-    {priceOracle:priceOracle@(UtxoId
+    protocolRec@{priceOracle:priceOracle@(UtxoId
+      priceOracleRec@
       {nft: nftCs /\ nftTn
       ,script:oracleVal
       })
@@ -66,7 +67,7 @@ pushPriceOracle
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   let newDatum = List $ cons nextEntry (take 47 old)
   pkh <- getWalletPubkeyhash
-  _utxo <- waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
+  utxo <- waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
           ( singleton oldIn
@@ -84,7 +85,7 @@ pushPriceOracle
             (Value.singleton nftCs nftTn one)
           <> Constraints.mustBeSignedBy (wrap pkh)
       )
-  pure unit
+  pure $ Protocol protocolRec{priceOracle=UtxoId priceOracleRec{guess=Just utxo}}
 
 
 getPrice :: Aff PRational
