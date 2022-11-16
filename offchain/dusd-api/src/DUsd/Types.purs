@@ -20,6 +20,7 @@ import Data.UInt as UInt
 newtype Protocol = Protocol
   { configUtxo :: UtxoId
   , params :: UtxoId
+  , priceOracle :: UtxoId
   }
 
 derive newtype instance EncodeAeson Protocol

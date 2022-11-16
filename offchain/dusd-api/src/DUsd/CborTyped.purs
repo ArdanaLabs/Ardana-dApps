@@ -2,6 +2,7 @@ module DUsd.CborTyped
   ( simpleNft
   , configAddressValidator
   , paramAddressValidator
+  , priceOracleValidator
   ) where
 
 import Contract.Prelude
@@ -22,6 +23,11 @@ import Effect.Exception (throw)
 - this way there is only one module that needs to be checked
 - for type errors between on and off chain code
 -}
+
+priceOracleValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
+priceOracleValidator pkh cs =
+  decodeCbor CBOR.configWithUpdates [ toData pkh , toData cs ]
+    <#> Validator
 
 -- | The address validator for the config utxo
 -- patametized by the admin key and the currency symbol of the config NFT

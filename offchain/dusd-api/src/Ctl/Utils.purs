@@ -184,4 +184,3 @@ getWalletPubkeyhash = do
   case addressCredential of
     PubKeyCredential pkh -> pure pkh
     _ -> liftEffect $ throw "wallet was not a pubkey?"
-
