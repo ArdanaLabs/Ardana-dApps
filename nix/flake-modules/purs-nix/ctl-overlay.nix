@@ -144,7 +144,7 @@
       src.git =
         {
           repo = "https://github.com/Plutonomicon/cardano-transaction-lib.git";
-          ref = "develop";
+          ref = "pb99u069/remove-tmp-dir-on-SIGINT-2";
           rev = ctl-rev;
         };
 
