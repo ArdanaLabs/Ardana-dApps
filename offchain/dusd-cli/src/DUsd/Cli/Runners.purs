@@ -11,7 +11,7 @@ import Contract.Monad (ConfigParams, runContract)
 import Contract.Wallet (KeyWallet, privateKeysToKeyWallet, withKeyWallet)
 import Contract.Wallet.KeyFile (privatePaymentKeyFromFile, privateStakeKeyFromFile)
 import Ctl.Utils.HsmWallet (makeHsmWallet)
-import DUsd.Api (Params(..), Protocol, initProtocol)
+import DUsd.Api (Protocol, ProtocolParams, initProtocol)
 import DUsd.Cli.Types (Command(..), Options(..), WalletConf(..))
 import Data.UInt as U
 import Effect.Exception (throw)
@@ -43,7 +43,7 @@ runCli (Options { command, protocolFilePath, walletConfigFilePath, networkId, ct
       log $ "created protocol configuration file: " <> realProtocolFilePath
       log "initialized protocol"
 
-parseParamsFromFile :: FilePath -> Aff Params
+parseParamsFromFile :: FilePath -> Aff ProtocolParams
 parseParamsFromFile path = do
   rawText <- readTextFile UTF8 path
   throwE =<< decodeAeson <$> throwE (parseJsonStringToAeson rawText)
