@@ -25,7 +25,7 @@ import Data.Map (singleton)
 import Effect.Exception (throw)
 
 -- | Initializes the config utxo with a given datum
-initConfigWith :: CurrencySymbol -> PlutusData -> Contract () UtxoId
+initConfigUtxoWith :: CurrencySymbol -> PlutusData -> Contract () UtxoId
 initConfigWith nftCs datum = do
   logDebug' "start config utxo init"
   pkh <- getWalletPubkeyhash
