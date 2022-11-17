@@ -9,13 +9,13 @@ import Contract.Plutarch.Types ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DUsd.Api (Params(..), initParams, initProtocol, mintNft, updateConfig)
-import DUsd.Config (initConfigWith)
+import DUsd.Api (ProtocolParams(..), initProtocol, initProtocolParams, mintNft, updateConfigUtxo)
+import DUsd.Config (initConfigUtxoWith)
 import DUsd.Params (updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
-import Test.Attacks.Api (defConfUpdate, defParamUpdate, updateConfigAttack, updateParamsAtack)
+import Test.Attacks.Api (defConfUpdate, defParamUpdate, updateConfigUtxoAttack, updateProtocolParamsAttack)
 import Test.Spec (describe, it, parallel, sequential)
 
 main :: Effect Unit
@@ -36,19 +36,19 @@ main = launchAff_ $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         initProtocol $
-          Params
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
             , liquidationRatio: fiveThirds
             }
 
-    describe "Params utxo" $ maybePar $ do
+    describe "ProtocolParams utxo" $ maybePar $ do
       it "Init prams doesn't error" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
-        initParams $
-          Params
+        initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -57,8 +57,8 @@ main = launchAff_ $ do
       it "Update params doesn't error" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -66,19 +66,19 @@ main = launchAff_ $ do
             }
         updateDebtFloor paramsId (BigInt.fromInt 2)
 
-    describe "Params utxo Attacks" $ maybePar $ do
+    describe "ProtocolParams utxo Attacks" $ maybePar $ do
       it "Update params without signature fails validation" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
             , liquidationRatio: fiveThirds
             }
         expectScriptError $
-          updateParamsAtack
+          updateProtocolParamsAttack
             (defParamUpdate { noSignature = true })
             paramsId
             (\x -> x)
@@ -86,8 +86,8 @@ main = launchAff_ $ do
       it "Can't set debt floor to negative" $ useRunnerSimple do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -101,8 +101,8 @@ main = launchAff_ $ do
       it "Can't set liquidation fee to negative" $ useRunnerSimple do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -117,8 +117,8 @@ main = launchAff_ $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         negTwo <- liftContractM "1==0" $ (negate 2) % 1
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -133,8 +133,8 @@ main = launchAff_ $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2
         fiveThirds <- liftContractM "3==0" $ 5 % 3
         half <- liftContractM "2==0" $ 1 % 2
-        paramsId <- initParams $
-          Params
+        paramsId <- initProtocolParams $
+          ProtocolParams
             { debtFloor: BigInt.fromInt 1
             , liquidationDiscount: threeHalves
             , liquidationFee: BigInt.fromInt 3
@@ -149,24 +149,24 @@ main = launchAff_ $ do
       -- @Todo implement https://github.com/ArdanaLabs/Danaswap/issues/16
       it "Init config doesn't error" $ useRunnerSimple $ do
         cs <- mintNft
-        initConfigWith cs (Constr zero [])
+        initConfigUtxoWith cs (Constr zero [])
       it "Update config doesn't error" $ useRunnerSimple $ do
         cs <- mintNft
-        configUtxo <- initConfigWith cs (Constr zero [])
-        updateConfig (Constr one []) configUtxo
+        configUtxo <- initConfigUtxoWith cs (Constr zero [])
+        updateConfigUtxo (Constr one []) configUtxo
       it "Update with edit fails validation" $ useRunnerSimple $ do
         cs <- mintNft
-        configUtxo <- initConfigWith cs (Constr zero [])
+        configUtxo <- initConfigUtxoWith cs (Constr zero [])
         expectScriptError $
-          updateConfigAttack
+          updateConfigUtxoAttack
             (defConfUpdate { overwriteDatum = Just $ List [ Constr zero [], Constr one [] ] })
             (Constr one [])
             configUtxo
       it "Update without signature fails validation" $ useRunnerSimple $ do
         cs <- mintNft
-        configUtxo <- initConfigWith cs (Constr zero [])
+        configUtxo <- initConfigUtxoWith cs (Constr zero [])
         expectScriptError $
-          updateConfigAttack
+          updateConfigUtxoAttack
             (defConfUpdate { noSignature = true })
             (Constr one [])
             configUtxo

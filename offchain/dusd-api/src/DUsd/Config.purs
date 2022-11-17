@@ -73,6 +73,5 @@ updateConfigUtxo newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: conf
             (Value.singleton nftCs nftTn one)
           <> Constraints.mustBeSignedBy (wrap pkh)
       )
-  logDebug' "config utxo submitted, waiting for confirmation"
-  logDebug' "protocol init complete"
+  logDebug' "config utxo created"
   pure $ UtxoId rec { guess = Just utxo }

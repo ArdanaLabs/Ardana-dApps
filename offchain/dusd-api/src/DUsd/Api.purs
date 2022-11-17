@@ -22,8 +22,8 @@ import DUsd.Types (AssetClass, Protocol(..), ProtocolParams(..), UtxoId(..)) as 
 
 initProtocol :: ProtocolParams -> Contract () Protocol
 initProtocol params = do
-  configNftCs <- mintNft
+  configNftCS <- mintNft
   paramsInfo <- initProtocolParams params
-  configUtxo <- initConfigUtxoWith configNftCs (toData unit) -- TODO real data here
+  configUtxo <- initConfigUtxoWith configNftCS (toData unit) -- TODO real data here
   -- TODO this type is incomplete
   pure $ Protocol { params: paramsInfo, configUtxo }

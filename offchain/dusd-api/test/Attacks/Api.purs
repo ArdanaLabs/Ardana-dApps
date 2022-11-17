@@ -1,8 +1,8 @@
 module Test.Attacks.Api
-  ( updateConfigAttack
+  ( updateConfigUtxoAttack
   , UpdateConfAttack
   , defConfUpdate
-  , updateParamsAtack
+  , updateProtocolParamsAttack
   , defParamUpdate
   ) where
 
@@ -18,8 +18,8 @@ import Contract.Transaction (TransactionOutput(..), TransactionOutputWithRefScri
 import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value as Value
-import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
-import DUsd.Api (Params)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubKeyHash, waitForTx)
+import DUsd.Api (ProtocolParams)
 import DUsd.Nft (lookupUtxo)
 import DUsd.Types (UtxoId(..))
 import Data.Array (cons)
@@ -41,8 +41,8 @@ defConfUpdate =
   }
 
 -- | technically not part of this version of the protocol
-updateConfigAttack :: UpdateConfAttack -> PlutusData -> UtxoId -> Contract () UtxoId
-updateConfigAttack
+updateConfigUtxoAttack :: UpdateConfAttack -> PlutusData -> UtxoId -> Contract () UtxoId
+updateConfigUtxoAttack
   attack
   newDatum
   utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
@@ -50,7 +50,7 @@ updateConfigAttack
   old <- case datum of
     (OutputDatum (Datum (List old))) -> pure old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
@@ -64,10 +64,10 @@ updateConfigAttack
           (Redeemer $ toData unit)
           <> Constraints.mustPayToScript
             (validatorHash configVal)
-            (Datum $ (fromMaybe (List $ cons newDatum old) atack.overwriteDatum))
+            (Datum $ (fromMaybe (List $ cons newDatum old) attack.overwriteDatum))
             DatumInline
             (Value.singleton nftCs nftTn one)
-          <> (if atack.noSignature then mempty else Constraints.mustBeSignedBy (wrap pkh))
+          <> (if attack.noSignature then mempty else Constraints.mustBeSignedBy (wrap pkh))
       )
   logDebug' "config utxo submitted, waiting for confirmation"
   logDebug' "protocol init complete"
@@ -80,14 +80,14 @@ type UpdateParamAttack =
 defParamUpdate :: UpdateParamAttack
 defParamUpdate = { noSignature: false }
 
-updateParamsAttack :: UpdateParamAttack -> UtxoId -> (Params -> Params) -> Contract () UtxoId
-updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
+updateProtocolParamsAttack :: UpdateParamAttack -> UtxoId -> (ProtocolParams -> ProtocolParams) -> Contract () UtxoId
+updateProtocolParamsAttack attack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
   txIn /\ oldOut@(TransactionOutput { datum: outDatum }) <- lookupUtxo utxoid
   Datum datum <- case outDatum of
     OutputDatum datum -> pure datum
     _ -> liftEffect $ throw "no datum or datum was datum hash"
-  oldParams :: Params <- fromData datum # liftContractM "old datum didn't parse"
-  pkh <- getWalletPubkeyhash
+  oldParams :: ProtocolParams <- fromData datum # liftContractM "old datum didn't parse"
+  pkh <- getWalletPubKeyHash
   utxo <- waitForTx (scriptHashAddress (validatorHash script) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.validator script
@@ -99,7 +99,7 @@ updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdat
       ( Constraints.mustSpendScriptOutput txIn
           (Redeemer $ toData unit)
           <>
-            ( if atack.noSignature then mempty
+            ( if attack.noSignature then mempty
               else Constraints.mustBeSignedBy (PaymentPubKeyHash pkh)
             )
           <>
