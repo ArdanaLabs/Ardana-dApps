@@ -48,7 +48,7 @@ initParams params = do
     , guess: Just utxo
     }
 
-updateParams :: UtxoId -> (Params -> Params) -> Contract () UtxoId
+updateProtocolParams :: UtxoId -> (Params -> Params) -> Contract () UtxoId
 updateParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
   txIn /\ oldOut@(TransactionOutput { datum: outDatum }) <- lookupUtxo utxoid
   Datum datum <- case outDatum of
