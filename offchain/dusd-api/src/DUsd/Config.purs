@@ -1,6 +1,6 @@
 module DUsd.Config
-  ( initConfigWith
-  , updateConfig
+  ( initConfigUtxoWith
+  , updateConfigUtxo
   ) where
 
 import Contract.Prelude
@@ -16,7 +16,7 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value (CurrencySymbol, adaToken)
 import Contract.Value as Value
-import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubKeyHash, waitForTx)
 import DUsd.CborTyped (configAddressValidator)
 import DUsd.Nft (lookupUtxo)
 import DUsd.Types (UtxoId(..))
@@ -26,9 +26,9 @@ import Effect.Exception (throw)
 
 -- | Initializes the config utxo with a given datum
 initConfigUtxoWith :: CurrencySymbol -> PlutusData -> Contract () UtxoId
-initConfigWith nftCs datum = do
+initConfigUtxoWith nftCs datum = do
   logDebug' "start config utxo init"
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   configVal <- configAddressValidator pkh nftCs
   utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
@@ -49,12 +49,12 @@ initConfigWith nftCs datum = do
 -- | technically not part of this version of the protocol
 -- but pushes a new datum onto the config utxo
 updateConfigUtxo :: PlutusData -> UtxoId -> Contract () UtxoId
-updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
+updateConfigUtxo newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
   oldIn /\ oldOut@(TransactionOutput { datum }) <- lookupUtxo utxoId
   old <- case datum of
     (OutputDatum (Datum (List old))) -> pure old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   utxo <- waitForTx (scriptHashAddress (validatorHash configVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs

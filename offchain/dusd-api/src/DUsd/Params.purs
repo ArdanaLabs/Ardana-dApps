@@ -1,6 +1,6 @@
 module DUsd.Params
-  ( initParams
-  , updateParams
+  ( initProtocolParams
+  , updateProtocolParams
   , updateDebtFloor
   , updateLiquidationDiscount
   , updateLiquidationFee
@@ -20,18 +20,18 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value (adaToken)
 import Contract.Value as Value
-import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubKeyHash, waitForTx)
 import DUsd.CborTyped (paramAddressValidator)
 import DUsd.Nft (lookupUtxo, mintNft)
-import DUsd.Types (Params(..), UtxoId(..))
+import DUsd.Types (ProtocolParams(..), UtxoId(..))
 import Data.BigInt (BigInt)
 import Data.Map (singleton)
 import Effect.Exception (throw)
 
-initProtocolParams :: Params -> Contract () UtxoId
-initParams params = do
+initProtocolParams :: ProtocolParams -> Contract () UtxoId
+initProtocolParams params = do
   paramNftCS <- mintNft
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   paramAdrVal <- paramAddressValidator pkh paramNftCS
   utxo <- waitForTx (scriptHashAddress (validatorHash paramAdrVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
@@ -48,14 +48,14 @@ initParams params = do
     , guess: Just utxo
     }
 
-updateProtocolParams :: UtxoId -> (Params -> Params) -> Contract () UtxoId
-updateParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
+updateProtocolParams :: UtxoId -> (ProtocolParams -> ProtocolParams) -> Contract () UtxoId
+updateProtocolParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
   txIn /\ oldOut@(TransactionOutput { datum: outDatum }) <- lookupUtxo utxoid
   Datum datum <- case outDatum of
     OutputDatum datum -> pure datum
     _ -> liftEffect $ throw "no datum or datum was datum hash"
-  oldParams :: Params <- fromData datum # liftContractM "old datum didn't parse"
-  pkh <- getWalletPubkeyhash
+  oldParams :: ProtocolParams <- fromData datum # liftContractM "old datum didn't parse"
+  pkh <- getWalletPubKeyHash
   utxo <- waitForTx (scriptHashAddress (validatorHash script) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.validator script
@@ -78,17 +78,17 @@ updateParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
   pure $ UtxoId rec { guess = Just utxo }
 
 updateDebtFloor :: UtxoId -> BigInt -> Contract () UtxoId
-updateDebtFloor utxoid new = updateParams utxoid
-  (\(Params p) -> Params $ p { debtFloor = new })
+updateDebtFloor utxoid new = updateProtocolParams utxoid
+  (\(ProtocolParams p) -> ProtocolParams $ p { debtFloor = new })
 
 updateLiquidationDiscount :: UtxoId -> PRational -> Contract () UtxoId
-updateLiquidationDiscount utxoid new = updateParams utxoid
-  (\(Params p) -> Params $ p { liquidationDiscount = new })
+updateLiquidationDiscount utxoid new = updateProtocolParams utxoid
+  (\(ProtocolParams p) -> ProtocolParams $ p { liquidationDiscount = new })
 
 updateLiquidationFee :: UtxoId -> BigInt -> Contract () UtxoId
-updateLiquidationFee utxoid new = updateParams utxoid
-  (\(Params p) -> Params $ p { liquidationFee = new })
+updateLiquidationFee utxoid new = updateProtocolParams utxoid
+  (\(ProtocolParams p) -> ProtocolParams $ p { liquidationFee = new })
 
 updateLiquidationRatio :: UtxoId -> PRational -> Contract () UtxoId
-updateLiquidationRatio utxoid new = updateParams utxoid
-  (\(Params p) -> Params $ p { liquidationRatio = new })
+updateLiquidationRatio utxoid new = updateProtocolParams utxoid
+  (\(ProtocolParams p) -> ProtocolParams $ p { liquidationRatio = new })
