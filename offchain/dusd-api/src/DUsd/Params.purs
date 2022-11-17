@@ -28,7 +28,7 @@ import Data.BigInt (BigInt)
 import Data.Map (singleton)
 import Effect.Exception (throw)
 
-initParams :: Params -> Contract () UtxoId
+initProtocolParams :: Params -> Contract () UtxoId
 initParams params = do
   paramNftCS <- mintNft
   pkh <- getWalletPubkeyhash
