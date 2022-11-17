@@ -39,7 +39,7 @@ newtype UtxoId = UtxoId
 
 type AssetClass = CurrencySymbol /\ TokenName
 
-newtype Params = Params
+newtype ProtocolParams = ProtocolParams
   { debtFloor :: BigInt
   , liquidationDiscount :: PRational
   , liquidationFee :: BigInt
