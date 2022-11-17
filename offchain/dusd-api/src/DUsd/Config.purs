@@ -48,7 +48,7 @@ initConfigWith nftCs datum = do
 
 -- | technically not part of this version of the protocol
 -- but pushes a new datum onto the config utxo
-updateConfig :: PlutusData -> UtxoId -> Contract () UtxoId
+updateConfigUtxo :: PlutusData -> UtxoId -> Contract () UtxoId
 updateConfig newDatum utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
   oldIn /\ oldOut@(TransactionOutput { datum }) <- lookupUtxo utxoId
   old <- case datum of
