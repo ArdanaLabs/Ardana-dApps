@@ -5,12 +5,16 @@ module DUsd.Params
   , updateLiquidationDiscount
   , updateLiquidationFee
   , updateLiquidationRatio
+  -- Testing
+  , updateDebtFloor'
+  , updateLiquidationFee'
   ) where
 
 import Contract.Prelude
 
 import Contract.Address (PaymentPubKeyHash(..), scriptHashAddress)
 import Contract.Monad (Contract, liftContractM)
+import Contract.Numeric.Natural (Natural, toBigInt)
 import Contract.Plutarch.Types (PRational)
 import Contract.PlutusData (Datum(..), OutputDatum(..), Redeemer(..), fromData, toData)
 import Contract.ScriptLookups as Lookups
@@ -77,16 +81,24 @@ updateProtocolParams utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate =
       )
   pure $ UtxoId rec { guess = Just utxo }
 
-updateDebtFloor :: UtxoId -> BigInt -> Contract () UtxoId
-updateDebtFloor utxoid new = updateProtocolParams utxoid
+updateDebtFloor :: UtxoId -> Natural -> Contract () UtxoId
+updateDebtFloor utxo nat = updateDebtFloor' utxo (toBigInt nat)
+
+-- unsafe version that allows negatives for testing
+updateDebtFloor' :: UtxoId -> BigInt -> Contract () UtxoId
+updateDebtFloor' utxoid new = updateProtocolParams utxoid
   (\(ProtocolParams p) -> ProtocolParams $ p { debtFloor = new })
 
 updateLiquidationDiscount :: UtxoId -> PRational -> Contract () UtxoId
 updateLiquidationDiscount utxoid new = updateProtocolParams utxoid
   (\(ProtocolParams p) -> ProtocolParams $ p { liquidationDiscount = new })
 
-updateLiquidationFee :: UtxoId -> BigInt -> Contract () UtxoId
-updateLiquidationFee utxoid new = updateProtocolParams utxoid
+updateLiquidationFee :: UtxoId -> Natural -> Contract () UtxoId
+updateLiquidationFee utxoid nat = updateLiquidationFee' utxoid (toBigInt nat)
+
+-- unsafe version that allows negatives for testing
+updateLiquidationFee' :: UtxoId -> BigInt -> Contract () UtxoId
+updateLiquidationFee' utxoid new = updateProtocolParams utxoid
   (\(ProtocolParams p) -> ProtocolParams $ p { liquidationFee = new })
 
 updateLiquidationRatio :: UtxoId -> PRational -> Contract () UtxoId

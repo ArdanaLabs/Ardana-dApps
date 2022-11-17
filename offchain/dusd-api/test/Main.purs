@@ -5,13 +5,14 @@ module Test.Main
 import Contract.Prelude
 
 import Contract.Monad (launchAff_, liftContractM)
+import Contract.Numeric.Natural as Natural
 import Contract.Plutarch.Types ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
 import DUsd.Api (ProtocolParams(..), initProtocol, initProtocolParams, mintNft, updateConfigUtxo)
 import DUsd.Config (initConfigUtxoWith)
-import DUsd.Params (updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio)
+import DUsd.Params (updateDebtFloor, updateDebtFloor', updateLiquidationDiscount, updateLiquidationFee', updateLiquidationRatio)
 import Data.BigInt as BigInt
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
@@ -64,7 +65,7 @@ main = launchAff_ $ do
             , liquidationFee: BigInt.fromInt 3
             , liquidationRatio: fiveThirds
             }
-        updateDebtFloor paramsId (BigInt.fromInt 2)
+        updateDebtFloor paramsId (Natural.fromInt' 2)
 
     describe "ProtocolParams utxo Attacks" $ maybePar $ do
       it "Update params without signature fails validation" $ useRunnerSimple $ do
@@ -94,7 +95,7 @@ main = launchAff_ $ do
             , liquidationRatio: fiveThirds
             }
         expectScriptError $
-          updateDebtFloor
+          updateDebtFloor'
             paramsId
             (BigInt.fromInt $ negate 2)
 
@@ -109,7 +110,7 @@ main = launchAff_ $ do
             , liquidationRatio: fiveThirds
             }
         expectScriptError $
-          updateLiquidationFee
+          updateLiquidationFee'
             paramsId
             (BigInt.fromInt $ negate 2)
 
