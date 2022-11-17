@@ -62,13 +62,13 @@ executeTests (Options { mode, testResources }) = do
       it "should fail if the testnet or mainnet flag is missing"
         $ withEnv
         $ \ports wallet ->
-            ("dusd-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -i" <> paramsFile) `failsSaying` "Missing: (--mainnet | --testnet)"
+            ("dusd-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` "Missing: (--mainnet | --testnet)"
 
       it "should fail if the wallet-config option was not set" $
-        (cli <> "-p" <> protocolFile <> "init -i" <> paramsFile) `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
+        (cli <> "-p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
 
       it "should fail if the wallet-config option path doesn't exist" $
-        (cli <> "-w bad_path -p" <> protocolFile <> "init -i" <> paramsFile) `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
+        (cli <> "-w bad_path -p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
 
       it "should fail if the path passed to wallet-config has the wrong contents"
         $ fails
@@ -77,7 +77,7 @@ executeTests (Options { mode, testResources }) = do
         <> badWalletConf
         <> "-p"
         <> protocolFile
-        <> "init -i"
+        <> "init -p"
         <> paramsFile
 
     describe (cli <> "init") do
@@ -89,7 +89,7 @@ executeTests (Options { mode, testResources }) = do
               \ports wallet -> do
                 hasOldProtocol <- exists (trim protocolFile)
                 when hasOldProtocol $ unlink (trim protocolFile)
-                (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -i" <> paramsFile) `passesSaying` "initialized protocol"
+                (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile) `passesSaying` "initialized protocol"
                 exists (trim protocolFile) `shouldReturn` true
 
       it "should initialize the protocol successfully and create a protocol config file"
@@ -97,7 +97,7 @@ executeTests (Options { mode, testResources }) = do
         $ \ports wallet -> do
             hasOldProtocol <- exists (trim protocolFile)
             when hasOldProtocol $ unlink (trim protocolFile)
-            (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -i" <> paramsFile)
+            (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile)
               `passesSaying` "initialized protocol"
             exists (trim protocolFile) `shouldReturn` true
 
@@ -106,7 +106,7 @@ executeTests (Options { mode, testResources }) = do
         $ \ports wallet -> do
             hasOldProtocol <- exists "protocol.json"
             when hasOldProtocol $ unlink "protocol.json"
-            (cli <> ports <> "-w" <> wallet <> "init -i" <> paramsFile)
+            (cli <> ports <> "-w" <> wallet <> "init -p" <> paramsFile)
               `passesSaying` "initialized protocol"
             exists "protocol.json" `shouldReturn` true
 
