@@ -1,4 +1,4 @@
-module Dusd (configWithUpdatesCBOR, paramCbor) where
+module Dusd (configWithUpdatesCBOR, paramCbor,priceOracleCBOR) where
 
 import Plutarch.Api.V2
 import Plutarch.Prelude
@@ -7,9 +7,12 @@ import Lib (checkAdminSig, getNextOutputByNft)
 import Plutarch (Config)
 import Plutarch.Extensions.Data (ptryFromData)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Types (ProtocolParams (..))
+import Types (ProtocolParams (..), PriceData)
 
 import Utils (closedTermToHexString)
+import Plutarch.Api.V1 (PCurrencySymbol)
+import Plutarch.Api.V1.Value (padaToken)
+import Plutarch.Extensions.List (ptake)
 
 configWithUpdatesCBOR :: Config -> Maybe String
 configWithUpdatesCBOR = closedTermToHexString configWithUpdatesValidator
@@ -31,7 +34,7 @@ configWithUpdatesValidator = ptrace "config validator" $
       outDatum :: Term _ (PBuiltinList PData) <-
         getNextOutputByNft
           nftCs
-          (pconstant "")
+          padaToken
           infoRec
           scRec
       PCons _ outDatumTail <- pmatchC outDatum
@@ -64,4 +67,23 @@ paramModuleAdr = ptrace "param module" $
       pguardC "liquidationDiscount >= 0" $ 0 #<= pfromData (getField @"liquidationDiscount" outRec)
       pguardC "debtFloor >= 0" $ 0 #<= pfromData (getField @"debtFloor" outRec)
       pguardC "liquidationRatio > 1" $ 1 #< pfromData (getField @"liquidationRatio" outRec)
+      pure $ popaque $ pcon PUnit
+
+priceOracleCBOR :: Config -> Maybe String
+priceOracleCBOR = closedTermToHexString priceOracleValidator
+
+priceOracleValidator :: ClosedTerm (PData :--> PData :--> PData :--> PValidator)
+priceOracleValidator = ptrace "price oracle" $
+  phoistAcyclic $
+    plam $ \_time adminPKHdata nftCsData inDatum _red sc -> unTermCont $ do
+      nftCs :: Term _ PCurrencySymbol  <- pletC $ pfromData $ ptryFromData nftCsData
+      scRec <- pletFieldsC @'["txInfo","purpose"] sc
+      PTxInfo info <- pmatchC $ getField @"txInfo" scRec
+      infoRec <- pletFieldsC @'["outputs", "inputs", "signatories"] info
+      checkAdminSig adminPKHdata infoRec
+      oldList :: Term _ PriceData <- pletC $ pfromData $ ptryFromData inDatum
+      newList :: Term _ PriceData <- getNextOutputByNft nftCs padaToken infoRec scRec
+      pguardC "no history edit" $ ptail # newList #== ptake # 47 # oldList
+        -- TODO this is probably ineficent
+      -- TODO check time interval
       pure $ popaque $ pcon PUnit
