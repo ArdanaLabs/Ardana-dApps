@@ -36,6 +36,7 @@ common lang
     HexFloatLiterals
     ImplicitPrelude
     ImportQualifiedPost
+    ImpredicativeTypes
     InstanceSigs
     KindSignatures
     LambdaCase
@@ -99,7 +100,11 @@ executable dusd
   main-is:        GenCbor.hs
   hs-source-dirs: dusd
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
-  other-modules:  Dusd
+  other-modules:
+    Dusd
+    Lib
+    Types
+
   build-depends:
     , base
     , bytestring
