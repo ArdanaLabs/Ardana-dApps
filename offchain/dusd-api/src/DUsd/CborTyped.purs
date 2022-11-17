@@ -26,9 +26,9 @@ import Effect.Exception (throw)
 -}
 
 -- | validator for the price oracle address
-priceOracleValidator :: POSIXTime -> PubKeyHash -> CurrencySymbol -> Contract () Validator
-priceOracleValidator interval pkh cs =
-  decodeCbor CBOR.trivial [ toData interval, toData pkh , toData cs ]
+priceOracleValidator :: POSIXTime -> POSIXTime -> PubKeyHash -> CurrencySymbol -> Contract () Validator
+priceOracleValidator interval margin pkh cs =
+  decodeCbor CBOR.priceOracle [ toData interval, toData margin, toData pkh , toData cs ]
     <#> Validator
 
 -- | The address validator for the config utxo

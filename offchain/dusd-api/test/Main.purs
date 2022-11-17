@@ -14,7 +14,7 @@ import DUsd.Config (initConfigWith)
 import DUsd.Params (updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio)
 import DUsd.PriceOracle (pushPriceOracle', startPriceOracle, startPriceOracle')
 import Data.BigInt as BigInt
-import Data.Time.Duration (Minutes(..), fromDuration)
+import Data.Time.Duration (Minutes(..), Seconds(..), fromDuration)
 import Effect.Aff (delay)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
@@ -39,12 +39,12 @@ main = launchAff_ $ do
         startPriceOracle
 
       it "update price oracle doesn't error" $ useRunnerSimple $ do
-        oracle <- startPriceOracle' (Minutes 1.0)
-        liftAff $ delay $ fromDuration $ Minutes 1.0
+        oracle <- startPriceOracle' (Minutes 1.0) (Seconds 20.0)
+        liftAff $ delay $ fromDuration $ Seconds 70.0
         pushPriceOracle' oracle
 
       it "update too fast fails" $ useRunnerSimple $ do
-        oracle <- startPriceOracle' (Minutes 2.0)
+        oracle <- startPriceOracle' (Minutes 2.0) (Seconds 20.0)
         liftAff $ delay $ fromDuration $ Minutes 1.0
         expectScriptError $ pushPriceOracle' oracle
 

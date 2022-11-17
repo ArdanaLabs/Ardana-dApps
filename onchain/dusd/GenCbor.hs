@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Dusd (configWithUpdatesCBOR, paramCbor)
+import Dusd (configWithUpdatesCBOR, paramCbor, priceOracleCBOR)
 import Hello
 import HelloDiscovery
 
@@ -33,7 +33,7 @@ main = do
     _ -> die "usage: cabal run dusd <file_path>"
 
 dusdConfig :: Config
-dusdConfig = def {tracingMode = DetTracing}
+dusdConfig = def {tracingMode = DoTracing}
 
 cbors :: [Cbor]
 cbors =
@@ -42,4 +42,5 @@ cbors =
   , Cbor "nft" nftCbor
   , Cbor "configWithUpdates" configWithUpdatesCBOR
   , Cbor "paramAdr" paramCbor
+  , Cbor "priceOracle" priceOracleCBOR
   ]
