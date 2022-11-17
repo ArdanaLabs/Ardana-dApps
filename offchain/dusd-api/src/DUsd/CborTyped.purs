@@ -14,6 +14,7 @@ import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
+import Contract.Time (POSIXTime)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 import Effect.Exception (throw)
@@ -24,9 +25,10 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
-priceOracleValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
-priceOracleValidator pkh cs =
-  decodeCbor CBOR.configWithUpdates [ toData pkh , toData cs ]
+-- | validator for the price oracle address
+priceOracleValidator :: POSIXTime -> PubKeyHash -> CurrencySymbol -> Contract () Validator
+priceOracleValidator interval pkh cs =
+  decodeCbor CBOR.trivial [ toData interval, toData pkh , toData cs ]
     <#> Validator
 
 -- | The address validator for the config utxo

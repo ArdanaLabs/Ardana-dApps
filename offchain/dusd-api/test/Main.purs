@@ -12,7 +12,10 @@ import Ctl.Utils.Test.Types (Mode(..))
 import DUsd.Api (Params(..), initParams, initProtocol, mintNft, updateConfig)
 import DUsd.Config (initConfigWith)
 import DUsd.Params (updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio)
+import DUsd.PriceOracle (pushPriceOracle', startPriceOracle, startPriceOracle')
 import Data.BigInt as BigInt
+import Data.Time.Duration (Minutes(..), fromDuration)
+import Effect.Aff (delay)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Attacks.Api (defConfUpdate, defParamUpdate, updateConfigAttack, updateParamsAtack)
@@ -31,6 +34,20 @@ main = launchAff_ $ do
   log "about to start"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
+    describe "Price module" $ maybePar $ do
+      it "Init price orcale doesn't error" $ useRunnerSimple $ do
+        startPriceOracle
+
+      it "update price oracle doesn't error" $ useRunnerSimple $ do
+        oracle <- startPriceOracle' (Minutes 1.0)
+        liftAff $ delay $ fromDuration $ Minutes 1.0
+        pushPriceOracle' oracle
+
+      it "update too fast fails" $ useRunnerSimple $ do
+        oracle <- startPriceOracle' (Minutes 2.0)
+        liftAff $ delay $ fromDuration $ Minutes 1.0
+        expectScriptError $ pushPriceOracle' oracle
+
     describe "Protocol" $ do
       it "Init protocol doesn't error" $ useRunnerSimple $ do
         threeHalves <- liftContractM "2==0" $ 3 % 2

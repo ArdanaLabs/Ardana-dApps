@@ -1,17 +1,20 @@
 module DUsd.PriceOracle
   (startPriceOracle
+  ,startPriceOracle'
   ,pushPriceOracle
+  ,pushPriceOracle'
   ) where
 
 import Contract.Prelude
 
 import Contract.Address (scriptHashAddress)
 import Contract.Chain (currentTime)
-import Contract.Monad (Contract)
+import Contract.Monad (Contract, liftContractM)
 import Contract.Plutarch.Types (PRational, (%))
 import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
 import Contract.ScriptLookups as Lookups
 import Contract.Scripts (validatorHash)
+import Contract.Time (POSIXTime(..))
 import Contract.Transaction (TransactionOutput(..), TransactionOutputWithRefScript(..))
 import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
@@ -22,17 +25,26 @@ import DUsd.CborTyped (priceOracleValidator)
 import DUsd.Nft (lookupUtxo, mintNft)
 import DUsd.Types (Protocol(..), UtxoId(..))
 import Data.Array (cons, take)
+import Data.BigInt as BigInt
 import Data.Map (singleton)
+import Data.Time.Duration (class Duration, Hours(..), fromDuration)
 import Effect.Aff (error)
 import Effect.Exception (throw)
 
+-- | Starts the price oracle
 startPriceOracle :: Contract () UtxoId
 startPriceOracle = do
+  startPriceOracle' (Hours 1.0)
+
+-- | Starts the price oracle with a custom interval time (important for tests to not take 1 hour)
+startPriceOracle' :: forall d. Duration d => d -> Contract () UtxoId
+startPriceOracle' interval' = do
+  interval <- durationToPoxisTime interval'
   price <- liftAff getPrice
   time <- currentTime
   pkh <- getWalletPubkeyhash
   nftCs <- mintNft
-  oracleVal <- priceOracleValidator pkh nftCs
+  oracleVal <- priceOracleValidator interval pkh nftCs
   utxo <- waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       mempty
@@ -48,16 +60,21 @@ startPriceOracle = do
     , guess : Just utxo
     }
 
-pushPriceOracle :: Protocol -> Contract () Protocol
-pushPriceOracle
-  (Protocol
-    protocolRec@{priceOracle:priceOracle@(UtxoId
-      priceOracleRec@
+-- Updates the price oracle
+pushPriceOracle :: Protocol -> Contract () Unit
+pushPriceOracle (Protocol{priceOracle}) = pushPriceOracle' priceOracle
+
+-- Updates the price oracle by utxoid
+-- usefull for testing without initializing the whole
+-- porotocol
+pushPriceOracle' :: UtxoId -> Contract () Unit
+pushPriceOracle'
+    priceOracle@(UtxoId
       {nft: nftCs /\ nftTn
       ,script:oracleVal
-      })
-    }
-  ) = do
+      }
+    )
+  = do
   newPrice <- liftAff getPrice
   newTime <- currentTime
   let nextEntry = List [ toData newPrice , toData newTime ]
@@ -67,7 +84,7 @@ pushPriceOracle
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   let newDatum = List $ cons nextEntry (take 47 old)
   pkh <- getWalletPubkeyhash
-  utxo <- waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
+  void $ waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
           ( singleton oldIn
@@ -85,8 +102,11 @@ pushPriceOracle
             (Value.singleton nftCs nftTn one)
           <> Constraints.mustBeSignedBy (wrap pkh)
       )
-  pure $ Protocol protocolRec{priceOracle=UtxoId priceOracleRec{guess=Just utxo}}
 
+durationToPoxisTime :: forall d . Duration d => d -> Contract () POSIXTime
+durationToPoxisTime d =
+  liftContractM "time conversion failed"
+  $ POSIXTime <$> BigInt.fromNumber (unwrap $ fromDuration d)
 
 getPrice :: Aff PRational
 getPrice = do
