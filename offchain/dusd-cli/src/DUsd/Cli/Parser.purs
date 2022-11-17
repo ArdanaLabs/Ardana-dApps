@@ -86,7 +86,7 @@ initializeProtocol :: Mod CommandFields Command
 initializeProtocol =
   command "init"
     ( info
-        (InitializeProtocol <<< { paramsPath: _ } <$> strOption (long "init-params" <> short 'i' <> metavar "InitialParamsFile" <> help "the path to the params file"))
+        (InitializeProtocol <<< { paramsPath: _ } <$> strOption (long "protocol-params" <> short 'p' <> metavar "FILE_PATH" <> help "The path to the protocol parameter json file"))
         (progDesc "Initialize the dUSD protocol")
     )
 
