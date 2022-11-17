@@ -178,7 +178,7 @@ getDatum = case _ of
 waitTime :: Seconds
 waitTime = Seconds 1.0
 
-getWalletPubkeyhash :: Contract () PubKeyHash
+getWalletPubKeyHash :: Contract () PubKeyHash
 getWalletPubkeyhash = do
   (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
   case addressCredential of
