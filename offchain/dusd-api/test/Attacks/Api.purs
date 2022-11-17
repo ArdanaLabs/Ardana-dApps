@@ -80,7 +80,7 @@ type UpdateParamAttack =
 defParamUpdate :: UpdateParamAttack
 defParamUpdate = { noSignature: false }
 
-updateParamsAtack :: UpdateParamAttack -> UtxoId -> (Params -> Params) -> Contract () UtxoId
+updateParamsAttack :: UpdateParamAttack -> UtxoId -> (Params -> Params) -> Contract () UtxoId
 updateParamsAtack atack utxoid@(UtxoId rec@{ nft: cs /\ tn, script }) paramUpdate = do
   txIn /\ oldOut@(TransactionOutput { datum: outDatum }) <- lookupUtxo utxoid
   Datum datum <- case outDatum of
