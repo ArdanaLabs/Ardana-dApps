@@ -43,7 +43,7 @@ defConfUpdate =
 -- | technically not part of this version of the protocol
 updateConfigAttack :: UpdateConfAttack -> PlutusData -> UtxoId -> Contract () UtxoId
 updateConfigAttack
-  atack
+  attack
   newDatum
   utxoId@(UtxoId rec@{ nft: nftCs /\ nftTn, script: configVal }) = do
   oldIn /\ oldOut@(TransactionOutput { datum }) <- lookupUtxo utxoId
