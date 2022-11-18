@@ -132,6 +132,11 @@ The dUSD-API includes a function to gather information on a given vault.
 
 Users can open a new vault.
 
+\subsubsection*{Close vault}
+
+If a vault has no outstanding dUSD debt, its owner can close the vault and get
+back the remaining collateral.
+
 \subsubsection*{Deposit}
 
 Users can deposit ADA into their vaults.
@@ -157,7 +162,10 @@ bring the collateralization ratio below the liquidation ratio\footnote{
 There is a minimum for the total debt in one vault, called the ``debt
 floor''\footnote{
   This is an on-chain mechanism, which means it is enforced on everyone.
-}, as well as a ``debt ceiling''.
+}, as well as a ``debt ceiling''\footnote{
+  Similarly, no loan is allowed to be taken out which leaves the vault with more
+dUSD debt than a given parameter, called the debt ceiling. This parameter is
+stored in tho Protocol-wide Parameters Module.}.
 
 \subsubsection*{Pay back loan}
 
@@ -261,34 +269,12 @@ The admin user can set the debt ceiling (in dUSD) through the admin CLI.
 
 \subsubsection*{Initialize protocol}
 
-The procedure to initialize the protocol is the same as in the Hello Cardano
-Template:
-\begin{enumerate}
-  \item Create an NFT through the generic NFT minting policy (see Hello Cardano
-    Template)
-  \item Using this NFT as the protocol's master NFT (identifying its Config
-    UTXO), generate the script hashes of all the on-chain components' scripts
-  \item Create the NFTs identifying the protocol parameters module and the price
-    module
-  \item Launch a protocol-wide parameters module and a price module
-  \item Create a Config UTXO with the master NFT and a datum listing the script
-    hashes and (parameters module and price module) NFTs
-\end{enumerate}
+Anyone can initialize their own protocol.
 
 \subsubsection*{Update protocol}
 
 Initially, protocol updates are performed by admin. Eventually, governance
-voting will take over. This is done through the Admin CLI. The process looks as
-follows:
-\begin{enumerate}
-  \item If you want to update the price module, create a new price module and
-    send the NFT identifying the old one to the new one
-  \item Generate an NFT identifying the new parameters module and create the new
-    module with that NFT
-  \item Set the debt ceiling in the old parameters module to $0$
-  \item Add the new vault script hash and NFTs (price module and parameters
-    module) to the protocol's Config UTXO
-\end{enumerate}
+voting will take over. This is done through the Admin CLI.
 
 \section{Acceptance criteria}
 
@@ -308,7 +294,7 @@ Price feed bot:
 \begin{itemize}
   \item Always collects information from at least three sources successfully
   \item Running the cron service makes the UTXO get updated by at least three
-    sources within $5$ minutes from the hour passing. What we mean by this, is
+    sources within $5$ minutes from the hour passing. What we mean by this is
     that the price module can only be updated at least one hour after its last
     update, and should hence be updated soon after that limit.
 \end{itemize}
@@ -339,61 +325,99 @@ Price feed bot:
 % 
 \subsection{Vault}
 
-Each user has access to "www.vault.ardana.com". On this website, they can
-connect their wallet and subsequently set up vaults and interact with their
-existing vaults.
+Each user has access to a website where they can connect their wallet and
+subsequently set up vaults and interact with their existing vaults.
+
+\subsubsection*{Initialize vault}
 
 \begin{itemize}
-  \item Anyone can create a vault, through a button on the website
+  \item Anyone can create a vault with collateral, through a form on the website
   \item Anyone can create multiple vaults
-  \item One person's vault being sick doesn't affect another vault owned by the
-    same person, i.e. they can still take out loans and take out collateral
-  \item The user can see how many vaults they own, and for each vault the amount
-    of collateral, debt, collateralization ratio, and (post-MVP) how healthy the
-    vault is
-  \item Vault information is traced correctly (as read by the ``Gather vault
-    info'' function in dUSD-API) when performing transactions (withdraw and
-    deposit collateral, take out and pay back debt, and liquidating vaults
-    (partially and fully))
-  \item The vault overview is correct, clear and aesthetic
+\end{itemize}
+
+\subsubsection*{Deposit \& withdraw collateral, take out \& pay back loan}
+
+\begin{itemize}
   \item Users can deposit and withdraw collateral, take out and pay back loans
     through forms on the website only if the collateralization ratio doesn't
     drop below the liquidation ratio through the dUSD-API
-  \item Users can deposit and withdraw collateral, take out and pay back loans
-    through forms on the website only if the collateralization ratio doesn't
-    drop below the minimum collateralization ratio through the VaultUI
-  \item No transaction can update the timestamp in the vault in a way that's
-    inaccurate by more than $12$ hours
+  \item Same criterium as above is true in the VaultUI
   \item Users cannot take out a loan or pay one back that leaves the dUSD debt
     above $0$ but below the debt floor\footnote{
     The purpose of the debt floor is to ensure good debt is issued against a
     vault to incentivize a liquidator to liquidate it should it become
     under-collateralized.}
-% Comment for Version 2:
-%   \item Users cannot take out a loan that leaves the dUSD debt above the debt
-%     ceiling\footnote{
-%     The debt ceiling has two purposes:
-%     \begin{enumerate}
-%       \item Deprecating collateral types by lowering the debt ceiling to below
-%         the current amount of issued debt
-%       \item Stopping OSM timing attacks, where vault owners exploit the OSM time
-%         delay during a price crash, issuing a massive amount of debt thus
-%         cashing out on worthless collateral
-%     \end{enumerate}}
-% 
-% Debt ceilings are not useful against OSM timing attacks, since users can
-% simply create multiple vaults.
+  \item Users cannot take out a loan that leaves the dUSD debt above the debt
+    ceiling\footnote{
+    The purpose of the debt ceiling is to deprecate protocol versions and
+    collateral types by lowering the debt ceiling to zero.}
   \item When going through a sequence of transactions, stability fees and dUSD
     debt are calculated correctly. `Correctly' here is defined in the
     Implementation details.
+\end{itemize}
+
+\subsubsection*{Close vault}
+
+\begin{itemize}
+  \item Anyone can close a vault of theirs if it has no outstanding debt
   \item Only the owner of the vault can create transactions other than
     liquidation
+\end{itemize}
+
+\subsubsection*{Liquidate vault}
+
+\begin{itemize}
+  \item One person's vault being sick doesn't affect another vault owned by the
+    same person, i.e. they can still take out loans and take out collateral
   \item Anyone can liquidate a sick vault
-  \item Liquidation is possibly if and only if the vault is in an unhealthy
-    state
-  \item When a vault turns sick, the liquidation bot notices within $5$ minutes
   \item The price at which a vault is liquidated, is correct in accordance with
     Dutch auctions. This is defined in the implementation details.
+  \item Liquidation isn't allowed if the vault is in a healthy state
+\end{itemize}
+
+\subsubsection*{Liquidation bot}
+
+\begin{itemize}
+  \item When a vault turns sick, the liquidation bot notices within $5$ minutes
+\end{itemize}
+
+\subsubsection*{List my vaults}
+
+\begin{itemize}
+  \item The user can see how many vaults they own on the website, and for each
+    vault the amount of collateral, debt, collateralization ratio, and
+    (post-MVP) how healthy the vault is
+  \item The vault overview is correct, clear and aesthetic
+\end{itemize}
+
+\subsubsection*{List all vaults}
+
+\begin{itemize}
+  \item A function in dUSD-API lists all existing vaults' IDs
+\end{itemize}
+
+\subsubsection*{Get vault info}
+
+\begin{itemize}
+  \item A function in dUSD-API provides the information of a vault given its ID
+  \item Vault information is traced correctly when performing transactions
+    (withdraw and deposit collateral, take out and pay back debt, and
+    liquidating vaults (partially and fully))
+\end{itemize}
+
+\subsubsection*{Collect admin fees}
+
+\begin{itemize}
+  \item No transaction can update the timestamp in the vault in a way that's
+    inaccurate by more than $12$ hours
+  \item Admin and only admin can call this endpoint
+  \item Calling this endpoint extracts all fees from the vault and sets the fee
+    counter (in the vault's datum) back to zero
+\end{itemize}
+
+\subsubsection*{Protocol update vault}
+
+\begin{itemize}
   \item When the protocol is currently on a more recent version than a given
     vault, the UX shows a button to update the protocol one version
 \end{itemize}
@@ -402,8 +426,10 @@ existing vaults.
 
 \subsubsection*{Protocol update vault}
 
-When a vault follows an outdated version of our protocol, a button appears in
-the UX to update it to a newer version.
+\begin{itemize}
+  \item When a vault follows an outdated version of our protocol, a button
+    appears in the UX to update it to a newer version
+\end{itemize}
 
 \subsection{Protocol Parameters Module}
 
@@ -524,6 +550,8 @@ most up-to-date price module, and these old protocols must still be viable.
 % 
 \subsection{Vault}
 
+The vault website is deployed on \url{www.vault.ardana.com}. \\
+
 How stability fees work:
 \todo{Explain what stability fees are.}
 \todo{Explain how stability fees are stored: In the vault's value, and in its
@@ -633,6 +661,22 @@ resigned.
 
 \subsection{Config UTXO}
 
+\subsubsection*{Initialize protocol}
+
+The procedure to initialize the protocol is the same as in the Hello Cardano
+Template:
+\begin{enumerate}
+  \item Create an NFT through the generic NFT minting policy (see Hello Cardano
+    Template)
+  \item Using this NFT as the protocol's master NFT (identifying its Config
+    UTXO), generate the script hashes of all the on-chain components' scripts
+  \item Create the NFTs identifying the protocol parameters module and the price
+    module
+  \item Launch a protocol-wide parameters module and a price module
+  \item Create a Config UTXO with the master NFT and a datum listing the script
+    hashes and (parameters module and price module) NFTs
+\end{enumerate}
+
 When initializing the Config UTXO, we should manually check if the Config UTXO
 is valid. This means the following:
 \begin{itemize}
@@ -653,6 +697,19 @@ is valid. This means the following:
 
 Note that none of this is enforced automatically, but rather checked manually
 when launching the protocol.
+
+\subsubsection*{Protocol updates}
+
+The process looks as follows:
+\begin{enumerate}
+  \item If you want to update the price module, create a new price module and
+    send the NFT identifying the old one to the new one
+  \item Generate an NFT identifying the new parameters module and create the new
+    module with that NFT
+  \item Set the debt ceiling in the old parameters module to $0$
+  \item Add the new vault script hash and NFTs (price module and parameters
+    module) to the protocol's Config UTXO
+\end{enumerate}
 
 \todo{Explain the Admin CLI implementation of ``update protocol''.}
 
