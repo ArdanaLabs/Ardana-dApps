@@ -10,17 +10,17 @@ import Contract.Plutarch.Types ((%))
 import Contract.PlutusData (PlutusData(..))
 import Ctl.Utils.Test (expectScriptError, runWithMode, useRunnerSimple)
 import Ctl.Utils.Test.Types (Mode(..))
-import DUsd.Params (updateDebtFloor, updateDebtFloor', updateLiquidationDiscount, updateLiquidationFee', updateLiquidationRatio)
-import DUsd.PriceOracle (pushPriceOracle', startPriceOracle, startPriceOracle')
 import DUsd.Api (ProtocolParams(..), initProtocol, initProtocolParams, mintNft, updateConfigUtxo)
 import DUsd.Config (initConfigUtxoWith)
+import DUsd.Params (updateDebtFloor, updateDebtFloor', updateLiquidationDiscount, updateLiquidationFee', updateLiquidationRatio)
+import DUsd.PriceOracle (pushPriceOracle', startPriceOracle, startPriceOracle')
 import Data.BigInt as BigInt
 import Data.Time.Duration (Minutes(..), Seconds(..), fromDuration)
 import Effect.Aff (delay)
 import Effect.Exception (throw)
 import Node.Process (lookupEnv)
 import Test.Attacks.Api (defConfUpdate, defParamUpdate, updateConfigUtxoAttack, updateProtocolParamsAttack)
-import Test.Spec (describe, it, parallel, sequential)
+import Test.Spec (describe, describeOnly, it, itOnly, parallel, sequential)
 
 main :: Effect Unit
 main = launchAff_ $ do
@@ -35,11 +35,11 @@ main = launchAff_ $ do
   log "about to start"
   let maybePar = if mode == Local then parallel else sequential
   runWithMode mode $ do
-    describe "Price module" $ maybePar $ do
+    describeOnly "Price module" $ maybePar $ do
       it "Init price orcale doesn't error" $ useRunnerSimple $ do
         startPriceOracle
 
-      it "update price oracle doesn't error" $ useRunnerSimple $ do
+      itOnly "update price oracle doesn't error" $ useRunnerSimple $ do
         oracle <- startPriceOracle' (Minutes 1.0) (Seconds 20.0)
         liftAff $ delay $ fromDuration $ Seconds 70.0
         pushPriceOracle' oracle

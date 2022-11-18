@@ -6,14 +6,14 @@ import Plutarch.Prelude
 import Lib (checkAdminSig, getNextOutputByNft)
 import Plutarch (Config)
 import Plutarch.Extensions.Data (ptryFromData)
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC)
 import Types (ProtocolParams (..), PriceData, PriceEntry (PriceEntry))
 
 import Utils (closedTermToHexString)
 import Plutarch.Api.V1.Value (padaToken, PCurrencySymbol)
 import Plutarch.Extensions.List (ptake)
 import Plutarch.Api.V1.Interval (PInterval(PInterval))
-import Plutarch.Api.V1.Time (PPOSIXTime)
+import Plutarch.Api.V1.Time (PPOSIXTime (PPOSIXTime))
 import Plutarch.Api.V1 (PLowerBound(PLowerBound),PUpperBound(PUpperBound),PExtended(PFinite))
 import Plutarch.Extensions.Monad (pletFieldC)
 
@@ -114,10 +114,19 @@ priceOracleValidator = ptrace "price oracle" $
       PFinite end2 <- pmatchC $ pfield @"_0" # end1
       end <- pletFieldC @"_0" end2
 
+      ptraceC $ "in  datum" <> pshow inDatum
+      ptraceC $ "out datum" <> pshow newList'
+      ptraceC $ "start" <> timeShow start
+      ptraceC $ "end" <> timeShow end
+      ptraceC $ "last" <> timeShow lastTime
+      ptraceC $ "next" <> timeShow nextTime
+
       pguardC "time is in interval" $ start #<= nextTime #&& nextTime #<= end
       pguardC "interval isn't too long" $ end - start #<= margin
       pguardC "waited enough" $ lastTime + interval #<= start
 
       pure $ popaque $ pcon PUnit
 
-
+-- TODO upstream this as an instance
+timeShow :: Term s PPOSIXTime -> Term s PString
+timeShow t = pmatch t $ \(PPOSIXTime t') -> "PPosixTime " <> pshow t'

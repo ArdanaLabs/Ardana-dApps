@@ -9,6 +9,7 @@ import Contract.Prelude
 
 import Contract.Address (scriptHashAddress)
 import Contract.Chain (currentTime)
+import Contract.Log (logError')
 import Contract.Monad (Contract, liftContractM)
 import Contract.Plutarch.Types (PRational, (%))
 import Contract.PlutusData (Datum(..), OutputDatum(..), PlutusData(..), Redeemer(..), toData)
@@ -89,6 +90,13 @@ pushPriceOracle'
   let newDatum = List $ cons nextEntry (take 47 old)
   pkh <- getWalletPubKeyHash
   halfMargin <- durationToPoxisTime $ Seconds 30.0
+  let start = POSIXTime $ unwrap newTime - unwrap halfMargin
+  let end = POSIXTime $ unwrap newTime + unwrap halfMargin
+  logError' $ "next" <> show newTime
+  logError' $ "ent" <> show nextEntry
+  logError' $ "datum" <> show newDatum
+  logError' $ "start" <> show start
+  logError' $ "end" <> show end
   void $ waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
     =<< buildBalanceSignAndSubmitTx
       ( Lookups.unspentOutputs
@@ -117,7 +125,7 @@ pushPriceOracle'
 durationToPoxisTime :: forall d . Duration d => d -> Contract () POSIXTime
 durationToPoxisTime d =
   liftContractM "time conversion failed"
-  $ POSIXTime <$> BigInt.fromNumber (unwrap $ fromDuration d)
+  $ POSIXTime <$> BigInt.fromNumber (( _ / 1000.0) $ unwrap $ fromDuration d)
 
 getPrice :: Aff PRational
 getPrice = do
