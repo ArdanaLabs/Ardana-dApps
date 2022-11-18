@@ -43,11 +43,7 @@ $button-border-width: 0;
 
 @import "../../node_modules/bulma/bulma";
 
-.navbar-item.is-active {
-  border-bottom: 3px solid #73d6f1;
-}
-
-.dusd-btn-has-background {
+button.has-background {
   background-color: #72d2f2;
   background-image: linear-gradient(89.62deg, #72d2f2 0.3%, #6077ff 99.64%);
   font-style: normal;
@@ -57,7 +53,7 @@ $button-border-width: 0;
   color: #f5fcfe;
 }
 
-.dusd-btn-has-border {
+button.has-border {
   border: 3px solid rgba(45, 59, 160, 1);
   box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 1);
   font-style: normal;
@@ -67,7 +63,7 @@ $button-border-width: 0;
   color: #f5fcfe;
 }
 
-.navbar-brand a.navbar-item {
+#logo {
   background-image: url("/assets/images/logo_header_night.png");
   background-size: cover;
   width: 65.92px;
@@ -86,8 +82,8 @@ $button-border-width: 0;
   height: 50px;
 }
 
-#home-static {
-  background-image: url("/assets/images/home_static_night.png");
+#home {
+  background-image: url("/assets/images/home_night.png");
   background-image: image-set(
     "/assets/images/home_static_night.jxl" type("image/jxl"),
     "/assets/images/home_static_night.webp" type("image/webp"),
@@ -96,60 +92,14 @@ $button-border-width: 0;
   background-size: cover;
 }
 
-.vaults-table-row {
+.card {
+  background: #2f3f9d;
+  border-radius: 20px;
+  padding: 3rem 6rem;
+}
+
+.vault {
   border-bottom: 1px solid #72d2f3;
-}
-
-.link-a-coin {
-  background-color: #3142a3;
-  background-image: linear-gradient(
-    180deg,
-    #3142a3 0%,
-    rgba(49, 66, 163, 0) 118.48%
-  );
-}
-
-.uni-a-coin {
-  background-color: #627eff;
-  background-image: linear-gradient(
-    180.2deg,
-    #627eff 0.17%,
-    rgba(77, 97, 210, 0) 116.51%
-  );
-}
-
-.gusd-a-coin {
-  background-color: #71b5f3;
-  background-image: linear-gradient(
-    180deg,
-    #71b5f3 0%,
-    rgba(113, 206, 243, 0) 110%
-  );
-}
-
-.dana-coin {
-  background-color: #627eff;
-  background-image: linear-gradient(
-    180.2deg,
-    #627eff 0.17%,
-    rgba(77, 97, 210, 0) 116.51%
-  );
-}
-
-.got-questions {
-  background-color: #71b5f3;
-  background-image: linear-gradient(
-    180deg,
-    #71b5f3 0%,
-    rgba(113, 206, 243, 0) 110%
-  );
-}
-
-.search-input {
-  mix-blend-mode: normal;
-  background-color: #1e2769;
-  background-image: linear-gradient(0deg, #1e2769, #1e2769);
-  border: 1px solid rgba(96, 119, 255, 1);
 }
 
 @import "./common";

@@ -43,11 +43,7 @@ $button-border-width: 0;
 
 @import "../../node_modules/bulma/bulma";
 
-.navbar-item.is-active {
-  border-bottom: 3px solid #2e49c5;
-}
-
-.dusd-btn-has-background {
+button.has-background {
   background-color: #030d53;
   background-image: linear-gradient(89.62deg, #030d53 0.3%, #3b4bc2 99.64%);
   font-style: normal;
@@ -58,7 +54,7 @@ $button-border-width: 0;
   color: #ffffff;
 }
 
-.dusd-btn-has-border {
+button.has-border {
   border: 3px solid rgba(30, 39, 105, 1);
   box-shadow: 0px 0px 20px 5px rgba(45, 59, 160, 0.4);
   font-style: normal;
@@ -69,7 +65,7 @@ $button-border-width: 0;
   color: #1e2769;
 }
 
-.navbar-brand a.navbar-item {
+#logo {
   background-image: url("/assets/images/logo_header_light.png");
   background-image: image-set(
     "/assets/images/logo_header_light.jxl" type("image/jxl"),
@@ -93,8 +89,8 @@ $button-border-width: 0;
   height: 50px;
 }
 
-#home-static {
-  background-image: url("/assets/images/home_static_light.png");
+#home {
+  background-image: url("/assets/images/home_light.png");
   background-image: image-set(
     "/assets/images/home_static_light.jxl" type("image/jxl"),
     "/assets/images/home_static_light.webp" type("image/webp"),
@@ -103,47 +99,14 @@ $button-border-width: 0;
   background-size: cover;
 }
 
-.vaults-table-row {
+.card {
+  background: #2f3f9d;
+  border-radius: 20px;
+  padding: 3rem 6rem;
+}
+
+.vault {
   border-bottom: 1px solid #3651cd;
-}
-
-.link-a-coin {
-  background-color: #0d1e7e;
-  background-image: linear-gradient(179.9deg, #0d1e7e 0.1%, #4d5ec1 99.98%);
-  box-shadow: 10px 10px 30px rgba(109, 109, 109, 0.2);
-}
-
-.uni-a-coin {
-  background-color: #2e49c5;
-  background-image: linear-gradient(180deg, #2e49c5 0%, #6480ff 106.6%);
-  box-shadow: 10px 10px 30px rgba(109, 109, 109, 0.2);
-}
-
-.gusd-a-coin {
-  background-color: #72d2f2;
-  background-image: linear-gradient(
-    358.66deg,
-    #72d2f2 -23.79%,
-    #307bd3 107.77%
-  );
-}
-
-.dana-coin {
-  background-color: #2e49c5;
-  background-image: linear-gradient(180deg, #2e49c5 0%, #6480ff 106.6%);
-}
-
-.got-questions {
-  background-color: #72d2f2;
-  background-image: linear-gradient(
-    358.66deg,
-    #72d2f2 -23.79%,
-    #307bd3 107.77%
-  );
-}
-
-.search-input {
-  border: 1px solid rgba(3, 13, 83, 1);
 }
 
 @import "./common";
