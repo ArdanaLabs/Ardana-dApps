@@ -97,7 +97,7 @@ priceOracleValidator = ptrace "price oracle" $
       lastTime :: Term _ PPOSIXTime <- pletFieldC @"time" lastRec'
 
       -- next time
-      PriceEntry nextRec' <- pmatchC $ pfromData $ phead # oldList
+      PriceEntry nextRec' <- pmatchC $ pfromData $ phead # newList
       nextTime :: Term _ PPOSIXTime <- pletFieldC @"time" nextRec'
 
         -- TODO this is probably ineficent
@@ -114,12 +114,10 @@ priceOracleValidator = ptrace "price oracle" $
       PFinite end2 <- pmatchC $ pfield @"_0" # end1
       end <- pletFieldC @"_0" end2
 
-      ptraceC $ "in  datum" <> pshow inDatum
-      ptraceC $ "out datum" <> pshow newList'
-      ptraceC $ "start" <> timeShow start
-      ptraceC $ "end" <> timeShow end
-      ptraceC $ "last" <> timeShow lastTime
-      ptraceC $ "next" <> timeShow nextTime
+      ptraceC $ "start " <> timeShow start
+      ptraceC $ "end " <> timeShow end
+      ptraceC $ "margin " <> timeShow margin
+      ptraceC $ "diff " <> timeShow (end - start)
 
       pguardC "time is in interval" $ start #<= nextTime #&& nextTime #<= end
       pguardC "interval isn't too long" $ end - start #<= margin
