@@ -14,7 +14,7 @@ import Effect.Aff (launchAff_)
 import Node.FS.Aff (unlink, exists)
 import Node.Path (normalize)
 import Options.Applicative (execParser)
-import Test.Spec (describe, it)
+import Test.Spec (describe, it, itOnly)
 import Test.Spec.Assertions (shouldReturn)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec', defaultConfig)
@@ -41,6 +41,7 @@ executeTests (Options { mode, testResources }) = do
     cli = "dusd-cli --mainnet "
     badWalletConf = jsonDir <> "badWalletCfg.json "
     protocolFile = " protocol.json "
+    paramsFile = " " <> (normalize $ jsonDir <> "/params.json")
   -- remove the protocol config file if it exists
   hasOldProtocol <- exists (trim protocolFile)
   when hasOldProtocol $ unlink (trim protocolFile)
@@ -61,13 +62,13 @@ executeTests (Options { mode, testResources }) = do
       it "should fail if the testnet or mainnet flag is missing"
         $ withEnv
         $ \ports wallet ->
-            ("dusd-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `failsSaying` "Missing: (--mainnet | --testnet)"
+            ("dusd-cli " <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` "Missing: (--mainnet | --testnet)"
 
       it "should fail if the wallet-config option was not set" $
-        (cli <> "-p" <> protocolFile <> "init") `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
+        (cli <> "-p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` ("Missing: (-w|--wallet-config FILE_PATH)")
 
       it "should fail if the wallet-config option path doesn't exist" $
-        (cli <> "-w bad_path -p" <> protocolFile <> "init") `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
+        (cli <> "-w bad_path -p" <> protocolFile <> "init -p" <> paramsFile) `failsSaying` ("[Error: ENOENT: no such file or directory, open 'bad_path']")
 
       it "should fail if the path passed to wallet-config has the wrong contents"
         $ fails
@@ -76,7 +77,8 @@ executeTests (Options { mode, testResources }) = do
         <> badWalletConf
         <> "-p"
         <> protocolFile
-        <> "init"
+        <> "init -p"
+        <> paramsFile
 
     describe (cli <> "init") do
       when (mode == Local) $
@@ -87,7 +89,7 @@ executeTests (Options { mode, testResources }) = do
               \ports wallet -> do
                 hasOldProtocol <- exists (trim protocolFile)
                 when hasOldProtocol $ unlink (trim protocolFile)
-                (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init") `passesSaying` "initialized protocol"
+                (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile) `passesSaying` "initialized protocol"
                 exists (trim protocolFile) `shouldReturn` true
 
       it "should initialize the protocol successfully and create a protocol config file"
@@ -95,7 +97,7 @@ executeTests (Options { mode, testResources }) = do
         $ \ports wallet -> do
             hasOldProtocol <- exists (trim protocolFile)
             when hasOldProtocol $ unlink (trim protocolFile)
-            (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init")
+            (cli <> ports <> "-w" <> wallet <> "-p" <> protocolFile <> "init -p" <> paramsFile)
               `passesSaying` "initialized protocol"
             exists (trim protocolFile) `shouldReturn` true
 
@@ -104,7 +106,7 @@ executeTests (Options { mode, testResources }) = do
         $ \ports wallet -> do
             hasOldProtocol <- exists "protocol.json"
             when hasOldProtocol $ unlink "protocol.json"
-            (cli <> ports <> "-w" <> wallet <> "init")
+            (cli <> ports <> "-w" <> wallet <> "init -p" <> paramsFile)
               `passesSaying` "initialized protocol"
             exists "protocol.json" `shouldReturn` true
 

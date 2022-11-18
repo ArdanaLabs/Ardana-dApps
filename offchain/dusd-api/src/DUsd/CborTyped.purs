@@ -1,6 +1,8 @@
 module DUsd.CborTyped
   ( simpleNft
   , configAddressValidator
+  , paramAddressValidator
+  , priceOracleValidator
   ) where
 
 import Contract.Prelude
@@ -12,6 +14,7 @@ import Contract.Monad (Contract, liftContractM)
 import Contract.PlutusData (PlutusData, toData)
 import Contract.Prim.ByteArray (hexToByteArray)
 import Contract.Scripts (MintingPolicy(..), PlutusScript, Validator(..), applyArgs)
+import Contract.Time (POSIXTime)
 import Contract.Transaction (TransactionInput, plutusV2Script)
 import Contract.Value (CurrencySymbol)
 import Effect.Exception (throw)
@@ -22,15 +25,30 @@ import Effect.Exception (throw)
 - for type errors between on and off chain code
 -}
 
--- | The address validator for the config utxo
--- patametized by the admin key and the currency symbol of the config NFT
-configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
-configAddressValidator pkh cs =
-  do
-    decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
+-- | validator for the price oracle address
+priceOracleValidator :: POSIXTime -> POSIXTime -> PubKeyHash -> CurrencySymbol -> Contract () Validator
+priceOracleValidator interval margin pkh cs =
+  decodeCbor CBOR.priceOracle [ toData interval, toData margin, toData pkh , toData cs ]
     <#> Validator
 
--- | Simple NFT minting policy parametized by a transaction input
+-- | The address validator for the config utxo
+-- parametrized by the admin key and the currency symbol of the config NFT
+configAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
+configAddressValidator pkh cs =
+  decodeCbor CBOR.configWithUpdates [ toData pkh, toData cs ]
+    <#> Validator
+
+-- | Param address validator supports updates with some
+-- basic checks:
+-- the liquidation fee, liquidation discount
+-- and debtFloor are non-negative
+-- and the liquidationRatio is more than 1
+paramAddressValidator :: PubKeyHash -> CurrencySymbol -> Contract () Validator
+paramAddressValidator pkh cs =
+  decodeCbor CBOR.paramAdr [ toData pkh, toData cs ]
+    <#> Validator
+
+-- | Simple NFT minting policy parametrized by a transaction input
 simpleNft :: TransactionInput -> Contract () MintingPolicy
 simpleNft ref = do
   decodeCbor CBOR.nft [ toData ref ]

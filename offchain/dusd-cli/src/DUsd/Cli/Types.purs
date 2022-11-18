@@ -15,7 +15,8 @@ import Data.Show.Generic (genericShow)
 import Data.UInt (UInt)
 import Node.Path (FilePath)
 
-data Command = InitializeProtocol
+data Command =
+  InitializeProtocol { paramsPath :: String }
 
 data WalletConf
   = KeyWalletFiles { walletPath :: String, stakingPath :: Maybe String }
