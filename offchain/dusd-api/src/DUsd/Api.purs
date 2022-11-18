@@ -11,21 +11,21 @@ import Contract.Prelude
 
 import Contract.Monad (Contract)
 import Contract.PlutusData (toData)
-import DUsd.Config (initConfigWith)
-import DUsd.Config (initConfigWith, updateConfig) as Config
-import DUsd.Nft (lookupUtxo, mintNft, seedTx) as NFT
 import DUsd.Nft (mintNft)
-import DUsd.Params (initParams)
-import DUsd.Params (initParams, updateParams) as Params
+import DUsd.Config (initConfigUtxoWith)
+import DUsd.Config (initConfigUtxoWith, updateConfigUtxo) as Config
+import DUsd.Nft (lookupUtxo, mintNft, seedTx) as NFT
 import DUsd.PriceOracle (startPriceOracle)
-import DUsd.Types (Params(..), Protocol(..)) as Types
-import DUsd.Types (Params, Protocol(..))
+import DUsd.Params (initProtocolParams)
+import DUsd.Params (initProtocolParams, updateDebtFloor, updateLiquidationDiscount, updateLiquidationFee, updateLiquidationRatio, updateProtocolParams) as Params
+import DUsd.Types (Protocol(..), ProtocolParams)
+import DUsd.Types (AssetClass, Protocol(..), ProtocolParams(..), UtxoId(..)) as Types
 
-initProtocol :: Params -> Contract () Protocol
-initProtocol initialParams = do
-  configNftCs <- mintNft
-  params <- initParams initialParams
+initProtocol :: ProtocolParams -> Contract () Protocol
+initProtocol params = do
+  configNftCS <- mintNft
+  protocolParams <- initProtocolParams params
   priceOracle <- startPriceOracle
-  configUtxo <- initConfigWith configNftCs (toData unit) -- TODO real data here
+  configUtxo <- initConfigUtxoWith configNftCS (toData unit) -- TODO real data here
   -- TODO this type is incomplete
-  pure $ Protocol { params, configUtxo,priceOracle }
+  pure $ Protocol { protocolParams, configUtxo,priceOracle }

@@ -28,7 +28,7 @@ import Data.Map as Map
 import Data.Set (toUnfoldable)
 import Effect.Exception (throw)
 
--- | lookup a utxo by id
+-- | lookup an utxo by id
 lookupUtxo :: UtxoId -> Contract () (TransactionInput /\ TransactionOutput)
 lookupUtxo (UtxoId { nft: (cs /\ tn), script, guess }) =
   case guess of
@@ -77,7 +77,7 @@ mintNft = do
   _ <- waitForTx adr txId
   pure $ cs
 
--- | Selects a utxo owned by the current wallet usefull for minting nfts
+-- | Selects an utxo owned by the current wallet usefull for minting nfts
 seedTx :: Contract () TransactionInput
 seedTx = do
   adr <- liftContractM "no wallet" =<< getWalletAddress

@@ -1,6 +1,6 @@
 module DUsd.Types
   ( Protocol(..)
-  , Params(..)
+  , ProtocolParams(..)
   , UtxoId(..)
   , AssetClass
   ) where
@@ -19,7 +19,7 @@ import Data.UInt as UInt
 
 newtype Protocol = Protocol
   { configUtxo :: UtxoId
-  , params :: UtxoId
+  , protocolParams :: UtxoId
   , priceOracle :: UtxoId
   }
 
@@ -40,25 +40,25 @@ newtype UtxoId = UtxoId
 
 type AssetClass = CurrencySymbol /\ TokenName
 
-newtype Params = Params
+newtype ProtocolParams = ProtocolParams
   { debtFloor :: BigInt
   , liquidationDiscount :: PRational
   , liquidationFee :: BigInt
   , liquidationRatio :: PRational
   }
 
-derive newtype instance EncodeAeson Params
-derive newtype instance DecodeAeson Params
+derive newtype instance EncodeAeson ProtocolParams
+derive newtype instance DecodeAeson ProtocolParams
 
-instance ToData Params where
-  toData (Params { debtFloor, liquidationDiscount, liquidationFee, liquidationRatio }) = List
+instance ToData ProtocolParams where
+  toData (ProtocolParams { debtFloor, liquidationDiscount, liquidationFee, liquidationRatio }) = List
     [ toData debtFloor
     , toData liquidationDiscount
     , toData liquidationFee
     , toData liquidationRatio
     ]
 
-instance FromData Params where
+instance FromData ProtocolParams where
   fromData =
     case _ of
       List [ df, ld, lf, lr ] -> do
@@ -66,7 +66,7 @@ instance FromData Params where
         liquidationDiscount <- fromData ld
         liquidationFee <- fromData lf
         liquidationRatio <- fromData lr
-        pure $ Params
+        pure $ ProtocolParams
           { debtFloor
           , liquidationDiscount
           , liquidationFee

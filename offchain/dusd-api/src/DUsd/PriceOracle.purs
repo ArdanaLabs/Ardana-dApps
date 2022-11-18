@@ -20,7 +20,7 @@ import Contract.TxConstraints (DatumPresence(..))
 import Contract.TxConstraints as Constraints
 import Contract.Value (adaToken)
 import Contract.Value as Value
-import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubkeyhash, waitForTx)
+import Ctl.Utils (buildBalanceSignAndSubmitTx, getWalletPubKeyHash, waitForTx)
 import DUsd.CborTyped (priceOracleValidator)
 import DUsd.Nft (lookupUtxo, mintNft)
 import DUsd.Types (Protocol(..), UtxoId(..))
@@ -46,7 +46,7 @@ startPriceOracle' interval' margin' = do
   margin <- durationToPoxisTime margin'
   price <- liftAff getPrice
   time <- currentTime
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   nftCs <- mintNft
   oracleVal <- priceOracleValidator interval margin pkh nftCs
   utxo <- waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
@@ -87,7 +87,7 @@ pushPriceOracle'
     (OutputDatum (Datum (List old))) -> pure old
     _ -> liftEffect $ throw "old datum was formatted incorectly or a datum hash or missing"
   let newDatum = List $ cons nextEntry (take 47 old)
-  pkh <- getWalletPubkeyhash
+  pkh <- getWalletPubKeyHash
   halfMargin <- durationToPoxisTime $ Seconds 30.0
   void $ waitForTx (scriptHashAddress (validatorHash oracleVal) Nothing)
     =<< buildBalanceSignAndSubmitTx

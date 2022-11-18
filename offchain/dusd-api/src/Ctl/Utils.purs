@@ -5,7 +5,7 @@ module Ctl.Utils
   , getTxScanUrl
   , maxWait
   , getDatum
-  , getWalletPubkeyhash
+  , getWalletPubKeyHash
   ) where
 
 import Contract.Prelude
@@ -178,8 +178,8 @@ getDatum = case _ of
 waitTime :: Seconds
 waitTime = Seconds 1.0
 
-getWalletPubkeyhash :: Contract () PubKeyHash
-getWalletPubkeyhash = do
+getWalletPubKeyHash :: Contract () PubKeyHash
+getWalletPubKeyHash = do
   (Address { addressCredential }) <- getWalletAddress >>= liftContractM "no wallet"
   case addressCredential of
     PubKeyCredential pkh -> pure pkh
