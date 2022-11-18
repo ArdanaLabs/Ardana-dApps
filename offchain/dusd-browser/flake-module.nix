@@ -9,7 +9,7 @@
       dusd-browser =
         (dream2nix.lib.makeOutputs { source = ./.; settings = [{ subsystemInfo.nodejs = 16; }]; }).packages.dusd-browser;
 
-      dusd-ui-components = {
+      dusd-browser-ps = {
         ps =
           purs-nix.purs
             {
@@ -33,10 +33,10 @@
               ];
             };
           in
-          pkgs.runCommand "build-dusd-ui-components" { }
+          pkgs.runCommand "build-dusd-browser-ps" { }
             ''
               export BROWSER_RUNTIME=1
-              cp -r ${dusd-ui-components.ps.modules."DUsd.UI.Components.Home".output { }} homeOutput
+              cp -r ${dusd-browser-ps.ps.modules."DUsd.Browser.Pages.Home".output { }} homeOutput
               cp ${./home.js} home.js
               cp -r ${nodeModules}/* .
               export NODE_PATH="node_modules"
@@ -113,7 +113,7 @@
             set -euo pipefail
             mkdir -p $out
             filenames=("brands" "solid")
-            parallel ${escapeShellArgs [ 
+            parallel ${escapeShellArgs [
               "--will-cite"
               "fa_sprite_util ${fontAwesomeFlags} < ${self.inputs.font-awesome}/sprites/{}.svg | scour -o \"$out/font-awesome-sprite-{}.svg\" ${scourFlags}"
             ]} \
@@ -132,7 +132,7 @@
               cp -r ${dusd-browser}/lib/node_modules/dusd-browser/build/* $out/
               cp -r ${font-awesome-sprites}/*.svg $out/assets/images
               cp -f ${optimized-images}/*.{jxl,png,webp} $out/assets/images
-              cp -r ${dusd-ui-components.package}/dist/* $out/assets/scripts
+              cp -r ${dusd-browser-ps.package}/dist/* $out/assets/scripts
             '';
       };
 
@@ -145,7 +145,7 @@
 
       devShells = {
         "offchain:dusd-browser" =
-          offchain-lib.makeProjectShell { project = dusd-ui-components; };
+          offchain-lib.makeProjectShell { project = dusd-browser-ps; };
       };
 
       checks = {
