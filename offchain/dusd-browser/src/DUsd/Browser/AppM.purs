@@ -6,8 +6,10 @@ import Contract.Config (NetworkId(..), WalletSpec(..), mainnetConfig, mainnetNam
 import Control.Monad.Writer (execWriterT, lift, tell)
 import Ctl.Internal.Wallet (WalletExtension(..), isWalletAvailable)
 import DUsd.Browser.Capability.CardanoApi (class CardanoApi)
+import DUsd.Browser.Capability.DUsdApi (class DUsdApi)
 import DUsd.Browser.FFI.Cardano as Cardano
 import DUsd.Browser.Store as S
+import DUsd.Browser.Types.Vault (Collateral(..), Debt(..), LiquidationPrice(..))
 import Effect.Aff (Aff, try)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
@@ -29,6 +31,13 @@ derive newtype instance monadAppM :: Monad AppM
 derive newtype instance monadEffectAppM :: MonadEffect AppM
 derive newtype instance monadAffAppM :: MonadAff AppM
 derive newtype instance monadStoreAppM :: MonadStore S.Action S.Store AppM
+
+instance dusdApiAppM :: DUsdApi AppM where
+  loadVaults = pure $ Right
+    [ { liquidationPrice: LiquidationPrice 0.23, collateral: Ada 1000.23, debt: DUsd 200.0 }
+    , { liquidationPrice: LiquidationPrice 0.13, collateral: Ada 3000.23, debt: DUsd 400.0 }
+    ]
+  createVault _ = pure $ Right { liquidationPrice: LiquidationPrice 0.23, collateral: Ada 1000.23, debt: DUsd 200.0 }
 
 instance cardanoApiAppM :: CardanoApi AppM where
   availableWallets = liftEffect $ execWriterT do

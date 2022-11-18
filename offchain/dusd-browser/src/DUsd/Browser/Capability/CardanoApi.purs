@@ -1,6 +1,6 @@
 module DUsd.Browser.Capability.CardanoApi where
 
-import Contract.Prelude
+import Prelude
 
 import Ctl.Internal.Wallet (WalletExtension)
 import Data.Either (Either)

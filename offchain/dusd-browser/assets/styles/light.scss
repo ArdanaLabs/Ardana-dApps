@@ -65,7 +65,7 @@ button.has-border {
   color: #1e2769;
 }
 
-.navbar-brand a.navbar-item {
+#logo {
   background-image: url("/assets/images/logo_header_light.png");
   background-image: image-set(
     "/assets/images/logo_header_light.jxl" type("image/jxl"),
@@ -99,10 +99,14 @@ button.has-border {
   background-size: cover;
 }
 
-.connect-wallet {
+.card {
   background: #2f3f9d;
   border-radius: 20px;
   padding: 3rem 6rem;
+}
+
+.vault {
+  border-bottom: 1px solid #3651cd;
 }
 
 @import "./common";
