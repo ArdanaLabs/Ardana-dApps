@@ -175,7 +175,8 @@ Users can pay back (part of) the loan in their vaults.
 
 Stability fees are stored in the vault and must be collected as protocol
 profits. In the MVP, this will be done through a vault endpoint that allows the
-admin user to collect all the fees. \\
+admin user to collect all the fees. This is the MVP's alternative to the buffer
+described in the whitepaper.
 
 % Post-MVP note: Once there is a concept of a buffer, any protocol update that
 % changes the buffer should require the funds from the old buffer to be sent to
@@ -464,35 +465,54 @@ mentioned above.
 
 \subsection{Price module}
 
-The price module is a UTXO which can only be created by admin.
-It contains in its datum a map from timestamps (POSIX time) to the price value.
-An off-chain bot will be written which aggregates price information from at
-least five sources (CEXes and DEXes) and applies the appropriate calculations on
-this information in order to conclude what the most accurate current price is.
-This current price will then be submitted as a transaction to the price module
-using one of the admin keys. \\
-
-Off-chain bot:
 \begin{itemize}
-  \item The bot is a cron job which runs a Purescript executable, which uses the
-    dUSD-API. This is similar to the Admin CLI.
-  \item The bot runs once every minute until successful, then waits for an hour,
-    and repeats
+  \item The off-chain code will be built in CTL, on-chain code in Plutarch.
+  \item The validator should be parameterized by the admin's public key.
+  \item The validator will validate the following:
+    \begin{itemize}
+      \item There is a previous price oracle UTxO being spent.
+      \item The previous price oracle UTxO is being spent by Admin.
+      \item The previous price oracle UTxO contains the Oracle ID NFT, the name
+        of which is hardcoded in the script.
+      \item The datum has a list of tuples containing USD Price of ADA and the
+        POSIX timestamp of when the price was observed.
+      \item The datum list does not exceed $3$ entries.
+      \item The timestamp of the latest two entries of the datum list are at
+        least an hour apart.
+      \item The timestamp of the first entry in the datum list falls within the
+        time range of the transaction
+      \item The time range of the transaction is less than or equal to $5$
+        minutes
+      \item The tail of the datum list equals the start of the previous price
+        module's datum starting from it's first element.
+      \item The Oracle ID NFT is being moved to the new Price Oracle UTxO.
+    \end{itemize}
+  \item Note that this validator does allow admin to move the Price Module ID to
+    a new script address. This is used for price module updates. However,
+    through updates of the protocol and price module, we don't want to pay to
+    run multiple price modules. This means that all versions of the protocol
+    will use the same price module, requiring its interface to be
+    backwards-compatible.
+  \item The price module does not have any protection to be initiated properly.
+    This implies that its initialization process should be checked manually
+    carefully before launching the dUSD protocol.
+  \item For more information on the implementation, see
+    \url{https://github.com/ArdanaLabs/Ardana-dApps/issues/73}.
 \end{itemize}
 
-Price module:
+\subsection{Price feeder}
+
+The price feeder is a CLI which is ran on the Ardana Tenant. It aggregates
+information on the current price of ADA expressed in USD from a number of CEXes
+(Binance, Coinbase, Huobi, Kraken, Kucoin). The aggregate ADA price is then
+written as a transaction to the price module. This CLI is ran automatically
+through a cron job. Note that the CLI command starts by checking if the price
+module is in need of being updated. If not, it ceases immediately.
+
 \begin{itemize}
-  \item The on-chain code will be written in Plutarch
-  \item The off-chain code will be built as an API in CTL, used both by an Admin
-    CLI and a browser app
-  \item The datum will contain a map from timestamps (in POSIX time) to price
-    values
-  \item The script address will be dependent on three admin public
-    keys\footnote{
-      These admin keys can only be updated when the protocol is updated.
-      This decision will be enforced by using the keys to determine the script
-      address, rather than putting them into the datum.
-    }
+  \item The CLI is written in Purescript and uses the dUSD-API, similar to the
+    Admin CLI.
+  \item The bot runs once every minute until successful
 \end{itemize}
 
 Note: The off-chain bot will combine the price feeds through two operations:
@@ -502,21 +522,8 @@ Note: The off-chain bot will combine the price feeds through two operations:
   \item Take the median of the resulting values
 \end{enumerate}
 
-\subsubsection*{Protocol updates}
-
-Protocol updates work a bit differently for the price module than for the other
-on-chain components.
-The reason for this is that maintaining a price module costs a significant
-amount in gas fees, so we only want to maintain one version.
-This means that the price module will not be part of the regular protocol
-updates, but instead the configuration module will refer to one NFT as
-identifying the price module.
-Admin is then allowed to update the price module by moving its NFT to a new
-UTXO, which is associated with the new price module script.
-Lastly, it is important to note the drawback of this update mechanism, namely
-that the price module must forever remain backwards compatible.
-This is because an arbitrary number of old protocols will still depend on the
-most up-to-date price module, and these old protocols must still be viable.
+For more information on the implementation, see
+\url{https://github.com/ArdanaLabs/Ardana-dApps/issues/73}.
 
 % \subsection{Price oracle}
 % 
@@ -713,57 +720,35 @@ The process looks as follows:
 
 \todo{Explain the Admin CLI implementation of ``update protocol''.}
 
-\subsection{Buffer}
-
-The buffer's script address will be dependent on the same three admin public
-keys as the price module. \\
-
-The main advantage of this price modules-based approach, is that we always sell
-at a trusted price, without allowing as many opportunities for manipulations.
-(Classic auctions are vulnerable for manipulations through resource contention,
-DEXes through e.g. sandwich attacks.) \\
-
-Note that the buffer itself cannot mint or burn dUSD. This can only be done
-inside vaults.
-
 \subsection{Protocol Parameters Module}
 
-The protocol parameters module will contain in its datum a map from timestamps
-to the stability fee set at that timestamp.
-We use a map to make the stability fee calculations as accurate as
-possible.\footnote{
-  Imagine you open a vault, take out a loan and then leave the vault alone for
-  two years.
-  Just before you pay back the loan, governance decides to increase the
-  stability fee.
-  We want to use the stability fee that was applicable to the two year period
-  when calculating your stability fee wherever possible, rather than
-  retro-actively increasing your debt.
-}. \\
-
-We put together this map by figuring out the time of execution of the
-transaction that changes the stability fee, within that transaction itself.
-This is done by setting the timestamp to be the beginning of the
-``txInfoValidRange'' range\footnote{
-  \url{https://playground.plutus.iohkdev.io/doc/haddock/plutus-ledger-api/html/Plutus-V1-Ledger-Contexts.html}},
-where the on-chain validator enforces this range to be less than $12$ hours
-long. \\
-
-In order to prevent datum overflow\footnote{
-  This means we want to prevent the datum from becoming too big}
-we limit the size of the map to $20$ data points.
-This means that any transaction that changes the stability fee, will both add a
-new entry to the map, and remove the oldest entry in case there are more than
-$20$ entries. \\
-
-The protocol parameters module will be a UTXO that includes in its datum the following:
+The protocol parameters module will contain in its datum
 \begin{itemize}
-  \item Map from timestamps to stability fees
-  \item Liquidation discount
-  \item Liquidation ratio
   \item Debt floor
   \item Debt ceiling
-  \item Auction discount
+  \item \todo{Fill in the parameters relevant for Dutch auctions}
+  \item Stability fee: This is stored as a map from POSIX timestamps to the
+    stability fee rate (in annual percentage) set at that time. We use a map to
+    make the stability fee calculations as accurate as possible.\footnote{
+      Imagine you open a vault, take out a loan and then leave the vault alone
+      for two years. Just before you pay back the loan, governance decides to
+      increase the stability fee. We want to use the stability fee that was
+      applicable to the two year period when calculating your stability fee
+      wherever possible, rather than retro-actively increasing your debt.
+    }. \\
+\end{itemize}
+
+Validator requirements:
+\begin{itemize}
+  \item Any transactions updating the stability fee must have a time range of at
+    most one hour
+  \item If the stability fee map is updated, the (at most) $4$ newest elements
+    are retained and the new element has as a POSIX time is at the beginning of
+    the ``txInfoValidRange'' range\footnote{
+      \url{https://playground.plutus.iohkdev.io/doc/haddock/plutus-ledger-api/html/Plutus-V1-Ledger-Contexts.html}}.
+  \item The stability fee map contains less than $5$ elements
+  \item The debt floor, debt ceiling and stability fee values are positive or
+    zero
 \end{itemize}
 
 \subsection{dUSD minting policy}
@@ -771,19 +756,12 @@ The protocol parameters module will be a UTXO that includes in its datum the fol
 The dUSD minting policy refers to the Configuration Module by its unique NFT.
 The Configuration Module contains both the script address of the vaults in the
 most recent version of the protocol, and the CurrencySymbol used to identify
-vault's NFT IDs. The minting policy allows minting and burning dUSD if and only
-if the most recent vault script passes on the transaction, there is exactly one
-vault among the inputs of the transaction, and the vault is legitimate (i.e. it
-contains an NFT as an ID with the correct CurrencySymbol).
+vault's NFT IDs. The dUSD minting policy allows minting and burning dUSD if and
+only if the most recent vault script validates the transaction, there is exactly
+one vault among the inputs of the transaction, and the vault is legitimate (i.e.
+it contains as an ID an NFT ID with the correct CurrencySymbol).
 
 \section{Tests}
-
-\begin{itemize}
-  \item Test for Cardano network congestion
-  \item Test what happens if someone hacks one or more price oracles
-  \item Other attack vectors which are not specific to our application, should
-    be listed and tested for
-\end{itemize}
 
 \section{Remarks}
 
@@ -807,7 +785,7 @@ Some extra remarks:
   \item All parameters the protocol depends on, are either included in the
     Parameters Module or hardcoded into the scripts in order to prevent updating
     them outside of a protocol update
-  \item Random reminder about Cardano lingo:
+  \item Reminder about some Cardano lingo:
     \begin{itemize}
       \item Minting Policy: the validator script that controls how the tokens
         are minted
@@ -850,12 +828,14 @@ centralized `emergency' control.
 
 \section{To be determined}
 
+Initial values for:
 \begin{itemize}
-  \item Liquidation ratio
-  \item Liquidation discount
   \item Minimum collateralization ratio
+  \item Liquidation ratio
+  \item Stability fee
   \item Debt floor
   \item Debt ceiling
+  \item \todo{Dutch auction variables}
 \end{itemize}
 
 \end{document}
